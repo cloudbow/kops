@@ -1,5 +1,5 @@
 /*
- * NagraServer.java
+ * GenericJsonProxyServer.java
  * @author arung
  **********************************************************************
 
@@ -34,15 +34,16 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.slingmedia.sportscloud.tests.fixtures.servers.handlers.NagraServerInitializer;
+import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
+import com.slingmedia.sportscloud.tests.fixtures.servers.handlers.GenericJsonProxyServerInitializer;
 
 /**
- * The Class NagraServer.
+ * The Class GenericJsonProxyServer.
  */
-public class NagraServer {
+public class GenericJsonProxyServer {
 
 	/** The Constant LOGGER. */
-	private static final Logger LOGGER = LoggerFactory.getLogger(NagraServer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GenericJsonProxyServer.class);
 
 	/** The Constant DEFAULT_BOSS_THREADS. */
 	private static final int DEFAULT_BOSS_THREADS = 10;
@@ -53,13 +54,10 @@ public class NagraServer {
 	/** The is secure. */
 	public static boolean IS_SECURE = false;
 
-	/** The Constant NAGRA_SERVER. */
-	private static final NagraServer NAGRA_SERVER = new NagraServer();
+	private static final GenericJsonProxyServer JSON_PROXY_SERVER = new GenericJsonProxyServer();
 
-	/**
-	 * Instantiates a new nagra server.
-	 */
-	private NagraServer() {
+
+	private GenericJsonProxyServer() {
 		LOGGER.info("Iam initialized");
 	}
 
@@ -69,17 +67,20 @@ public class NagraServer {
 	 * @param args the arguments
 	 */
 	public static void main(final String[] args) {
-		NagraServer.LOGGER.trace("--NAGRASERVER INIT--");
+				
+		GenericJsonProxyServer.LOGGER.trace("-- INIT--");
 		if (args.length < 2) {
-			NagraServer.LOGGER.info("Unable to start server . Please provide server name");
+			GenericJsonProxyServer.LOGGER.info("Unable to start server . Please provide server name");
 			System.exit(1);
 		}
+		JsonProxyServerConfiguration.setTARGET_HOST_TO_PROXY(System.getProperty("target-host-to-proxy"));
+		
 		if (args.length > 3) {
-			NagraServer.IS_SECURE = Boolean.parseBoolean(args[3]);
+			GenericJsonProxyServer.IS_SECURE = Boolean.parseBoolean(args[3]);
 		}
 		// assign boss and worker threads
-		int bossThreads = NagraServer.DEFAULT_BOSS_THREADS;
-		int workerThreads = NagraServer.DEFAULT_WORKER_THREADS;
+		int bossThreads = GenericJsonProxyServer.DEFAULT_BOSS_THREADS;
+		int workerThreads = GenericJsonProxyServer.DEFAULT_WORKER_THREADS;
 		if (args.length > 3) {
 			bossThreads = Integer.parseInt(args[3]);
 			workerThreads = Integer.parseInt(args[4]);
@@ -87,7 +88,7 @@ public class NagraServer {
 		final String server = args[0];
 		final int port = Integer.parseInt(args[1]);
 
-		NagraServer.NAGRA_SERVER.createServer(server, port, bossThreads, workerThreads);
+		GenericJsonProxyServer.JSON_PROXY_SERVER.createServer(server, port, bossThreads, workerThreads);
 	}
 
 	/**
@@ -106,13 +107,13 @@ public class NagraServer {
 		try {
 			final ServerBootstrap batchBootstrap = new ServerBootstrap();
 
-			bossGroup = new NioEventLoopGroup(bossThreads, new DefaultThreadFactory("NagraServerThreads"));
-			workerGroup = new NioEventLoopGroup(workerThreads, new DefaultThreadFactory("NagraWorkerThreads"));
+			bossGroup = new NioEventLoopGroup(bossThreads, new DefaultThreadFactory("JsonProxyServerThreads"));
+			workerGroup = new NioEventLoopGroup(workerThreads, new DefaultThreadFactory("JsonProxyWorkerThreads"));
 			//@formatter:off
             batchBootstrap
             	.group(bossGroup, workerGroup)
             	.channel(NioServerSocketChannel.class)
-            	.childHandler(new NagraServerInitializer())
+            	.childHandler(new GenericJsonProxyServerInitializer())
             	.option(ChannelOption.SO_BACKLOG, 128);
             //@formatter:on
 			ChannelFuture f = null;
@@ -121,7 +122,7 @@ public class NagraServer {
 			} catch (final InterruptedException e) {
 				LOGGER.error("Interrupted ..",e );
 			}
-			NagraServer.LOGGER.info("STARTED NAGRA SERVER SUCCESSFULLY");
+			GenericJsonProxyServer.LOGGER.info("STARTED JSON PROXY SERVER SUCCESSFULLY");
 			f.channel().closeFuture().syncUninterruptibly();
 
 		} finally {

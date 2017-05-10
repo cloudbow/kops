@@ -1,3 +1,0 @@
-Twente:PSV:ered:soccer:alert_gex=95
-Twente:PSV:ered:soccer:alert_gex_home=80
-Twente:PSV:ered:soccer:alert_gex_away=75
