@@ -1,5 +1,5 @@
 /*
- * NagraServerInitializer.java
+ * GenericJsonProxyServerInitializer.java
  * @author arung
  **********************************************************************
 
@@ -33,12 +33,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 
 
 
-/**
- * The Class NagraServerInitializer.
- *
- * @author arung
- */
-public class NagraServerInitializer extends ChannelInitializer<Channel> {
+public class GenericJsonProxyServerInitializer extends ChannelInitializer<Channel> {
 
     /* (non-Javadoc)
      * @see io.netty.channel.ChannelInitializer#initChannel(io.netty.channel.Channel)
@@ -49,7 +44,7 @@ public class NagraServerInitializer extends ChannelInitializer<Channel> {
         pipeline.addLast("codec", new HttpServerCodec());
         pipeline.addLast("inflator", new HttpContentDecompressor());
         pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024));      
-        pipeline.addLast("handler", new NagraDecoder());
+        pipeline.addLast("handler", new GenericJsonProxyDecoder());
     }
 
 }
