@@ -3,11 +3,11 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.slingmedia</groupId>
-	<artifactId>json-proxy-server</artifactId>
+	<artifactId>slingtv-proxy-server</artifactId>
 	<version>1.0</version>
 	<packaging>jar</packaging>
 
-	<name>json-proxy-server</name>
+	<name>slingtv-proxy-server</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
@@ -73,7 +73,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>json-proxy-server</finalName>
+		<finalName>slingtv-proxy-server</finalName>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -200,7 +200,7 @@
 	<distributionManagement>
 		<repository>
 			<id>com.slingmedia</id>
-			<name>json-proxy-server</name>
+			<name>slingtv-proxy-server</name>
 			<url>svn:https://svn.slingmedia.com/repos/maven2</url>
 		</repository>
 	</distributionManagement>
