@@ -1,2 +1,0 @@
-$.content[?(@.homeTeam.name == 'Spurs' && @.awayTeam.name == 'Rockets' && @.sport == 'basketball' && @.league == 'nba')]<::>.scheduledDate<::>Thu, 11 May 2017 12:30:00 +0000<::>PREDICATE_REPLACE
-<::>$.content[*].league<::>nba<::>BLIND_REPLACE
