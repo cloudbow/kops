@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
 import com.slingmedia.sportscloud.tests.fixtures.servers.handlers.GenericJsonProxyServerInitializer;
-
+import com.slingmedia.sportscloud.tests.dao.*;
 /**
  * The Class GenericJsonProxyServer.
  */
@@ -74,7 +74,7 @@ public class GenericJsonProxyServer {
 			System.exit(1);
 		}
 		JsonProxyServerConfiguration.setTARGET_HOST_TO_PROXY(System.getProperty("target-host-to-proxy"));
-		
+		MongoDAO$.MODULE$.init("mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage");
 		if (args.length > 3) {
 			GenericJsonProxyServer.IS_SECURE = Boolean.parseBoolean(args[3]);
 		}

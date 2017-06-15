@@ -1,8 +1,8 @@
 <configuration  scan="true" scanPeriod="30 seconds">
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>/var/log/json-proxy-server/app.log</file>
+    <file>/var/log/slingtv-proxy-server/app.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-          <fileNamePattern>/var/log/json-proxy-server/app.%i.log.zip</fileNamePattern>
+          <fileNamePattern>/var/log/slingtv-proxy-server/app.%i.log.zip</fileNamePattern>
           <minIndex>1</minIndex>
           <maxIndex>3</maxIndex>
       </rollingPolicy>
@@ -25,7 +25,7 @@
   <logger name="org.springframework" level="INFO" />
   
 
-  <root level="ERROR">
+  <root level="TRACE">
     <appender-ref ref="FILE" />
     <appender-ref ref="STDOUT" />
   </root>
