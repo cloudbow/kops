@@ -26,9 +26,7 @@ package com.slingmedia.sportscloud.tests.fixtures.servers.handlers;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.SocketAddress;
 import java.net.URL;
 import java.util.List;
 import java.util.Scanner;
@@ -46,8 +44,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.slingmedia.sportscloud.tests.dao.MongoDAO$;
 import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
-import com.slingmedia.sportscloud.tests.dao.*;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
@@ -115,7 +113,6 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 			HttpResponse response = null;
 			response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
 			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
-			InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 			//@formatter:on
 			StringBuilder requestURLBuilder = new StringBuilder();
@@ -162,12 +159,9 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 			if(mappingObj==null) {
 				for (JsonElement jsonElement : scheduleArray) {			
 					String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
-					String callsign = jsonElement.getAsJsonObject().get("channel_title").getAsString();
 					mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramID(channelGuid,programId);
 					if(mappingObj!=null)
 						break;
-					
-					
 				}
 			}
 			JsonElement sportApiJson = parser.parse("{}");
@@ -193,13 +187,6 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 			}
 		} catch (Exception e) {
 			LOGGER.error("Error occurred in parsing json",e);
-		}
-		
-		
-		
-
-		if (LOGGER.isTraceEnabled()) {
-			LOGGER.trace(responseString);
 		}
 
 		if (keepAlive) {
