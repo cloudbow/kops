@@ -24,27 +24,17 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.tests.fixtures.servers.handlers;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Scanner;
+import java.util.NoSuchElementException;
 
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
-import com.slingmedia.sportscloud.tests.dao.MongoDAO$;
+import com.slingmedia.sportscloud.tests.dao.*;
 import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
 
 import io.netty.buffer.ByteBuf;
@@ -56,17 +46,8 @@ import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.util.CharsetUtil;
-import pns.alltypes.netty.httpclient.config.HostConfig;
-import pns.alltypes.netty.httpclient.config.SyncType;
-import pns.alltypes.netty.httpclient.exception.AlreadyRegisteredHostException;
-import pns.alltypes.netty.httpclient.exception.InvalidResponseException;
-import pns.alltypes.netty.httpclient.request.HttpRequestMessage.Builder;
-import pns.alltypes.netty.httpclient.request.RequestMaker;
-import pns.alltypes.netty.httpclient.response.ResponseMsg;
 
 /**
  * The Class GenericJsonProxyDecoder.
@@ -78,24 +59,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LoggerFactory.getLogger(GenericJsonProxyDecoder.class);
 
-	/** The Constant REQUEST_MAKER. */
-	private static final RequestMaker REQUEST_MAKER = RequestMaker.getInstance();
-
-	//@formatter:off
-	private static final Configuration CONFIGURAION_OPTION = Configuration.builder()
-			.options(Option.AS_PATH_LIST).build();
-	private static final Configuration CONFIG_NO_OPT = Configuration.builder()
-			 .jsonProvider(new JacksonJsonNodeJsonProvider())
-			 .mappingProvider(new JacksonMappingProvider())
-		     .build();
-    //@formatter:on
-
-	private static CloseableHttpAsyncClient httpClient;
-
 	GenericJsonProxyDecoder() {
-
-		httpClient = HttpAsyncClients.createDefault();
-		httpClient.start();
 
 	}
 
@@ -114,181 +78,147 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 			response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
 			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-			//@formatter:on
 			StringBuilder requestURLBuilder = new StringBuilder();
 			requestURLBuilder.append(JsonProxyServerConfiguration.getTARGET_HOST_TO_PROXY()).append(request.uri());
 
-		//@formatter:off
-		
-		URL baseURLToProxy = new URL(JsonProxyServerConfiguration.getTARGET_HOST_TO_PROXY());
-		
-		HostConfig hostConfig = null;
-		try {
-			hostConfig = new HostConfig(baseURLToProxy.getHost(), baseURLToProxy.getPort()==-1?80:baseURLToProxy.getPort(), SyncType.OPENCLOSE);
-			REQUEST_MAKER.registerHost(hostConfig);
-		} catch (final AlreadyRegisteredHostException e) {
-			LOGGER.error("Already registered",e);
-		}
-		final Builder registerCallBack = REQUEST_MAKER.registerCallBack(request.method(), requestURLBuilder.toString());
-		registerCallBack.url().headers().body(request.content().toString(CharsetUtil.UTF_8)).addHeader("host", hostConfig.getHost());
-		ResponseMsg requestSync = null;
-		try {
-			requestSync = REQUEST_MAKER.requestSync(registerCallBack.build(), hostConfig);
-		} catch (final InvalidResponseException e) {
+			URL baseURLToProxy = new URL(JsonProxyServerConfiguration.getTARGET_HOST_TO_PROXY());
+			String responseString = ExternalHttpClient$.MODULE$.getFromUrl(requestURLBuilder.toString());
 
-		}
-		
-	
-		String responseString = requestSync.getResponse();
-		
-		JsonParser parser = new JsonParser();
-		JsonElement responseJson = null;
-		try {
-			responseJson = parser.parse(responseString);
-			String programId= responseJson.getAsJsonObject().get("program").getAsJsonObject().get("id").getAsString();
-			JsonArray scheduleArray = responseJson.getAsJsonObject().get("schedules").getAsJsonArray();
-			JsonElement mappingObj = null;
-			for (JsonElement jsonElement : scheduleArray) {
-				String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
-				String callsign = jsonElement.getAsJsonObject().get("channel_title").getAsString();
-				mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramIDAndCallSign(channelGuid,programId,callsign);
-				if(mappingObj!=null)
-					break;
-			}
-			
-			if(mappingObj==null) {
-				for (JsonElement jsonElement : scheduleArray) {			
-					String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
-					mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramID(channelGuid,programId);
-					if(mappingObj!=null)
-						break;
+			if (responseString != null) {
+				JsonParser parser = new JsonParser();
+				JsonElement responseJson = null;
+				try {
+					responseJson = parser.parse(responseString);
+					String programId = responseJson.getAsJsonObject().get("program").getAsJsonObject().get("id")
+							.getAsString();
+					JsonArray scheduleArray = responseJson.getAsJsonObject().get("schedules").getAsJsonArray();
+					JsonElement mappingObj = null;
+					for (JsonElement jsonElement : scheduleArray) {
+						String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
+						String callsign = jsonElement.getAsJsonObject().get("channel_title").getAsString();
+						try {
+							mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramIDAndCallSign(channelGuid,
+									programId, callsign);
+						} catch (NoSuchElementException e) {
+							LOGGER.info("Unable to get info1");
+						}
+						if (mappingObj != null)
+							break;
+					}
+
+					if (mappingObj == null) {
+						for (JsonElement jsonElement : scheduleArray) {
+							String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
+							try {
+								mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramID(channelGuid,
+										programId);
+							} catch (NoSuchElementException e) {
+								LOGGER.info("Unable to get info2");
+							}
+							if (mappingObj != null)
+								break;
+						}
+					}
+					JsonElement sportApiJson = parser.parse("{}");
+
+					if (mappingObj == null) {
+						LOGGER.error(String.format("Mapping for content %s not found", programId));
+					} else {
+						// GET 0th item
+						JsonElement mappingObjItem = mappingObj.getAsJsonObject().get("gameEvents").getAsJsonArray()
+								.get(0);
+
+						String contentId = mappingObjItem.getAsJsonObject().get("contentId").getAsString();
+						LOGGER.trace(String.format("Got contentId %s", contentId));
+						String gameId = mappingObjItem.getAsJsonObject().get("gameId").getAsString();
+						String teamId = mappingObjItem.getAsJsonObject().get("teamId").getAsString();
+						String genres = mappingObjItem.getAsJsonObject().get("genres").getAsString();
+
+						String sportApiResponse = fetchSportApiResponse(gameId, teamId, genres);
+						sportApiJson = parser.parse(sportApiResponse);
+					}
+					if (sportApiJson != null)
+						responseJson.getAsJsonObject().add("sports-cloud", sportApiJson);
+
+					if (responseJson != null) {
+						responseString = responseJson.toString();
+					}
+				} catch (Exception e) {
+					LOGGER.error("Error occurred in parsing json", e);
 				}
-			}
-			JsonElement sportApiJson = parser.parse("{}");
-			
-			if(mappingObj==null){
-				LOGGER.error(String.format("Mapping for content %s not found",programId));
 			} else {
-				//GET 0th item 
-				JsonElement mappingObjItem = mappingObj.getAsJsonObject().get("gameEvents").getAsJsonArray().get(0);
-				
-				String contentId= mappingObjItem.getAsJsonObject().get("contentId").getAsString();
-				LOGGER.trace(String.format("Got contentId %s", contentId));
-				String gameId = mappingObjItem.getAsJsonObject().get("gameId").getAsString();
-				String teamId = mappingObjItem.getAsJsonObject().get("teamId").getAsString();
-				
-				String sportApiResponse = fetchSportApiResponse(gameId,teamId);
-				sportApiJson = parser.parse(sportApiResponse);				
+				responseString = "";
 			}
-			if(sportApiJson!=null) responseJson.getAsJsonObject().add("sports-cloud",sportApiJson);
-			
-			if(responseJson!=null) {
-				responseString= responseJson.toString();
+
+			if (keepAlive) {
+				response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+			} else {
+				response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
 			}
+			byte[] bytes = responseString.toString().getBytes();
+			response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+
+			// response.headers().set(HttpHeaders.Names.CONNECTION,
+			// HttpHeaders.Values.CLOSE);
+
+			ctx.write(response);
+
+			buf.writeBytes(bytes);
+
 		} catch (Exception e) {
-			LOGGER.error("Error occurred in parsing json",e);
-		}
-
-		if (keepAlive) {
-			response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-		} else {
-			response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-		}
-		String jsonPathFile = System.getProperty("json-path-file");
-		if(jsonPathFile!=null) {
-		try (Scanner scanner = new Scanner(new File(jsonPathFile))) {
-
-			while (scanner.hasNext()) {
-				String nextLine = scanner.nextLine();
-				String[] lines = nextLine.split("<::>");
-				String predicates = lines[0];
-				String targetOffsetPath = lines[1];
-				String replacementValue = lines[2];
-				ReplaceType replaceType = ReplaceType.valueOf(lines[3]);
-				if (replaceType == ReplaceType.BLIND_REPLACE) {
-					try {
-					Object updatedJson = JsonPath.using(CONFIG_NO_OPT).parse(responseString)
-							.set(targetOffsetPath, replacementValue).json();
-					responseString = updatedJson.toString();
-					} catch(com.jayway.jsonpath.PathNotFoundException e){
-						LOGGER.error("path not found",e);
-					}
-				} else if (replaceType == ReplaceType.PREDICATE_REPLACE) {
-					try {
-					List<String> pathList = JsonPath.using(CONFIGURAION_OPTION).parse(responseString).read(predicates);
-					for (String path : pathList) {
-						Object updatedJson = JsonPath.using(CONFIG_NO_OPT).parse(responseString)
-								.set(path.concat(targetOffsetPath), replacementValue).json();
-						responseString = updatedJson.toString();
-						LOGGER.trace(updatedJson.toString());
-					}
-					}catch(com.jayway.jsonpath.PathNotFoundException e){
-						LOGGER.error("path not found",e);
-					}
-				}
-			}
-
-		} catch (IOException e) {
-			LOGGER.error("IOException ",e);
-		}
-		
-		}
-
-		byte[] bytes = responseString.toString().getBytes();
-		response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-
-		// response.headers().set(HttpHeaders.Names.CONNECTION,
-		// HttpHeaders.Values.CLOSE);
-
-		ctx.write(response);
-
-		
-		buf.writeBytes(bytes);
-
-		
-		}catch(Exception e){
-			LOGGER.error("Error occurred during encoding",e);
-		}	
-		finally {
+			LOGGER.error("Error occurred during encoding", e);
+		} finally {
 			final ChannelFuture future = ctx.writeAndFlush(new DefaultLastHttpContent(buf));
 			future.addListener(ChannelFutureListener.CLOSE);
 		}
 
-
-
 	}
-	
-	private String fetchSportApiResponse(String gameId, String teamId) {
-		String url = "http://hsportsdata.slingbox.com/dish/v1/mc/mlb?gameId=%s&teamId=%s";
 
-		URL baseURLToProxy=null;
+	private String fetchSportApiResponse(String gameId, String teamId, String genres) {
+		String league = "";
+		String genresLower = genres.toLowerCase();
+		if (genresLower.contains("basketball")) {
+			if (genresLower.contains("college")) {// College basketball //ncaab
+				league="ncaab";
+			} else {// nba
+				league="nba";
+			}
+		} else if (genresLower.contains("football")) {
+			if (genresLower.contains("college")) {// ncaaf
+				league="ncaaf";
+			} else {// nfl
+				league="nfl";
+			}
+		} else if (genresLower.contains("baseball")) {// mlb
+			league="mlb";
+		} else if (genresLower.contains("soccer")) {// soccer
+			league="soccer";
+		} else if (genresLower.contains("hockey")) {// soccer
+			league="nhl";
+		}
+
+		String url1Template = "http://hsportsdata.slingbox.com/dish/v1/mc/%s?gameId=%s&teamId=%s";
+		String url2Template = "http://hsportsdata.slingbox.com/dish/games/%s/%s";
+		String url = "";
+		if(league.equals("nhl") || league.equals("soccer")) {
+			url  = String.format(url2Template);
+		} else {
+			url  = String.format(url1Template,league,gameId,teamId);
+		}
+		
+
+		URL baseURLToProxy = null;
 		try {
 			baseURLToProxy = new URL(url);
 		} catch (MalformedURLException e1) {
-			LOGGER.error("Error occurred in url",e1);
+			LOGGER.error("Error occurred in url", e1);
 		}
 		//@formatter:on
 		StringBuilder requestURLBuilder = new StringBuilder();
-		requestURLBuilder.append(String.format(url, gameId, teamId));
+		requestURLBuilder.append(String.format(url1Template, league,gameId, teamId));
 
 		//@formatter:off
-		HostConfig hostConfig = null;
-		try {
-			hostConfig = new HostConfig(baseURLToProxy.getHost(), baseURLToProxy.getPort()==-1?80:baseURLToProxy.getPort(), SyncType.OPENCLOSE);
-			REQUEST_MAKER.registerHost(hostConfig);
-		} catch (final AlreadyRegisteredHostException e) {
-			LOGGER.error("Already registered",e);
-		}
-		final Builder registerCallBack = REQUEST_MAKER.registerCallBack(HttpMethod.GET, requestURLBuilder.toString());
-		registerCallBack.url().headers().addHeader("host", hostConfig.getHost());
-		ResponseMsg requestSync = null;
-		try {
-			requestSync = REQUEST_MAKER.requestSync(registerCallBack.build(), hostConfig);
-		} catch (final InvalidResponseException e) {
-
-		}
-		String responseString = requestSync.getResponse();
-		
+		String responseString = ExternalHttpClient$.MODULE$.getFromUrl(requestURLBuilder.toString());		
 		return responseString;
 	}
 

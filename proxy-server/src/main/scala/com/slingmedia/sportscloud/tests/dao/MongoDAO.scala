@@ -51,6 +51,7 @@ object MongoDAO {
       if(mongoDocs!=null)
       {    
         val mongoDoc = mongoDocs.head.toJson
+        println ("Mongo Doc="+mongoDoc)
         finalObj = jsonParser.parse(mongoDoc)
       }     
     }

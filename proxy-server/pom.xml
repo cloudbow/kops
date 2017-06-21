@@ -34,7 +34,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.1.0.Beta1</version>
+			<version>4.1.12.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -56,12 +56,6 @@
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.github.cloudbow</groupId>
-			<artifactId>netty-http-client</artifactId>
-			<version>0.0.3</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.glassfish/javax.json -->
