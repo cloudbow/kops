@@ -3,3 +3,5 @@ micro_content_matcher/project/target
 .history
 micro_content_matcher/target
 proxy-server/logs
+proxy-server/metastore_db
+derby.log

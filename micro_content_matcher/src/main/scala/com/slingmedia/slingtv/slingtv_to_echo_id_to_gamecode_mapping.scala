@@ -191,18 +191,18 @@ case class ExternalId(id: String, provider: String)
 case class Team(uid:String, externalIds:Array[ExternalId])
 case class EventTeam(uid:String, teamId:String)
 
-val readConfigEventTeam = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"20","collection" -> "eventTeam", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
+val readConfigEventTeam = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"5","collection" -> "eventTeam", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
 val eventTeamDF = MongoSpark.load[EventTeam](spark, readConfigEventTeam)	
 
 
 
-val readConfigTeam = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"20","collection" -> "team", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
+val readConfigTeam = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"5","collection" -> "team", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
 val teamDF = MongoSpark.load[Team](spark, readConfigTeam)
 
 
 
 
-val readConfigEvent = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"20","collection" -> "event", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
+val readConfigEvent = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"5","collection" -> "event", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
 case class Event(contentIDs:String, externalIds: Array[ExternalId], eventTeams: Array[String],title:String )
 val eventDF=  MongoSpark.load[Event](spark,readConfigEvent)
 val eventDF0 = eventDF.withColumnRenamed("title","event_title")
@@ -273,12 +273,18 @@ val mongoChGPgmIdCallsignDF2 = joinedContentDF.map { row =>
 		 val asset_guid= row.getString(14)
          ((channel_guid.concat("_").concat(program_id.toString).concat("_").concat(callsign)),GameEvent(contentId, gameId, event_title, teamId, channel_guid, channel_no, callsign,subpack_int_id, subpackage_guid, subpack_title, program_id, program_guid, program_title,genres,asset_guid))
 }
+
+val readConfigChPgmCallsignDF = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"5","collection" -> "slingtv_schguid_program_id_callsign_cont_nagra_mapping", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
+val chPgmCallsignDF = MongoSpark.load(spark, readConfigChPgmCallsignDF).select($"id",$"gameEvents")
+
 val mongoChGPgmIdCallsignDF3 = mongoChGPgmIdCallsignDF2.withColumnRenamed("_1","id").withColumnRenamed("_2","gameEvent")
 val mongoChGPgmIdCallsignDF4 = mongoChGPgmIdCallsignDF3.groupBy("id").agg(collect_list("gameEvent")).withColumnRenamed("collect_list(gameEvent)","gameEvents")
-
+val finalChPgmCallsignDFtoWrite = chPgmCallsignDF.except(mongoChGPgmIdCallsignDF4)
 //write to mongo
-val writeConfig = WriteConfig(Map("collection" -> "slingtv_schguid_program_id_callsign_cont_nagra_mapping", "writeConcern.w" -> "majority"), Some(WriteConfig(sc)))
-mongoChGPgmIdCallsignDF4.write.option("collection", "slingtv_schguid_program_id_callsign_cont_nagra_mapping").mode("overwrite").mongo()
+if(finalChPgmCallsignDFtoWrite.count>0) {
+	val writeConfig = WriteConfig(Map("collection" -> "slingtv_schguid_program_id_callsign_cont_nagra_mapping", "writeConcern.w" -> "majority"), Some(WriteConfig(sc)))
+	finalChPgmCallsignDFtoWrite.write.option("collection", "slingtv_schguid_program_id_callsign_cont_nagra_mapping").mode("append").mongo()
+}
 
 
 val mongoChGPgmIdDF2 = joinedContentDF.map { row =>
@@ -299,14 +305,18 @@ val mongoChGPgmIdDF2 = joinedContentDF.map { row =>
 		 val asset_guid= row.getString(14)
          ((channel_guid.concat("_").concat(program_id.toString)),GameEvent(contentId, gameId, event_title, teamId, channel_guid, channel_no,callsign, subpack_int_id, subpackage_guid, subpack_title,  program_id, program_guid, program_title,genres,asset_guid))
 }
+val readConfigChPgmDF = ReadConfig(Map("partitionKey"->"_id","numberOfPartitions"->"5","collection" -> "slingtv_schguid_program_id_cont_nagra_mapping", "readPreference.name" -> "primaryPreferred","partitioner"->"MongoPaginateByCountPartitioner"), Some(ReadConfig(spark)))
+val chPgmDF = MongoSpark.load(spark, readConfigChPgmDF).select($"id",$"gameEvents")
 val mongoChGPgmIdDF3 = mongoChGPgmIdDF2.withColumnRenamed("_1","id").withColumnRenamed("_2","gameEvent")
 val mongoChGPgmIdDF4 = mongoChGPgmIdDF3.groupBy("id").agg(collect_list("gameEvent")).withColumnRenamed("collect_list(gameEvent)","gameEvents")
 
+val finalChPgmDFtoWrite = chPgmDF.except(mongoChGPgmIdDF4)
 
 
-
-val writeConfig = WriteConfig(Map("collection" -> "slingtv_schguid_program_id_cont_nagra_mapping", "writeConcern.w" -> "majority"), Some(WriteConfig(sc)))
-mongoChGPgmIdDF4.write.option("collection", "slingtv_schguid_program_id_cont_nagra_mapping").mode("overwrite").mongo()
+if(finalChPgmDFtoWrite.count > 0) {
+	val writeConfig = WriteConfig(Map("collection" -> "slingtv_schguid_program_id_cont_nagra_mapping", "writeConcern.w" -> "majority"), Some(WriteConfig(sc)))
+	finalChPgmDFtoWrite.write.option("collection", "slingtv_schguid_program_id_cont_nagra_mapping").mode("append").mongo()
+}
 
 
 
