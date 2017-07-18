@@ -5,3 +5,7 @@ micro_content_matcher/target
 proxy-server/logs
 proxy-server/metastore_db
 derby.log
+ftp-kafka-source-coverter/target
+target
+Docker-MicroContentMatcher/metastore_db
+micro-content-matcher/metastore_db

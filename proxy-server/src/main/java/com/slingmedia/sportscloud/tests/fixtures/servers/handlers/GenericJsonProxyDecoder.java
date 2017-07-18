@@ -24,17 +24,19 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.tests.fixtures.servers.handlers;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.NoSuchElementException;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.slingmedia.sportscloud.tests.dao.*;
+import com.google.gson.JsonPrimitive;
+import com.slingmedia.sportscloud.tests.facade.*;
 import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
 
 import io.netty.buffer.ByteBuf;
@@ -97,29 +99,16 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 						String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
 						String callsign = jsonElement.getAsJsonObject().get("channel_title").getAsString();
 						try {
-							mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramIDAndCallSign(channelGuid,
-									programId, callsign);
+							mappingObj = ContentMatchFacade$.MODULE$.getDataForChannelGuidAndProgramID(channelGuid,
+									programId);
 						} catch (NoSuchElementException e) {
 							LOGGER.info("Unable to get info1");
 						}
 						if (mappingObj != null)
 							break;
 					}
-
-					if (mappingObj == null) {
-						for (JsonElement jsonElement : scheduleArray) {
-							String channelGuid = jsonElement.getAsJsonObject().get("channel_guid").getAsString();
-							try {
-								mappingObj = MongoDAO$.MODULE$.getDataForChannelGuidAndProgramID(channelGuid,
-										programId);
-							} catch (NoSuchElementException e) {
-								LOGGER.info("Unable to get info2");
-							}
-							if (mappingObj != null)
-								break;
-						}
-					}
-					JsonElement sportApiJson = parser.parse("{}");
+					
+					JsonObject sportApiJson = new JsonObject();
 
 					if (mappingObj == null) {
 						LOGGER.error(String.format("Mapping for content %s not found", programId));
@@ -128,19 +117,78 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 						JsonElement mappingObjItem = mappingObj.getAsJsonObject().get("gameEvents").getAsJsonArray()
 								.get(0);
 
-						String contentId = mappingObjItem.getAsJsonObject().get("contentId").getAsString();
-						LOGGER.trace(String.format("Got contentId %s", contentId));
-						String gameId = mappingObjItem.getAsJsonObject().get("gameId").getAsString();
-						String teamId = mappingObjItem.getAsJsonObject().get("teamId").getAsString();
-						String genres = mappingObjItem.getAsJsonObject().get("genres").getAsString();
+						String homeTeamName = "-" ;
+						if(mappingObjItem.getAsJsonObject().get("homeTeamName")!=null) {
+							homeTeamName = mappingObjItem.getAsJsonObject().get("homeTeamName").getAsString();
+						}
+						
+						String awayTeamName = "-";
+						if(mappingObjItem.getAsJsonObject().get("awayTeamName")!=null) {
+							awayTeamName = mappingObjItem.getAsJsonObject().get("awayTeamName").getAsString();
+						}
+						
+						
+						
+						String homeTeamScore = "0";
+						if(mappingObjItem.getAsJsonObject().get("homeTeamScore")!=null) {
+							homeTeamScore = mappingObjItem.getAsJsonObject().get("homeTeamScore").getAsJsonObject().get("$numberLong").getAsString();
+						}
+								
+								
+						String awayTeamScore = "0";
+						if(mappingObjItem.getAsJsonObject().get("awayTeamScore")!=null) {
+							awayTeamScore = mappingObjItem.getAsJsonObject().get("awayTeamScore").getAsJsonObject().get("$numberLong").getAsString();
+						}
+						
+								
+						String awayTeamPitcherName = "-";
+						if(mappingObjItem.getAsJsonObject().get("awayTeamPitcherName")!=null) {
+							awayTeamPitcherName = mappingObjItem.getAsJsonObject().get("awayTeamPitcherName").getAsString().split(" ")[0];
+						}
+								
+								
+						String homeTeamPitcherName = "-";
+						if(mappingObjItem.getAsJsonObject().get("homeTeamPitcherName")!=null) {
+							homeTeamPitcherName= mappingObjItem.getAsJsonObject().get("homeTeamPitcherName").getAsString().split(" ")[0];
+						}
+								
+						String homeTeamImg = "-" ;
+						if(mappingObjItem.getAsJsonObject().get("homeTeamImg")!=null) {
+							homeTeamImg = mappingObjItem.getAsJsonObject().get("homeTeamImg").getAsString();
+						}
+								
+								
+						String awayTeamImg = "-";
+						if(mappingObjItem.getAsJsonObject().get("awayTeamImg")!=null) {
+							awayTeamImg=mappingObjItem.getAsJsonObject().get("awayTeamImg").getAsString();
+						}
+						
+						String gexPredict = "0";
+						if(mappingObjItem.getAsJsonObject().get("gexPredict")!=null) {
+							gexPredict=mappingObjItem.getAsJsonObject().get("gexPredict").getAsJsonObject().get("$numberLong").getAsString();
+						}
 
-						String sportApiResponse = fetchSportApiResponse(gameId, teamId, genres);
-						sportApiJson = parser.parse(sportApiResponse);
+						JsonObject awayTeamObject = new JsonObject();
+						awayTeamObject.add("name", new JsonPrimitive(awayTeamName));
+						awayTeamObject.add("pitcherName", new JsonPrimitive(awayTeamPitcherName));
+						awayTeamObject.add("img", new JsonPrimitive(awayTeamImg));
+						JsonObject homeTeamObject = new JsonObject();
+						homeTeamObject.add("name", new JsonPrimitive(homeTeamName));
+						homeTeamObject.add("pitcherName", new JsonPrimitive(homeTeamPitcherName));
+						homeTeamObject.add("img", new JsonPrimitive(homeTeamImg));
+						JsonObject sportData = new JsonObject();
+						sportData.add("homeTeam", homeTeamObject);
+						sportData.add("awayTeam", awayTeamObject);
+						sportData.add("homeScore", new JsonPrimitive(homeTeamScore));
+						sportData.add("awayScore", new JsonPrimitive(awayTeamScore));
+						sportData.add("rating", new JsonPrimitive(gexPredict));
+						JsonObject mediaCardJsonObj = new JsonObject();
+						mediaCardJsonObj.add("sport_data", sportData);
+						sportApiJson.getAsJsonObject().add("mc", mediaCardJsonObj);
 					}
-					if (sportApiJson != null)
-						responseJson.getAsJsonObject().add("sports-cloud", sportApiJson);
 
 					if (responseJson != null) {
+						responseJson.getAsJsonObject().add("sports-cloud", sportApiJson);
 						responseString = responseJson.toString();
 					}
 				} catch (Exception e) {
@@ -174,54 +222,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 	}
 
-	private String fetchSportApiResponse(String gameId, String teamId, String genres) {
-		String league = "";
-		String genresLower = genres.toLowerCase();
-		if (genresLower.contains("basketball")) {
-			if (genresLower.contains("college")) {// College basketball //ncaab
-				league="ncaab";
-			} else {// nba
-				league="nba";
-			}
-		} else if (genresLower.contains("football")) {
-			if (genresLower.contains("college")) {// ncaaf
-				league="ncaaf";
-			} else {// nfl
-				league="nfl";
-			}
-		} else if (genresLower.contains("baseball")) {// mlb
-			league="mlb";
-		} else if (genresLower.contains("soccer")) {// soccer
-			league="soccer";
-		} else if (genresLower.contains("hockey")) {// soccer
-			league="nhl";
-		}
-
-		String url1Template = "http://hsportsdata.slingbox.com/dish/v1/mc/%s?gameId=%s&teamId=%s";
-		String url2Template = "http://hsportsdata.slingbox.com/dish/games/%s/%s";
-		String url = "";
-		if(league.equals("nhl") || league.equals("soccer")) {
-			url  = String.format(url2Template);
-		} else {
-			url  = String.format(url1Template,league,gameId,teamId);
-		}
-		
-
-		URL baseURLToProxy = null;
-		try {
-			baseURLToProxy = new URL(url);
-		} catch (MalformedURLException e1) {
-			LOGGER.error("Error occurred in url", e1);
-		}
-		//@formatter:on
-		StringBuilder requestURLBuilder = new StringBuilder();
-		requestURLBuilder.append(String.format(url1Template, league,gameId, teamId));
-
-		//@formatter:off
-		String responseString = ExternalHttpClient$.MODULE$.getFromUrl(requestURLBuilder.toString());		
-		return responseString;
-	}
-
+	
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		ctx.close();
