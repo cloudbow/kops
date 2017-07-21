@@ -12,6 +12,7 @@ lazy val root = (project in file(".")).
     name := "micro-container-matcher",
     libraryDependencies ++= Seq(
   		spark,
+  		logback,
   		scalaLogger,
   		kafka,
   		mongoSpark,

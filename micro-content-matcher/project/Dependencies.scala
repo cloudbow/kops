@@ -6,4 +6,6 @@ object Dependencies {
   lazy val kafka = "org.apache.spark" % "spark-sql-kafka-0-10_2.11" % "2.1.1"
   lazy val databricksCSV = "com.databricks" % "spark-csv_2.10" % "1.5.0"
   lazy val mongoSpark = "org.mongodb.spark" % "mongo-spark-connector_2.11" % "2.0.0"
+  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
+
 }
