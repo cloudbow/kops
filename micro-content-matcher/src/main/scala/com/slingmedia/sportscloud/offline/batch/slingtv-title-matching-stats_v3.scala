@@ -41,11 +41,11 @@ object Holder extends Serializable {
   @transient lazy val log = LoggerFactory.getLogger("ContentMatcher")
 }
 
-case class GameEvent(id: String, assetGuid: String, awayTeamCity: String, awayTeamExternalId: String, awayTeamImg: String, awayTeamName: String, awayTeamPitcherName: String, awayTeamScore: String, callsign: String, channelGuid: String, channelNo: Long, gameCode: String, gameDateEpoch: Long, genres: String, gexPredict: Long, homeTeamCity: String, homeTeamExternalId: String, homeTeamImg: String, homeTeamName: String, homeTeamPitcherName: String, homeTeamScore: String, programGuid: String, programId: Long, programTitle: String, subpackTitle: String, subpackageGuid: String)
-case class GameEvents(id: String, batchTime: Long,gameEvents: Array[GameEvent])
+case class GameEvent(id: String, anonsTitle: String, assetGuid: String, awayTeamCity: String, awayTeamExternalId: String, awayTeamImg: String, awayTeamName: String, awayTeamPitcherName: String, awayTeamScore: String, callsign: String, channelGuid: String, channelNo: Long, gameCode: String, gameDateEpoch: Long, genres: String, gexPredict: Long, homeTeamCity: String, homeTeamExternalId: String, homeTeamImg: String, homeTeamName: String, homeTeamPitcherName: String, homeTeamScore: String, preGameTeaser: String, programGuid: String, programId: Long, programTitle: String, stadiumName: String, subpackTitle: String, subpackageGuid: String)
+case class GameEvents(id: String, batchTime: Long, gameEvents: Array[GameEvent])
 
 object ContentMatcher extends Serializable {
-  
+
   def main(args: Array[String]) {
     Holder.log.debug("Args is $args")
     val spark = SparkSession.builder().getOrCreate()
@@ -54,28 +54,38 @@ object ContentMatcher extends Serializable {
 
     //fetch thuuz games
     fetchThuuzGames()
-    
+
     //fetch sports channels
     val summaryJson6 = fetchSportsChannels()
-    
+
     //fetch program schedules
     fetchProgramSchedules(summaryJson6)
-    
+
     //Fetch MLB schedule
     val mlbScheduleDF32 = fetchMLBSchedule()
 
     //join with thuuz to get gex score
     val mlbScheduleDF34 = intersectWithThuuz(mlbScheduleDF32)
-    
+
     //get the matched count
     val programsJoin3 = contentMatch(mlbScheduleDF34)
-    
+
     //Write delta back to mongo
     writeDeltaDataToMongo(programsJoin3)
 
   }
 
   //All UDFs are here which actually does multiple functions on a single column in a Ros
+
+  val getAnonsTitle: (String, String, String) => String = (homeTeamName: String, awayTeamName: String, stadium: String) => {
+    var anonsTitle = homeTeamName.concat(" take on ").concat(awayTeamName)
+    if (stadium != null) {
+      anonsTitle.concat(" at ").concat(stadium)
+    }
+    anonsTitle
+  }
+  val getAnonsTitleUDF = udf(getAnonsTitle(_: String, _: String, _: String))
+
   val getZeroPaddedFunc: (String => String) = (timeStr: String) => {
     val timeInInt = timeStr.toInt
     if (timeInInt < 0) {
@@ -201,20 +211,20 @@ object ContentMatcher extends Serializable {
     val totalGamesCount = statsTargetProgramsJoin3.count
     (totalMatchedCount, totalGamesCount, totalMatchedCount.toFloat / totalGamesCount.toFloat * 100)
   }
-  
-  val fetchThuuzGames:()=>Unit = () => {
+
+  val fetchThuuzGames: () => Unit = () => {
     //Fetch from thuuz and update 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val thuuzGamesDF = spark.read.json("/data/feeds/thuuz.json")
     val thuuzGamesDF1 = thuuzGamesDF.withColumn("gamesExp", explode(thuuzGamesDF.col("ratings"))).drop("ratings")
-    val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.external_ids.stats.game" as "statsGameCode");
+    val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameCode");
     val thuuzGamesDF20 = thuuzGamesDF11.withColumn("gameCodeTmp", thuuzGamesDF11("statsGameCode").cast(LongType)).drop("statsGameCode").withColumnRenamed("gameCodeTmp", "statsGameCode")
     thuuzGamesDF20.createOrReplaceTempView("thuuzGames")
 
   }
-  
-  val fetchSportsChannels:()=>DataFrame = () => {
+
+  val fetchSportsChannels: () => DataFrame = () => {
     //fetch summary json
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -232,12 +242,12 @@ object ContentMatcher extends Serializable {
     val channelsSummaryJsonDF5 = channelsSummaryJsonDF4.withColumn("genreExploded", explode($"genre")).drop("genre")
     //Total Sports channels== 1357 (14%)
     // Filter only sports channels
-    val channelsSummaryJsonDF6 = channelsSummaryJsonDF5.filter("genreExploded='Sports'").drop("genreExploded")    
+    val channelsSummaryJsonDF6 = channelsSummaryJsonDF5.filter("genreExploded='Sports'").drop("genreExploded")
     val summaryJson6 = channelsSummaryJsonDF6.join(subPackIds21, channelsSummaryJsonDF6("subpack_int_id") === subPackIds21("id"), "inner").drop("id")
     summaryJson6
   }
-  
-  val fetchProgramSchedules:(DataFrame)=>Unit = (summaryJson6:DataFrame) => {
+
+  val fetchProgramSchedules: (DataFrame) => Unit = (summaryJson6: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val linearFeedDF = spark.read.json("/data/feeds/schedules_plus_3")
@@ -265,7 +275,7 @@ object ContentMatcher extends Serializable {
 
     programScheduleChannelJoin0.createOrReplaceTempView("programSchedules")
   }
-  
+
   val fetchMLBSchedule: () => DataFrame = () => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -273,7 +283,7 @@ object ContentMatcher extends Serializable {
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
 
     val scoreSchema = StructType(StructField("score", StringType, true) :: Nil)
-
+    
     val nameSchema = StructType(StructField("name", StringType, true) :: Nil)
     val playerDataSchema = StructType(StructField("player-data", nameSchema, true) :: Nil)
 
@@ -281,7 +291,7 @@ object ContentMatcher extends Serializable {
     val dateSchema = StructType(StructField("month", StringType, true) :: StructField("date", StringType, true) :: StructField("day", StringType, true) :: StructField("year", StringType, true) :: Nil)
     val timeSchema = StructType(StructField("hour", StringType, true) :: StructField("minute", StringType, true) :: StructField("utc-hour", StringType, true) :: StructField("utc-minute", StringType, true) :: Nil)
 
-    val gameScheduleItemSchema = StructType(StructField("visiting-team-score", scoreSchema, true) :: StructField("home-team-score", scoreSchema, true) :: StructField("away-starting-pitcher", playerDataSchema, true) :: StructField("home-starting-pitcher", playerDataSchema, true) :: StructField("home-team", teamSchema, true) :: StructField("visiting-team", teamSchema, true) :: StructField("date", dateSchema, true) :: StructField("time", timeSchema, true) :: StructField("gamecode", StringType, true) :: Nil)
+    val gameScheduleItemSchema = StructType(StructField("stadium", nameSchema, true) ::StructField("visiting-team-score", scoreSchema, true) :: StructField("home-team-score", scoreSchema, true) :: StructField("away-starting-pitcher", playerDataSchema, true) :: StructField("home-starting-pitcher", playerDataSchema, true) :: StructField("home-team", teamSchema, true) :: StructField("visiting-team", teamSchema, true) :: StructField("date", dateSchema, true) :: StructField("time", timeSchema, true) :: StructField("gamecode", StringType, true) :: Nil)
     val gameShceduleSchema = StructType(StructField("game-schedule", gameScheduleItemSchema, true) :: Nil)
     //only pickup MLB games for now
     val ds3 = ds2.where("key like '%MLB_SCHEDULE.XML%'")
@@ -301,15 +311,17 @@ object ContentMatcher extends Serializable {
       $"game-schedule.away-starting-pitcher.player-data.name" as "awayTeamPitcherName",
       $"game-schedule.home-starting-pitcher.player-data.name" as "homeTeamPitcherName",
       $"game-schedule.gamecode" as "gameCode",
+      $"game-schedule.stadium.name" as "stadiumName",
       concat(col("game-schedule.date.year"), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.month")), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.date")), lit("T"), col("game-schedule.time.hour"), lit(":"), col("game-schedule.time.minute"), lit(":00.00"), lit(getZeroPaddedUDF($"game-schedule.time.utc-hour")), lit(":"), col("game-schedule.time.utc-minute")) as "date")
 
     val mlbScheduleDF31 = mlbScheduleDF3.withColumn("game_date_epoch", timeStrToEpochUDF($"date"))
-    val mlbScheduleDF32 = mlbScheduleDF31.distinct.toDF.na.fill(0L, Seq("homeTeamScore")).na.fill(0L, Seq("awayTeamScore"))
+    val mlbScheduleDF311 = mlbScheduleDF31.withColumn("anonsTitle", getAnonsTitleUDF($"homeTeamName", $"awayTeamName", $"stadiumName"))
+    val mlbScheduleDF32 = mlbScheduleDF311.distinct.toDF.na.fill(0L, Seq("homeTeamScore")).na.fill(0L, Seq("awayTeamScore"))
     mlbScheduleDF32
-    
+
   }
-  
-  val intersectWithThuuz:DataFrame=>DataFrame = (mlbScheduleDF32:DataFrame) => {
+
+  val intersectWithThuuz: DataFrame => DataFrame = (mlbScheduleDF32: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     //join with thuuz to get gex score
@@ -319,49 +331,52 @@ object ContentMatcher extends Serializable {
     val mlbScheduleDF34 = mlbScheduleDF33.na.fill(0L, Seq("gexPredict"))
     mlbScheduleDF34
   }
-  
-  val writeDeltaDataToMongo:(DataFrame=>Unit) = (programsJoin3: DataFrame) => {
+
+  val writeDeltaDataToMongo: (DataFrame => Unit) = (programsJoin3: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val batchTimeStamp = Instant.now().getEpochSecond
-    val mongoChGPgmIdDF2 = programsJoin3.rdd.map( { row =>
-      val asset_guid = row.getString(0)
-      val awayTeamCity = row.getString(1)
-      val awayTeamExternalId = row.getString(2)
-      val awayTeamImg = row.getString(3)
-      val awayTeamName = row.getString(4)
-      val awayTeamPitcherName = row.getString(5)
-      val awayTeamScore = row.getString(6)
-      val callsign = row.getString(7)
-      val channel_guid = row.getString(8)
-      val channel_no = row.getLong(9)
-      val gameCode = row.getString(10)
-      val game_date_epoch = row.getLong(11)
-      val genres = row.getString(12)
-      val gexPredict = row.getLong(13)
-      val homeTeamCity = row.getString(14)
-      val homeTeamExternalId = row.getString(15)
-      val homeTeamImg = row.getString(16)
-      val homeTeamName = row.getString(17)
-      val homeTeamPitcherName = row.getString(18)
-      val homeTeamScore = row.getString(19)
-      val program_guid = row.getString(20)
-      val program_id = row.getLong(21)
-      val program_title = row.getString(22)
-      val subpack_title = row.getString(23)
-      val subpackage_guid = row.getString(24)
-      ((channel_guid.concat("_").concat(program_id.toString)),batchTimeStamp, GameEvent(channel_guid.concat("_").concat(program_id.toString), asset_guid, awayTeamCity, awayTeamExternalId, awayTeamImg, awayTeamName, awayTeamPitcherName, awayTeamScore, callsign, channel_guid, channel_no, gameCode, game_date_epoch, genres, gexPredict, homeTeamCity, homeTeamExternalId, homeTeamImg, homeTeamName, homeTeamPitcherName, homeTeamScore, program_guid, program_id, program_title, subpack_title, subpackage_guid))
+    val mongoChGPgmIdDF2 = programsJoin3.rdd.map({ row =>
+      val anonsTitle = row.getString(0)
+      val asset_guid = row.getString(1)
+      val awayTeamCity = row.getString(2)
+      val awayTeamExternalId = row.getString(3)
+      val awayTeamImg = row.getString(4)
+      val awayTeamName = row.getString(5)
+      val awayTeamPitcherName = row.getString(6)
+      val awayTeamScore = row.getString(7)
+      val callsign = row.getString(8)
+      val channel_guid = row.getString(9)
+      val channel_no = row.getLong(10)
+      val gameCode = row.getString(11)
+      val game_date_epoch = row.getLong(12)
+      val genres = row.getString(13)
+      val gexPredict = row.getLong(14)
+      val homeTeamCity = row.getString(15)
+      val homeTeamExternalId = row.getString(16)
+      val homeTeamImg = row.getString(17)
+      val homeTeamName = row.getString(18)
+      val homeTeamPitcherName = row.getString(19)
+      val homeTeamScore = row.getString(20)
+      val preGameTeaser = row.getString(21)
+      val program_guid = row.getString(22)
+      val program_id = row.getLong(23)
+      val program_title = row.getString(24)
+      val stadiumName = row.getString(25)
+      val subpack_title = row.getString(26)
+      val subpackage_guid = row.getString(27)
+      ((channel_guid.concat("_").concat(program_id.toString)), batchTimeStamp, GameEvent(channel_guid.concat("_").concat(program_id.toString), anonsTitle, asset_guid, awayTeamCity, awayTeamExternalId, awayTeamImg, awayTeamName, awayTeamPitcherName, awayTeamScore, callsign, channel_guid, channel_no, gameCode, game_date_epoch, genres, gexPredict, homeTeamCity, homeTeamExternalId, homeTeamImg, homeTeamName, homeTeamPitcherName, homeTeamScore, preGameTeaser, program_guid, program_id, program_title, stadiumName, subpack_title, subpackage_guid))
     }).toDF
 
     val mongoChGPgmIdDF3 = mongoChGPgmIdDF2.withColumnRenamed("_1", "id").withColumnRenamed("_2", "batchTime").withColumnRenamed("_3", "gameEvents")
     val mongoChGPgmIdDF40 = mongoChGPgmIdDF3.groupBy("id").agg(Map(
-                                                             "gameEvents" -> "collect_list",
-                                                             "batchTime" -> "first" )).withColumnRenamed("collect_list(gameEvents)","gameEvents").withColumnRenamed("first(batchTime)","batchTime")
-                                                              
+      "gameEvents" -> "collect_list",
+      "batchTime" -> "first")).withColumnRenamed("collect_list(gameEvents)", "gameEvents").withColumnRenamed("first(batchTime)", "batchTime")
+
     //This schema conversion if to make sure that long fields are not nullable so that its comparable to mongo db
     import org.apache.spark.sql.catalyst.ScalaReflection.schemaFor
     val gameEventSchema = schemaFor[GameEvent].dataType.asInstanceOf[StructType]
-    val gameEventsSchema = StructType(StructField("id", StringType, true) :: StructField("gameEvents", ArrayType(gameEventSchema), true) :: Nil)
+    val gameEventsSchema = StructType(StructField("id", StringType, true) :: StructField("batchTime", LongType, true) :: StructField("gameEvents", ArrayType(gameEventSchema), true) :: Nil)
     val mongoChGPgmIdDF41 = spark.createDataFrame(mongoChGPgmIdDF40.rdd, gameEventsSchema)
     val mongoChGPgmIdDF42 = mongoChGPgmIdDF41.coalesce(3)
 
@@ -375,7 +390,7 @@ object ContentMatcher extends Serializable {
       case Success(v) =>
         Holder.log.trace("getting delta data from mongo");
         val originDF = chPgmDF.select($"id")
-        val idDifferences = originDF.except(mongoChGPgmIdDF42.select($"id")).withColumnRenamed("id","idRight")
+        val idDifferences = mongoChGPgmIdDF42.select($"id").except(originDF).withColumnRenamed("id", "idRight")
         val finalchPgmDFtoWrite = mongoChGPgmIdDF42.join(idDifferences, mongoChGPgmIdDF42("id") === idDifferences("idRight"), "inner").drop("idRight")
         //write to mongo
         if (finalchPgmDFtoWrite.count > 0) {
@@ -386,9 +401,5 @@ object ContentMatcher extends Serializable {
         mongoChGPgmIdDF42.write.option("collection", "slingtv_sports_events").mode("overwrite").mongo()
     }
   }
-
-  
-
-  
 
 }

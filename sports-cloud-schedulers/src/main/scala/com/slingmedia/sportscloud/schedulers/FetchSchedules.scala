@@ -47,10 +47,10 @@ object SportsCloudSchedulers  {
 	    val downloadSummaryJob:ScheduledJob = ScheduledJob("downloadSummaryJob","sportscloud-batch-schedules",classOf[DownloadSummaryJob].asInstanceOf[Class[Any]],"0 0 7 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allHomeGeneousJobsList = downloadSummaryJob :: allHomeGeneousJobsList
 	    Holder.log.debug("Adding downloadSummaryJob")
-	    val  downloadSchedulesJob:ScheduledJob = ScheduledJob("downloadShedulesJob","sportscloud-batch-schedules",classOf[DownloadSchedulesJob].asInstanceOf[Class[Any]],"0 0 8 ? * *",ScheduleType.CRON_MISFIRE_NOW)
+	    val  downloadSchedulesJob:ScheduledJob = ScheduledJob("downloadShedulesJob","sportscloud-batch-schedules",classOf[DownloadSchedulesJob].asInstanceOf[Class[Any]],"0 15 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allHomeGeneousJobsList = downloadSchedulesJob :: allHomeGeneousJobsList
 		  Holder.log.debug("Adding downloadSchedulesJob")
-		  val  sparkSubmitJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[SparkSubmitJob].asInstanceOf[Class[Any]],"0 15 7 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+		  val  sparkSubmitJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[SparkSubmitJob].asInstanceOf[Class[Any]],"* * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allHomeGeneousJobsList = sparkSubmitJob :: allHomeGeneousJobsList
 	    Holder.log.debug("Adding sparkSubmitJob")
 	    val  thuuzJob:ScheduledJob = ScheduledJob("thuuzJob","sportscloud-batch-schedules",classOf[ThuuzJob].asInstanceOf[Class[Any]],"0 0 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
@@ -76,8 +76,11 @@ class SparkSubmitJob extends Job {
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : SparkSubmitJob")
     val sportsCloudBatchJarLoc = System.getProperty("sportsCloudBatchJarLoc")
-    val sparkHomeLoc  = System.getProperty("sparkHomeLoc")
-		s"""$sparkHomeLoc/bin/spark-submit --name SportsCloudOfflineBatchJob --class com.slingmedia.sportscloud.offline.batch.ContentMatcher  --master local[8]  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf "spark.mongodb.input.uri=mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage.event?readPreference=primaryPreferred" --conf "spark.mongodb.output.uri=mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage.slingtv_schguid_cont_nagra_mapping" --packages com.databricks:spark-csv_2.10:1.5.0,joda-time:joda-time:2.9.7,org.mongodb.spark:mongo-spark-connector_2.11:2.0.0,com.databricks:spark-xml_2.10:0.4.1,org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,org.scala-lang.modules:scala-xml_2.11:1.0.6,org.apache.kafka:connect-api:0.10.2.0,org.quartz-scheduler:quartz:2.3.0,net.liftweb:lift-json_2.11:2.6.3,com.jayway.jsonpath:json-path:2.4.0    $sportsCloudBatchJarLoc  """ #>> new File("/var/log/sc-batch-job.log") !!
+    val sparkHomeLoc  = System.getProperty("sparkHomeLoc")	
+    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name SportsCloudOfflineBatchJob --class com.slingmedia.sportscloud.offline.batch.ContentMatcher  --master local[8]  --driver-java-options "-Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties -Dsc.logging.name=SCSparkDriver -Dsc.logging.level=DEBUG"  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf "spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties -Dsc.logging.name=SCExecutor -Dsc.logging.level=DEBUG" --conf "spark.mongodb.input.uri=mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage.event?readPreference=primaryPreferred" --conf "spark.mongodb.output.uri=mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage.slingtv_schguid_cont_nagra_mapping" --packages com.databricks:spark-csv_2.10:1.5.0,joda-time:joda-time:2.9.7,org.mongodb.spark:mongo-spark-connector_2.11:2.0.0,com.databricks:spark-xml_2.10:0.4.1,org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,org.scala-lang.modules:scala-xml_2.11:1.0.6,org.apache.kafka:connect-api:0.10.2.0,org.quartz-scheduler:quartz:2.3.0,net.liftweb:lift-json_2.11:2.6.3,com.jayway.jsonpath:json-path:2.4.0    $sportsCloudBatchJarLoc  """ 
+    log.trace(s"Executing command $sparkSumbitCommand")
+    sparkSumbitCommand #>> new File("/var/log/sc-batch-job.log") !!
+
 	}
 
 }

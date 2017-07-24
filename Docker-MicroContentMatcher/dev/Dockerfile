@@ -1,5 +1,6 @@
 FROM anapsix/alpine-java
 ADD startup.sh /root/startup.sh
+ADD spark-log4j-config /spark-log4j-config
 ENV SCALA_VERSION=2.12.2 \
     SCALA_HOME=/usr/share/scala \
     KAFKA_HOME=/kafka \
@@ -12,6 +13,7 @@ RUN apk update && \
     apk add bash && \ 
     apk add wget && \
     apk add curl && \
+    apk add screen && \
     apk add --update netcat-openbsd && rm -rf /var/cache/apk/* && \
     apk add --no-cache --virtual=.build-dependencies wget ca-certificates && \
     apk add --no-cache bash && \
