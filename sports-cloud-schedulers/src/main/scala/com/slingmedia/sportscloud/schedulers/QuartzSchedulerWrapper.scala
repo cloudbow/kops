@@ -9,10 +9,12 @@ import com.typesafe.scalalogging.slf4j.Logger
 
 object ScheduleType extends Enumeration {
   type ScheduleType = Value
-  val CRON_MISFIRE_DO_NOTHING, CRON_MISFIRE_NOW = Value
+  val CRON_MISFIRE_DO_NOTHING, CRON_MISFIRE_NOW, FIRE_ONCE = Value
 }
 import ScheduleType._;
 import org.quartz.CronTrigger
+import org.quartz.Trigger
+import org.quartz.TriggerBuilder
 
 case class ScheduledJob(name: String, group: String, jobClass: Class[Any], cronSchedule: String, scheduleType: ScheduleType)
 
@@ -41,13 +43,19 @@ class QuartzSchedulerWrapper {
     triggerBuilder.build()
   }
 
-  val scheduleJob: (ScheduledJob, ScheduleType) => Unit = (job: ScheduledJob, scheduleTypeEnum: ScheduleType) => {
-    log.trace(s"scheduling job of type $scheduleTypeEnum $job")
-    scheduleTypeEnum match {
+  val scheduleJob: (ScheduledJob) => Unit = (job: ScheduledJob) => {
+    log.trace(s"scheduling job of type $job.scheduleType $job")
+    job.scheduleType match {
       case ScheduleType.CRON_MISFIRE_DO_NOTHING | CRON_MISFIRE_NOW =>
         val jobDetail = createJob(job.jobClass, job.name, job.group)
-        val jobTrigger = createTrigger(job.name.concat("-trigger"), job.group.concat("-trigger"), job.name, job.group, job.cronSchedule, scheduleTypeEnum)
+        val jobTrigger = createTrigger(job.name.concat("-trigger"), job.group.concat("-trigger"), job.name, job.group, job.cronSchedule, job.scheduleType)
         sched.scheduleJob(jobDetail, jobTrigger)
+      case ScheduleType.FIRE_ONCE =>
+        val jobDetail = createJob(job.jobClass, job.name, job.group)
+        val trigger = TriggerBuilder.newTrigger()
+          .startNow()
+          .build();
+        sched.scheduleJob(jobDetail, trigger)
       case _ =>
       //throw new IllegalArgumentException
     }
@@ -62,9 +70,9 @@ class QuartzSchedulerWrapper {
     sched.shutdown(true)
   }
 
-  def publishJobs(jobsList: List[ScheduledJob], scheduleType: ScheduleType) = {
+  def publishJobs(jobsList: List[ScheduledJob]) = {
     jobsList.foreach { it =>
-      scheduleJob(it, scheduleType)
+      scheduleJob(it)
     }
   }
 

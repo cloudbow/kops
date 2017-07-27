@@ -8,9 +8,8 @@ import org.apache.kafka.connect.data.Struct
 import scala.collection.JavaConverters._
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 
-
 class DefaultParser extends ParsedItem {
-  def generateRows(data: Elem, in: SourceRecord): java.util.List[SourceRecord] = {
+  override def generateRows(data: Elem, in: SourceRecord): java.util.List[SourceRecord] = {
     val version = (data \\ "version" \ "@number").toString
     val message = GenericData(version)
     (new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure) :: List()).asJava

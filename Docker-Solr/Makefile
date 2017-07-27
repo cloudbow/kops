@@ -1,8 +1,8 @@
 # Docker configuration
 #
 
-TAG=sports-cloud-v2
-NETWORK=sports-cloud-v2-network
+TAG=sports-cloud-solr
+NETWORK=sports-cloud-solr-network
 
 # Calculate current path 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -50,11 +50,9 @@ docker-network-inspect:
 sports-cloud-no-network:
 	@docker run --rm \
 		--name=$@ \
-	    -p 8983:8983 \
 		-v /root/.m2:/root/.m2 \
 	 	-v /root/.ivy2:/root/.ivy2 \
 	 	-v /data/apps/content-matcher/feeds:/data/feeds \
-	 	-v /data/platforms/solr:/data/solr \
 		-v /var/log:/var/log \
 		-v $(current_path)/sports-cloud-schedulers/src/main/resources:/spark-log4j-config \
 		-v $(current_path):/project \

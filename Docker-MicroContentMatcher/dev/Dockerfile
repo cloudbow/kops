@@ -1,6 +1,6 @@
 FROM anapsix/alpine-java
 ADD startup.sh /root/startup.sh
-ADD spark-log4j-config /spark-log4j-config
+ADD solr-configurations /solr-configurations
 ENV SCALA_VERSION=2.12.2 \
     SCALA_HOME=/usr/share/scala \
     KAFKA_HOME=/kafka \
@@ -8,7 +8,9 @@ ENV SCALA_VERSION=2.12.2 \
     SBT_HOME=/usr/local/sbt \
     SPARK_HOME=/spark-2.1.0-bin-hadoop2.7 \
     MAVEN_VERSION=3.3.9 \
-    MAVEN_HOME=/usr/lib/maven	
+    MAVEN_HOME=/usr/lib/maven \
+    SOLR_VERSION=6.6.0 \
+    SOLR_HOME=/solr
 RUN apk update && \
     apk add bash && \ 
     apk add wget && \
@@ -38,6 +40,10 @@ RUN apk update && \
     apk del .build-dependencies && \   
     wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz && \
     tar -xvf spark-2.1.0-bin-hadoop2.7.tgz && \
-    mv spark-2.1.0-bin-hadoop2.7 /
-EXPOSE 9999
+    mv spark-2.1.0-bin-hadoop2.7 / && \
+    curl http://www-eu.apache.org/dist/lucene/solr/6.6.0/solr-6.6.0.tgz | tar -xzf - && \
+  	mv solr-6.6.0 $SOLR_HOME && \
+  	mkdir -p /var/log/solr && \
+  	cp -f /solr-configurations/solr.in.sh  $SOLR_HOME/bin/solr.in.sh
+EXPOSE 8983
 ENTRYPOINT /root/startup.sh

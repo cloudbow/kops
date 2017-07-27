@@ -10,13 +10,17 @@ lazy val root = (project in file(".")).
       version      := "0.1.0"
     )),
     name := "micro-container-matcher",
+    unmanagedBase := baseDirectory.value / "non-transitive",
     libraryDependencies ++= Seq(
   		spark,
+  		sparkStreaming,
   		logback,
+  		scalaLoggerSl4j,
   		scalaLogger,
   		kafka,
-  		mongoSpark,
-  		databricksCSV
+  		kafkaSparkStreaming,
+  		databricksCSV,
+  		solrj
 	),
 	assemblyMergeStrategy in assembly := {
 		case PathList("META-INF", xs @ _*) => MergeStrategy.discard

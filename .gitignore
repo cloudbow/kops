@@ -9,3 +9,6 @@ ftp-kafka-source-coverter/target
 target
 Docker-MicroContentMatcher/metastore_db
 micro-content-matcher/metastore_db
+sports-cloud-parsers/metastore_db
+sports-cloud-schedulers/metastore_db
+micro-content-matcher/non-transitive/metastore_db
