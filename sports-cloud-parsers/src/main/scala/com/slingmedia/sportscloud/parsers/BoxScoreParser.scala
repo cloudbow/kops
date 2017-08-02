@@ -36,10 +36,12 @@ class BoxScoreParser extends ParsedItem {
       val homeScoreErrors = toInt(((rowData \\ "home-score" filter { _ \ "@type" exists (_.text == "errors") }) \ "@number").text).getOrElse(0)
       val lastPlay = (rowData \\ "last-play" \ "@text").toString
       val gameStatus = (rowData \\ "gamestate" \ "@status").toString
+      val gameStatusId = toInt((rowData \\ "gamestate" \ "@status-id").text).getOrElse(0)
+
       val inningTitle = (rowData \\ "gamestate" \ "@inning").toString
-      val balls = toInt((rowData \\ "gamestate" \ "@balls").text).getOrElse(0)
-      val strikes = toInt((rowData \\ "gamestate" \ "@strikes").text).getOrElse(0)
-      val outs = toInt((rowData \\ "gamestate" \ "@outs").text).getOrElse(0)
+      val balls = toInt((rowData \\ "gamestate" \ "@balls").text).getOrElse(-1)
+      val strikes = toInt((rowData \\ "gamestate" \ "@strikes").text).getOrElse(-1)
+      val outs = toInt((rowData \\ "gamestate" \ "@outs").text).getOrElse(-1)
       val segmentDivision = (rowData \\ "gamestate" \ "@segment-division").toString
       val awayTeamInnings = scala.collection.mutable.ListBuffer.empty[Int]
       (rowData \\ "visiting-team" \\ "innings" \ "inning").map { inning =>
@@ -49,7 +51,7 @@ class BoxScoreParser extends ParsedItem {
       (rowData \\ "home-team" \\ "innings" \ "inning").map { inning =>
         homeTeamInnings += toInt((inning \\ "@score").text).getOrElse(0)
       }
-      val message = BoxScoreData(homeTeamExId, homeTeamAlias, awayTeamAlias, awayTeamExtId, gameCode, gameType, awayScoreRuns, awayScoreHits, awayScoreErrors, homeScoreRuns, homeScoreHits, homeScoreErrors, lastPlay, gameStatus, inningTitle, balls, strikes, outs, segmentDivision, awayTeamInnings.toList, homeTeamInnings.toList)
+      val message = BoxScoreData(homeTeamExId, homeTeamAlias, awayTeamAlias, awayTeamExtId, gameCode, gameType, awayScoreRuns, awayScoreHits, awayScoreErrors, homeScoreRuns, homeScoreHits, homeScoreErrors, lastPlay, gameStatus, gameStatusId ,inningTitle, balls, strikes, outs, segmentDivision, awayTeamInnings.toList, homeTeamInnings.toList)
       new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
 
     }
@@ -57,18 +59,13 @@ class BoxScoreParser extends ParsedItem {
 
   }
 
-  case class BoxScoreData(homeTeamExtId: String, homeTeamAlias: String, awayTeamAlias: String, awayTeamExtId: String, gameCode: String, gameType: String, awayScoreRuns: Int, awayScoreHits: Int, awayScoreErrors: Int, homeScoreRuns: Int, homeScoreHits: Int, homeScoreErrors: Int, lastPlay: String, gameStatus: String, inningTitle: String, balls: Int, strikes: Int, outs: Int, segmentDivision: String, awayTeamInnings: List[Int], homeTeamInnings: List[Int]) {
+  case class BoxScoreData(homeTeamExtId: String, homeTeamAlias: String, awayTeamAlias: String, awayTeamExtId: String, gameCode: String, gameType: String, awayScoreRuns: Int, awayScoreHits: Int, awayScoreErrors: Int, homeScoreRuns: Int, homeScoreHits: Int, homeScoreErrors: Int, lastPlay: String, gameStatus: String , gameStatusId:Int , inningTitle: String, balls: Int, strikes: Int, outs: Int, segmentDivision: String, awayTeamInnings: List[Int], homeTeamInnings: List[Int]) {
 
-    val teamSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Team")
-      .field("alias", Schema.STRING_SCHEMA)
-      .field("extId", Schema.STRING_SCHEMA)
-      .field("runs", Schema.INT32_SCHEMA)
-      .field("hits", Schema.INT32_SCHEMA)
-      .field("errors", Schema.INT32_SCHEMA)
-      .field("innings", SchemaBuilder.array(Schema.INT32_SCHEMA).build()).build()
 
-    val gameSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Game")
+
+    val boxScoreSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Game")
       .field("status", Schema.STRING_SCHEMA)
+      .field("statusId", Schema.INT32_SCHEMA)
       .field("gameType", Schema.STRING_SCHEMA)
       .field("gameCode", Schema.STRING_SCHEMA)
       .field("lastPlay", Schema.STRING_SCHEMA)
@@ -76,33 +73,30 @@ class BoxScoreParser extends ParsedItem {
       .field("balls", Schema.INT32_SCHEMA)
       .field("strikes", Schema.INT32_SCHEMA)
       .field("outs", Schema.INT32_SCHEMA)
-      .field("segmentDivision", Schema.STRING_SCHEMA).build()
+      .field("segmentDivision", Schema.STRING_SCHEMA)
+      .field("homeTeamAlias", Schema.STRING_SCHEMA)
+      .field("homeTeamExtId", Schema.STRING_SCHEMA)
+      .field("homeScoreRuns", Schema.INT32_SCHEMA)
+      .field("homeScoreHits", Schema.INT32_SCHEMA)
+      .field("homeScoreErrors", Schema.INT32_SCHEMA)
+      .field("homeTeamInnings", SchemaBuilder.array(Schema.INT32_SCHEMA).build())
+      .field("awayTeamAlias", Schema.STRING_SCHEMA)
+      .field("awayTeamExtId", Schema.STRING_SCHEMA)
+      .field("awayScoreRuns", Schema.INT32_SCHEMA)
+      .field("awayScoreHits", Schema.INT32_SCHEMA)
+      .field("awayScoreErrors", Schema.INT32_SCHEMA)
+      .field("awayTeamInnings", SchemaBuilder.array(Schema.INT32_SCHEMA).build())
+      .build()
 
-    val boxScoreSchema = SchemaBuilder.struct().name("c.s.s.s.BoxScore")
-      .field("game", gameSchema)
-      .field("homeTeam", teamSchema)
-      .field("awayTeam", teamSchema).build()
+   
 
     val connectSchema: Schema = boxScoreSchema
 
-    val homeTeamStruct: Struct = new Struct(teamSchema)
-      .put("alias", homeTeamAlias)
-      .put("extId", homeTeamExtId)
-      .put("runs", homeScoreErrors)
-      .put("hits", homeScoreHits)
-      .put("errors", homeScoreErrors)
-      .put("innings", homeTeamInnings.asJava)
 
-    val awayTeamStruct: Struct = new Struct(teamSchema)
-      .put("alias", awayTeamAlias)
-      .put("extId", awayTeamExtId)
-      .put("runs", awayScoreErrors)
-      .put("hits", awayScoreHits)
-      .put("errors", awayScoreErrors)
-      .put("innings", awayTeamInnings.asJava)
 
-    val gameStruct: Struct = new Struct(gameSchema)
+    val boxScoreStruct: Struct = new Struct(boxScoreSchema)
       .put("status", gameStatus)
+      .put("statusId", gameStatusId)
       .put("gameType",gameType)
       .put("gameCode",gameCode)
       .put("lastPlay", lastPlay)
@@ -111,11 +105,19 @@ class BoxScoreParser extends ParsedItem {
       .put("strikes", strikes)
       .put("outs", outs)
       .put("segmentDivision", segmentDivision)
+      .put("homeTeamAlias", homeTeamAlias)
+      .put("homeTeamExtId", homeTeamExtId)
+      .put("homeScoreRuns", homeScoreErrors)
+      .put("homeScoreHits", homeScoreHits)
+      .put("homeScoreErrors", homeScoreErrors)
+      .put("homeTeamInnings", homeTeamInnings.asJava)
+      .put("awayTeamAlias", awayTeamAlias)
+      .put("awayTeamExtId", awayTeamExtId)
+      .put("awayScoreRuns", awayScoreErrors)
+      .put("awayScoreHits", awayScoreHits)
+      .put("awayScoreErrors", awayScoreErrors)
+      .put("awayTeamInnings", awayTeamInnings.asJava)
 
-    val boxScoreStruct: Struct = new Struct(boxScoreSchema)
-      .put("homeTeam", homeTeamStruct)
-      .put("awayTeam", awayTeamStruct)
-      .put("game", gameStruct)
     def getStructure: Struct = boxScoreStruct
 
   }

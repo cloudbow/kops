@@ -73,7 +73,7 @@ public class GenericJsonProxyServer {
 			System.exit(1);
 		}
 		JsonProxyServerConfiguration.setTARGET_HOST_TO_PROXY(System.getProperty("target-host-to-proxy"));
-		ContentMatchFacade$.MODULE$.init("mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage");
+		//ContentMatchFacade$.MODULE$.init("mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage");
 		ExternalHttpClient$.MODULE$.init();
 		if (args.length > 3) {
 			GenericJsonProxyServer.IS_SECURE = Boolean.parseBoolean(args[3]);

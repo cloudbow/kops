@@ -11,6 +11,8 @@ $MAVEN_HOME/bin/mvn install:install-file -DgroupId=com.eneco  \
 -Dfile=/project/sports-cloud-parsers/libs/kafka-connect-ftp-0.0.0-unspecified-jar-with-dependencies.jar  \
 -Dpackaging=jar \
 -DgeneratePom=true
+
+
 # Create topic mlb_meta
 $KAFKA_HOME/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic content_match
 $KAFKA_HOME/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic live_info
@@ -36,6 +38,8 @@ $SOLR_HOME/bin/solr create -c game_schedule  -d data_driven_schema_configs -forc
 $SOLR_HOME/bin/solr create -c live_info  -d data_driven_schema_configs -force
 $SOLR_HOME/bin/solr create -c team_standings  -d data_driven_schema_configs -force
 $SOLR_HOME/bin/solr create -c player_stats  -d data_driven_schema_configs -force
+$SOLR_HOME/bin/solr create -c scoring_plays  -d data_driven_schema_configs -force
+
 
 # Building content matcher offline batch job
 cd /project/micro-content-matcher

@@ -9,6 +9,11 @@ trait ParsedItem {
   def generateRows(data: Elem, in: SourceRecord): java.util.List[SourceRecord] = {
     Array[SourceRecord]().toList.asJava
   }
+  
+  def generateRows(data: Elem, in: SourceRecord,league:String, sport:String): java.util.List[SourceRecord] = {
+    Array[SourceRecord]().toList.asJava
+  }
+  
   def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
     Array[SourceRecord]().toList.asJava
   }

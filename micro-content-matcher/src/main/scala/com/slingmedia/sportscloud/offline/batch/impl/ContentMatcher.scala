@@ -1,10 +1,8 @@
 package com.slingmedia.sportscloud.offline.batch
 
-import org.apache.spark.sql.{ SQLContext, SparkSession, DataFrame , Row, Column}
+import org.apache.spark.sql.{ SQLContext, SparkSession, DataFrame, Row, Column }
 import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, ArrayType };
-
-
 
 import sys.process._
 
@@ -26,27 +24,24 @@ import com.typesafe.scalalogging.slf4j.Logger
 
 import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
-
-
-
 object CMHolder extends Serializable {
   val serialVersionUID = 1L;
   @transient lazy val log = LoggerFactory.getLogger("ContentMatcher")
 }
 
-case class GameEvent(id: String, anonsTitle: String, assetGuid: String, awayPlayerExtId: String, awayTeamCity: String, awayTeamExternalId: String, awayTeamImg: String, awayTeamName: String, awayTeamPitcherName: String, awayTeamScore: String, callsign: String, channelGuid: String, channelNo: Long, gameCode: String, gameDateEpoch: Long, genres: String, gexPredict: Long, homePlayerExtId: String, homeTeamCity: String, homeTeamExternalId: String, homeTeamImg: String, homeTeamName: String, homeTeamPitcherName: String, homeTeamScore: String, preGameTeaser: String, programGuid: String, programId: Long, programTitle: String, stadiumName: String, subpackTitle: String, subpackageGuid: String)
+case class GameEvent(id: String, anonsTitle: String, assetGuid: String, awayPlayerExtId: String, awayTeamCity: String, awayTeamExternalId: String, awayTeamImg: String, awayTeamName: String, awayTeamPitcherName: String, awayTeamScore: String, callsign: String, channelGuid: String, channelNo: Long, gameCode: String, gameDate: String, gameDateEpoch: Long, genres: String, gexPredict: Long, homePlayerExtId: String, homeTeamCity: String, homeTeamExternalId: String, homeTeamImg: String, homeTeamName: String, homeTeamPitcherName: String, homeTeamScore: String, preGameTeaser: String, programGuid: String, programId: Long, programTitle: String, stadiumName: String, subpackTitle: String, subpackageGuid: String)
 case class GameEvents(id: String, batchTime: Long, gameEvents: Array[GameEvent])
 
 object ContentMatcher extends Serializable {
   def main(args: Array[String]) {
     CMHolder.log.debug("Args is $args")
-    new ContentMatcher().munch("content_match","game_schedule", "localhost:9983")
+    new ContentMatcher().munch("content_match", "game_schedule", "localhost:9983")
   }
 }
 
 class ContentMatcher extends Serializable with Muncher {
 
-  override def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String):Unit = {
+  override def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {
 
     //fetch thuuz games
     fetchThuuzGames()
@@ -67,7 +62,7 @@ class ContentMatcher extends Serializable with Muncher {
     val programsJoin3 = contentMatch(mlbScheduleDF34)
 
     //Write delta back to mongo
-    writeData(inputKafkaTopic, outputCollName, zkHost, programsJoin3)
+    writeData( outputCollName, zkHost, programsJoin3)
 
   }
 
@@ -99,6 +94,20 @@ class ContentMatcher extends Serializable with Muncher {
     if (timeStr == null) 0L else OffsetDateTime.parse(timeStr).toEpochSecond()
   }
   val timeStrToEpochUDF = udf(timeStrToEpoch(_: String))
+
+  val timeEpochToStr: (Long => String) = (timeEpoch: Long) => {
+    if (timeEpoch == 0) {
+      "1972-05-20T17:33:18Z"
+    } else {
+      val epochTime: Instant = Instant.ofEpochSecond(timeEpoch);
+      val utc: ZonedDateTime = epochTime.atZone(ZoneId.of("Z"));
+      val pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+      val utcTime = utc.format(DateTimeFormatter.ofPattern(pattern));
+      utcTime
+    }
+
+  }
+  val timeEpochtoStrUDF = udf(timeEpochToStr(_: Long))
 
   val timeISO8601ToEpochFunc: (String => Long) = (timeStr: String) => {
     if (timeStr == null) 0L else Instant.parse(timeStr).getEpochSecond()
@@ -271,14 +280,39 @@ class ContentMatcher extends Serializable with Muncher {
 
     val scoreSchema = StructType(StructField("score", StringType, true) :: Nil)
 
-    val nameSchema = StructType(StructField("name", StringType, true) :: StructField("player-code", StringType, true) :: Nil)
+    val nameSchema = StructType(StructField("name", StringType, true) 
+        :: StructField("player-code", StringType, true) 
+        :: Nil)
     val playerDataSchema = StructType(StructField("player-data", nameSchema, true) :: Nil)
 
-    val teamSchema = StructType(StructField("team-name", StringType, true) :: StructField("team-city", StringType, true) :: StructField("team-code", StringType, true) :: Nil)
-    val dateSchema = StructType(StructField("month", StringType, true) :: StructField("date", StringType, true) :: StructField("day", StringType, true) :: StructField("year", StringType, true) :: Nil)
-    val timeSchema = StructType(StructField("hour", StringType, true) :: StructField("minute", StringType, true) :: StructField("utc-hour", StringType, true) :: StructField("utc-minute", StringType, true) :: Nil)
+    val teamSchema = StructType(StructField("team-name", StringType, true)
+        :: StructField("team-city", StringType, true) 
+        :: StructField("team-code", StringType, true) 
+        :: Nil)
+    val dateSchema = StructType(StructField("month", StringType, true) 
+        :: StructField("date", StringType, true)
+        :: StructField("day", StringType, true) 
+        :: StructField("year", StringType, true)
+        :: Nil)
+    val timeSchema = StructType(StructField("hour", StringType, true) 
+        :: StructField("minute", StringType, true) 
+        :: StructField("utc-hour", StringType, true) 
+        :: StructField("utc-minute", StringType, true) 
+        :: Nil)
 
-    val gameScheduleItemSchema = StructType(StructField("stadium", nameSchema, true) :: StructField("visiting-team-score", scoreSchema, true) :: StructField("home-team-score", scoreSchema, true) :: StructField("away-starting-pitcher", playerDataSchema, true) :: StructField("home-starting-pitcher", playerDataSchema, true) :: StructField("home-team", teamSchema, true) :: StructField("visiting-team", teamSchema, true) :: StructField("date", dateSchema, true) :: StructField("time", timeSchema, true) :: StructField("gamecode", StringType, true) :: Nil)
+    val gameScheduleItemSchema = StructType(StructField("stadium", nameSchema, true)
+        :: StructField("visiting-team-score", scoreSchema, true) 
+        :: StructField("home-team-score", scoreSchema, true)
+        :: StructField("away-starting-pitcher", playerDataSchema, true) 
+        :: StructField("home-starting-pitcher", playerDataSchema, true)
+        :: StructField("home-team", teamSchema, true) 
+        :: StructField("visiting-team", teamSchema, true) 
+        :: StructField("date", dateSchema, true) 
+        :: StructField("time", timeSchema, true)
+        :: StructField("gamecode", StringType, true) 
+        :: StructField("league", StringType, true) 
+        :: StructField("sport", StringType, true) 
+        :: Nil)
     val gameShceduleSchema = StructType(StructField("game-schedule", gameScheduleItemSchema, true) :: Nil)
     //only pickup MLB games for now
     val ds3 = ds2.where("key like '%MLB_SCHEDULE.XML%'")
@@ -300,10 +334,12 @@ class ContentMatcher extends Serializable with Muncher {
       $"game-schedule.home-starting-pitcher.player-data.player-code" as "homePlayerExtId",
       $"game-schedule.away-starting-pitcher.player-data.player-code" as "awayPlayerExtId",
       $"game-schedule.gamecode" as "gameCode",
+      $"game-schedule.league" as "league",
+      $"game-schedule.sport" as "sport",
       $"game-schedule.stadium.name" as "stadiumName",
       concat(col("game-schedule.date.year"), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.month")), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.date")), lit("T"), col("game-schedule.time.hour"), lit(":"), col("game-schedule.time.minute"), lit(":00.00"), lit(getZeroPaddedUDF($"game-schedule.time.utc-hour")), lit(":"), col("game-schedule.time.utc-minute")) as "date")
 
-    val mlbScheduleDF31 = mlbScheduleDF3.withColumn("game_date_epoch", timeStrToEpochUDF($"date"))
+    val mlbScheduleDF31 = mlbScheduleDF3.withColumn("game_date_epoch", timeStrToEpochUDF($"date")).withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
     val mlbScheduleDF311 = mlbScheduleDF31.withColumn("anonsTitle", getAnonsTitleUDF($"homeTeamName", $"awayTeamName", $"stadiumName"))
     val mlbScheduleDF32 = mlbScheduleDF311.distinct.toDF.na.fill(0L, Seq("homeTeamScore")).na.fill(0L, Seq("awayTeamScore"))
     mlbScheduleDF32
@@ -321,58 +357,18 @@ class ContentMatcher extends Serializable with Muncher {
     mlbScheduleDF34
   }
 
-  val writeData: (String, String, String, DataFrame) => Unit = (inputKafkaTopic: String, outputCollName: String, zkHost: String, programsJoin3: DataFrame) => {
+  val writeData: ( String, String, DataFrame) => Unit = ( outputCollName: String, zkHost: String, programsJoin3: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val batchTimeStamp = Instant.now().getEpochSecond
-    val mongoChGPgmIdDF2 = programsJoin3.rdd.map({ row =>
-      val anonsTitle = row.getString(0)
-      val asset_guid = row.getString(1)
-      val awayPlayerExtId = row.getString(2)
-      val awayTeamCity = row.getString(3)
-      val awayTeamExternalId = row.getString(4)
-      val awayTeamImg = row.getString(5)
-      val awayTeamName = row.getString(6)
-      val awayTeamPitcherName = row.getString(7)
-      val awayTeamScore = row.getString(8)
-      val callsign = row.getString(9)
-      val channel_guid = row.getString(10)
-      val channel_no = row.getLong(11)
-      val gameCode = row.getString(12)
-      val game_date_epoch = row.getLong(13)
-      val genres = row.getString(14)
-      val gexPredict = row.getLong(15)
-      val homePlayerExtId = row.getString(16)
-      val homeTeamCity = row.getString(17)
-      val homeTeamExternalId = row.getString(18)
-      val homeTeamImg = row.getString(19)
-      val homeTeamName = row.getString(20)
-      val homeTeamPitcherName = row.getString(21)
-      val homeTeamScore = row.getString(22)
-      val preGameTeaser = row.getString(23)
-      val program_guid = row.getString(24)
-      val program_id = row.getLong(25)
-      val program_title = row.getString(26)
-      val stadiumName = row.getString(27)
-      val subpack_title = row.getString(28)
-      val subpackage_guid = row.getString(29)
-      ((channel_guid.concat("_").concat(program_id.toString)), batchTimeStamp, GameEvent(channel_guid.concat("_").concat(program_id.toString), anonsTitle, asset_guid, awayPlayerExtId, awayTeamCity, awayTeamExternalId, awayTeamImg, awayTeamName, awayTeamPitcherName, awayTeamScore, callsign, channel_guid, channel_no, gameCode, game_date_epoch, genres, gexPredict, homePlayerExtId, homeTeamCity, homeTeamExternalId, homeTeamImg, homeTeamName, homeTeamPitcherName, homeTeamScore, preGameTeaser, program_guid, program_id, program_title, stadiumName, subpack_title, subpackage_guid))
-    }).toDF
-
-    val mongoChGPgmIdDF3 = mongoChGPgmIdDF2.withColumnRenamed("_1", "id").withColumnRenamed("_2", "batchTime").withColumnRenamed("_3", "gameEvents")
-    val mongoChGPgmIdDF40 = mongoChGPgmIdDF3.groupBy("id").agg(Map(
-      "gameEvents" -> "collect_list",
-      "batchTime" -> "first")).withColumnRenamed("collect_list(gameEvents)", "gameEvents").withColumnRenamed("first(batchTime)", "batchTime")
-
-    //This schema conversion if to make sure that long fields are not nullable so that its comparable to mongo db
-    import org.apache.spark.sql.catalyst.ScalaReflection.schemaFor
-    val gameEventSchema = schemaFor[GameEvent].dataType.asInstanceOf[StructType]
-    val gameEventsSchema = StructType(StructField("id", StringType, true) :: StructField("batchTime", LongType, true) :: StructField("gameEvents", ArrayType(gameEventSchema), true) :: Nil)
-    val mongoChGPgmIdDF41 = spark.createDataFrame(mongoChGPgmIdDF40.rdd, gameEventsSchema)
-    val mongoChGPgmIdDF42 = mongoChGPgmIdDF41.coalesce(3)
-    val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> "false")
-    if (mongoChGPgmIdDF42.count > 0) {
-      mongoChGPgmIdDF42.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
+    val programsJoin4 = programsJoin3.withColumn("batchTime", lit(batchTimeStamp))
+    programsJoin4.createOrReplaceTempView("programsJoin4")
+    val programsJoin5 = spark.sql("select concat(channel_guid,'_',program_id) as id , * from programsJoin4")
+    if (programsJoin5.count > 0) {
+      val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> "false")
+      programsJoin5.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
+      val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
+      solrCloudClient.commit(outputCollName, true, true)
     }
 
   }

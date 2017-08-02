@@ -9,7 +9,7 @@ trait Muncher {
   def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {}
   def stream(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {}
   def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, filterCond: String): Unit = {}
-  def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
+  def munch(batchTime: Long, inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
   val children: (String, DataFrame) => Array[Column] = (colname: String, df: DataFrame) => {
     val parent = df.schema.fields.filter(_.name == colname).head
     val fields = parent.dataType match {

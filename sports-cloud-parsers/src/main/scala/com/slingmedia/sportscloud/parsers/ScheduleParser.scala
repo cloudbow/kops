@@ -13,7 +13,7 @@ import com.typesafe.scalalogging.slf4j.Logger
 class ScheduleParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
-  override def generateRows(data:Elem,in:SourceRecord):java.util.List[SourceRecord] = {
+  override def generateRows(data:Elem,in:SourceRecord,league:String,sport:String):java.util.List[SourceRecord] = {
     log.trace("Generating rows for schedule parsing")
     val rows = (data \\ "game-schedule").map { rowData =>
       val visitingTeamScore = (rowData \\ "visiting-team-score" \ "@score").toString
@@ -38,14 +38,14 @@ class ScheduleParser extends ParsedItem {
       val utcHour = (rowData \\ "time" \ "@utc-hour").toString
       val utcMinute = (rowData \\ "time" \ "@utc-minute").toString
       val gameCode = (rowData \\ "gamecode" \ "@global-id").toString
-      val message = MLBSchedule(stadiumName, visitingTeamScore, homeTeamScore, homeStartingPitcher, awayStartingPitcher,awaySPExtId,homeSPExtId, homeTeamName, homeTeamCity, homeTeamExtId, awayTeamName, awayTeamCity, awayTeamExtId, month, date, day, year, hour, minute, utcHour, utcMinute, gameCode)
+      val message = MLBSchedule(league, sport, stadiumName, visitingTeamScore, homeTeamScore, homeStartingPitcher, awayStartingPitcher,awaySPExtId,homeSPExtId, homeTeamName, homeTeamCity, homeTeamExtId, awayTeamName, awayTeamCity, awayTeamExtId, month, date, day, year, hour, minute, utcHour, utcMinute, gameCode)
       new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
     }
     log.trace("Generated rows")
     rows.toList.asJava
   }
 
-  case class MLBSchedule(stadiumName: String, visitingTeamScore: String, homeTeamScore: String, homeStartingPitcher: String, awayStartingPitcher: String, awaySPExtId:String,homeSPExtId:String, homeTeamName: String, homeTeamCity: String, homeTeamExternalId: String, awayTeamName: String, awayTeamCity: String, awayTeamExternalId: String, month: String, date: String, day: String, year: String, hour: String, minute: String, utcHour: String, utcMinute: String, gameCode: String) {
+  case class MLBSchedule(league:String, sport:String, stadiumName: String, visitingTeamScore: String, homeTeamScore: String, homeStartingPitcher: String, awayStartingPitcher: String, awaySPExtId:String,homeSPExtId:String, homeTeamName: String, homeTeamCity: String, homeTeamExternalId: String, awayTeamName: String, awayTeamCity: String, awayTeamExternalId: String, month: String, date: String, day: String, year: String, hour: String, minute: String, utcHour: String, utcMinute: String, gameCode: String) {
     log.trace("preparing schema")
     val scoreSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Score").field("score", Schema.STRING_SCHEMA).build()
     val stadiumSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Stadium").field("name", Schema.STRING_SCHEMA).build()
@@ -57,6 +57,8 @@ class ScheduleParser extends ParsedItem {
 
     val gameScheduleItemSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.GameScheduleItem")
       .field("gamecode", Schema.STRING_SCHEMA)
+      .field("league", Schema.STRING_SCHEMA)
+      .field("sport", Schema.STRING_SCHEMA)
       .field("stadium", stadiumSchema)
       .field("home-team-score", scoreSchema)
       .field("visiting-team-score", scoreSchema)
@@ -99,6 +101,8 @@ class ScheduleParser extends ParsedItem {
       .put("date", dateStruct)
       .put("time", timeStruct)
       .put("gamecode", gameCode)
+      .put("league", league)
+      .put("sport", sport)
       
       
     val gameScheduleStruct: Struct = new Struct(gameScheduleSchema).put("game-schedule", gameScheduleItemStruct)

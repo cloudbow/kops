@@ -44,29 +44,40 @@ object SportsCloudSchedulers  {
 	    quartzSchedulerWrapper =  QuartzSchedulerWrapper()
 	    Holder.log.debug("Args is $args")	
 	    var allBatchJobs:List[ScheduledJob] = List()
+	    
 	    val downloadSummaryJob:ScheduledJob = ScheduledJob("downloadSummaryJob","sportscloud-batch-schedules",classOf[DownloadSummaryJob].asInstanceOf[Class[Any]],"0 0 7 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allBatchJobs = downloadSummaryJob :: allBatchJobs
 	    Holder.log.debug("Adding downloadSummaryJob")
+	    
 	    val  downloadSchedulesJob:ScheduledJob = ScheduledJob("downloadShedulesJob","sportscloud-batch-schedules",classOf[DownloadSchedulesJob].asInstanceOf[Class[Any]],"0 15 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = downloadSchedulesJob :: allBatchJobs
 		  Holder.log.debug("Adding downloadSchedulesJob")
+		  
 		  val  contentMatchJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 0 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allBatchJobs = contentMatchJob :: allBatchJobs
 	    Holder.log.debug("Adding contentMatchJob")
-	    val  metaDataBatchJob:ScheduledJob = ScheduledJob("metaDataBatchJob","sportscloud-batch-schedules",classOf[MetaDataBatchJob].asInstanceOf[Class[Any]],"0 30 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
-	    allBatchJobs = metaDataBatchJob :: allBatchJobs
+	    
+	    val  teamStandingsMetaDataBatchJob:ScheduledJob = ScheduledJob("teamStandingsMetaDataBatchJob","sportscloud-batch-schedules",classOf[TeamStandingsMetaDataBatchJob].asInstanceOf[Class[Any]],"0 30 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    allBatchJobs = teamStandingsMetaDataBatchJob :: allBatchJobs
+	    Holder.log.debug("Adding metaDataBatchJob")
+	    
+	    val  playerStatsMetaDataBatchJob:ScheduledJob = ScheduledJob("playerStatsMetaDataBatchJob","sportscloud-batch-schedules",classOf[PlayerStatsMetaDataBatchJob].asInstanceOf[Class[Any]],"0 45 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    allBatchJobs = playerStatsMetaDataBatchJob :: allBatchJobs
 	    Holder.log.debug("Adding metaDataBatchJob")
 
 	    val  thuuzJob:ScheduledJob = ScheduledJob("thuuzJob","sportscloud-batch-schedules",classOf[ThuuzJob].asInstanceOf[Class[Any]],"0 0 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = thuuzJob :: allBatchJobs
 	    Holder.log.debug("Adding thuuzJob")
-	   	Holder.log.debug("Publishing all batch jobs")
+	   	
+	    Holder.log.debug("Publishing all batch jobs")
 	    quartzSchedulerWrapper.publishJobs(allBatchJobs)
 	    
 	    var allStreamingJobs:List[ScheduledJob] = List()
+	    
 	    val  liveStreamJob:ScheduledJob = ScheduledJob("liveStreamJob","sportscloud-batch-schedules",classOf[LiveStreamJob].asInstanceOf[Class[Any]],null,ScheduleType.FIRE_ONCE)
 	    allStreamingJobs = liveStreamJob :: allStreamingJobs
 	    Holder.log.debug("Adding liveStreamJob")
+	    
 	    Holder.log.debug("Publishing all streaming jobs")
 	    quartzSchedulerWrapper.publishJobs(allStreamingJobs)
 
@@ -87,6 +98,7 @@ abstract class SparkSubmitJob extends Job {
   protected val sparkHomeLoc  = System.getProperty("sparkHomeLoc")
   protected val sparkExtraJars = System.getProperty("sparkExtraJars")
   protected var mainClass:String = null
+  protected var name:String =null
 }
 
 
@@ -95,23 +107,40 @@ class ContentMatchJob extends SparkSubmitJob {
   
   override def execute(context:JobExecutionContext) {
     mainClass = "com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher"
+    name = "SportsCloudContentMatch"
     log.trace("Executing task : SparkSubmitJob")
    
-    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name SportsCloudOfflineBatchJob --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties --jars $sparkExtraJars     $sportsCloudBatchJarLoc  """ 
+    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name $name --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties --jars $sparkExtraJars     $sportsCloudBatchJarLoc  """ 
     log.trace(s"Executing command $sparkSumbitCommand")
     sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
 
 	}
 }
 
-class MetaDataBatchJob extends SparkSubmitJob {
-  private val log = LoggerFactory.getLogger("MetaDataBatchJob")
+class TeamStandingsMetaDataBatchJob extends SparkSubmitJob {
+  private val log = LoggerFactory.getLogger("TeamStandingsMetaDataBatchJob")
   
   override def execute(context:JobExecutionContext) {
     mainClass = "com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher"
-    log.trace("Executing task : SparkSubmitJob")
+    name = "TeamStandingsMetaDataMuncher"
+    log.trace("Executing task : TeamStandingsMetaDataBatchJob")
    
-    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name SportsCloudOfflineBatchJob --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties  --jars $sparkExtraJars  $sportsCloudBatchJarLoc  """ 
+    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name $name --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties  --jars $sparkExtraJars  $sportsCloudBatchJarLoc  TeamStandings """ 
+    log.trace(s"Executing command $sparkSumbitCommand")
+    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
+
+	}
+}
+
+class PlayerStatsMetaDataBatchJob extends SparkSubmitJob {
+  private val log = LoggerFactory.getLogger("PlayerStatsMetaDataBatchJob")
+  
+  override def execute(context:JobExecutionContext) {
+    mainClass = "com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher"
+    name = "PlayerStatsDataMuncher"
+    log.trace("Executing task : PlayerStatsMetaDataBatchJob")
+   
+    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name $name --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties  --jars $sparkExtraJars  $sportsCloudBatchJarLoc  PlayerStats """ 
     log.trace(s"Executing command $sparkSumbitCommand")
     sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
 
@@ -123,11 +152,12 @@ class LiveStreamJob extends SparkSubmitJob {
   
   override def execute(context:JobExecutionContext) {
     mainClass = "com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher"
-    log.trace("Executing task : SparkSubmitJob")
+    name = "LiveDataMucher"
+    log.trace("Executing task : LiveStreamJob")
    
-    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name SportsCloudOfflineBatchJob --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties  --jars $sparkExtraJars    $sportsCloudBatchJarLoc  """ 
+    val sparkSumbitCommand = s"""$sparkHomeLoc/bin/spark-submit --name $name --class $mainClass  --master local[8]  --driver-java-options -Dlog4j.configuration=file:/spark-log4j-config/log4j-driver.properties  --driver-memory 7G --executor-memory 7G --total-executor-cores 4 --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties  --jars $sparkExtraJars    $sportsCloudBatchJarLoc  """ 
     log.trace(s"Executing command $sparkSumbitCommand")
-    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
+    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-stream-job.log") !!
 
 	}
 }

@@ -11,9 +11,11 @@ import org.apache.spark.streaming.{ StreamingContext, Seconds }
 import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.spark.streaming.kafka010.{ HasOffsetRanges,CanCommitOffsets, KafkaUtils, LocationStrategies, ConsumerStrategies }
+import org.apache.spark.streaming.kafka010.{ HasOffsetRanges, CanCommitOffsets, KafkaUtils, LocationStrategies, ConsumerStrategies }
 
 import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
+
+import java.time.Instant
 
 object Holder extends Serializable {
   val serialVersionUID = 1L;
@@ -29,9 +31,22 @@ object LiveDataMuncher extends Serializable {
 }
 
 class LiveDataMuncher extends Serializable with Muncher {
+
+  //All Udfs starts here
+    val getFieldsCount:(Int,Int,Int)=>String = (balls:Int, strikes:Int, outs:Int) => {
+      var fieldCountTxt = ""
+      if (balls != -1 && strikes != -1 && outs != -1) {
+        fieldCountTxt =  balls + "-" + strikes + ", " + outs + (if(outs==1)  " out" else " outs");
+      } 
+      fieldCountTxt
+    }
+
+      val getFieldsCountUDF = udf(getFieldsCount(_: Int, _: Int, _: Int))
+
+  //All udfs ends here
+
   override def stream(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {
     Holder.log.debug("Args is $args")
-    val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> "false")
 
     val sc = SparkContext.getOrCreate()
     val spark = SparkSession.builder().getOrCreate()
@@ -52,43 +67,56 @@ class LiveDataMuncher extends Serializable with Muncher {
       ConsumerStrategies.Subscribe[String, String](topics, kafkaParams))
     val dstream0 = stream.map(record => (record.key, record.value))
     val dstream = dstream0.foreachRDD(kafkaRDD => {
-      val offsetRanges = kafkaRDD.asInstanceOf[HasOffsetRanges].offsetRanges
+      val batchTimeStamp = Instant.now().getEpochSecond
+      //val offsetRanges = kafkaRDD.asInstanceOf[HasOffsetRanges].offsetRanges
       val spark = SparkSession.builder.config(kafkaRDD.sparkContext.getConf).getOrCreate()
       import spark.implicits._
       val kafkaLiveInfoDF1 = kafkaRDD.toDF
       val kafkaLiveInfoT1DF1 = kafkaLiveInfoDF1.select(from_json($"_1", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"_2", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
-      val gameSchema = StructType(StructField("status", StringType, true) 
-          :: StructField("gameType", StringType, true) 
-          :: StructField("gameCode", StringType, true)
-          :: StructField("balls", IntegerType, true)
-          :: StructField("strikes", IntegerType, true)
-          :: StructField("outs", IntegerType, true)
-          :: StructField("segmentDivision", StringType, true) 
-          :: StructField("lastPlay", StringType, true) :: Nil)
-      val teamSchema = StructType(StructField("alias", StringType, true) 
-          :: StructField("extId", StringType, true) 
-          :: StructField("runs", IntegerType, true)
-          :: StructField("hits", IntegerType, true) 
-          :: StructField("errors", IntegerType, true) 
-          :: StructField("innings", ArrayType(IntegerType), true)
-          :: Nil)
-      val liveInfoSchema = StructType(StructField("game", gameSchema, true) 
-          :: StructField("homeTeam", teamSchema, true)
-          :: StructField("awayTeam", teamSchema, true) 
-          :: Nil)
+      val liveInfoSchema = StructType(StructField("status", StringType, true)
+        :: StructField("statusId", StringType, true)
+        :: StructField("gameType", StringType, true)
+        :: StructField("gameCode", StringType, true)
+        :: StructField("balls", IntegerType, true)
+        :: StructField("strikes", IntegerType, true)
+        :: StructField("outs", IntegerType, true)
+        :: StructField("segmentDivision", StringType, true)
+        :: StructField("lastPlay", StringType, true) 
+        :: StructField("homeTeamAlias", StringType, true)
+        :: StructField("homeTeamExtId", StringType, true)
+        :: StructField("homeScoreRuns", IntegerType, true)
+        :: StructField("homeScoreHits", IntegerType, true)
+        :: StructField("homeScoreErrors", IntegerType, true)
+        :: StructField("homeTeamInnings", ArrayType(IntegerType), true)
+        :: StructField("awayTeamAlias", StringType, true)
+        :: StructField("awayTeamExtId", StringType, true)
+        :: StructField("awayScoreRuns", IntegerType, true)
+        :: StructField("awayScoreHits", IntegerType, true)
+        :: StructField("awayScoreErrors", IntegerType, true)
+        :: StructField("awayTeamInnings", ArrayType(IntegerType), true)
+        :: Nil)
+      
       val kafkaLiveInfoT2DF1 = kafkaLiveInfoT1DF1.where("fileName.payload like '%BOXSCORE%' OR fileName.payload like '%FINALBOX%' OR fileName.payload like '%_LIVE%' ")
-      kafkaLiveInfoT2DF1.show
+      
       val kafkaLiveInfoT3DF1 = kafkaLiveInfoT2DF1.select(from_json($"payloadStruct.payload", liveInfoSchema) as "liveInfoStruct")
-      val kafkaLiveInfoT3DF2 = kafkaLiveInfoT3DF1.select(children("liveInfoStruct", kafkaLiveInfoT3DF1): _*)
-      val kafkaLiveInfoT3DF3 = kafkaLiveInfoT3DF2.withColumn("id", $"game.gameCode")
-      if (kafkaLiveInfoT3DF3.count > 0) {
-        kafkaLiveInfoT3DF3.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
+      val kafkaLiveInfoT3DF2 = kafkaLiveInfoT3DF1.select(children("liveInfoStruct", kafkaLiveInfoT3DF1): _*).orderBy($"statusId")
+      val kafkaLiveInfoT3DF3 = kafkaLiveInfoT3DF2.withColumn("id", $"gameCode").withColumn("fieldsCountHome",getFieldsCountUDF($"balls",$"strikes",$"outs"))
+      val kafkaLiveInfoT4DF3 = kafkaLiveInfoT3DF3.withColumn("batchTime", lit(batchTimeStamp))
+      kafkaLiveInfoT4DF3.select($"statusId").distinct.show(false)
+      if (kafkaLiveInfoT4DF3.count > 0) {
+        val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> "false")
+        val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
+        kafkaLiveInfoT4DF3.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
+        solrCloudClient.commit(outputCollName, true, true)
+        
+      
+      
       }
-      dstream0.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
+      //dstream0.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
     })
-    
-    ssc.start
 
+    ssc.start
+    ssc.awaitTermination
   }
 
 }

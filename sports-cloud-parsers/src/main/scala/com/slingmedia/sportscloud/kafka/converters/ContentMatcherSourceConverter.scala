@@ -23,7 +23,7 @@ class ContentMatcherSourceConverter extends SourceRecordConverter {
         val schedule = ".*MLB_SCHEDULE\\.XML.*".r
         fileName match {
           case schedule(_*) =>
-            Parsers(ParserType.ScheduleParser).generateRows(data, in)
+            Parsers(ParserType.ScheduleParser).generateRows(data, in, "MLB", "baseball")
           case _ =>
             Parsers(ParserType.Default).generateRows(data, in)
         }

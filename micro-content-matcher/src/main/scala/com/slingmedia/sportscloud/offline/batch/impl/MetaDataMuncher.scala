@@ -1,18 +1,20 @@
 package com.slingmedia.sportscloud.offline.batch.impl
 
+import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
+import com.slingmedia.sportscloud.offline.batch.Muncher
+
 import org.slf4j.LoggerFactory;
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.typesafe.scalalogging.slf4j.Logger
-
-import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
-import com.slingmedia.sportscloud.offline.batch.Muncher
 
 import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, FloatType, ArrayType };
 import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
+
+import java.time.Instant
 
 object LDMHolder extends Serializable {
   val serialVersionUID = 1L;
@@ -21,7 +23,7 @@ object LDMHolder extends Serializable {
 
 object MetaBatchJobType extends Enumeration {
   type MetaBatchJobType = Value
-  val TeamStandings, PlayerStats = Value
+  val TEAMSTANDINGS, PLAYERSTATS = Value
 }
 
 object MetaDataMuncher extends Serializable {
@@ -29,14 +31,17 @@ object MetaDataMuncher extends Serializable {
     LDMHolder.log.debug("Args is $args")
     val mucherType = MetaBatchJobType.withName(args(0).toUpperCase)
     var schema: StructType = null
+    val batchTimeStamp = Instant.now().getEpochSecond
     mucherType match {
-      case MetaBatchJobType.TeamStandings =>
+      case MetaBatchJobType.PLAYERSTATS =>
         schema = StructType(StructField("playerCode", StringType, true)
           :: StructField("wins", IntegerType, true)
           :: StructField("losses", IntegerType, true) :: Nil)
-        new MetaDataMuncher().munch("meta_batch", "player_stats", "localhost:9983", schema, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
-      case MetaBatchJobType.PlayerStats =>
+        new MetaDataMuncher().munch(batchTimeStamp, "meta_batch", "player_stats", "localhost:9983", schema, true, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+      case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
+          StructField("alias", StringType, true) ::
+          StructField("subLeague", StringType, true) ::
           StructField("division", StringType, true) ::
           StructField("teamName", StringType, true) ::
           StructField("teamCity", StringType, true) ::
@@ -44,7 +49,7 @@ object MetaDataMuncher extends Serializable {
           StructField("wins", IntegerType, true) ::
           StructField("losses", IntegerType, true) ::
           StructField("pct", FloatType, true) :: Nil)
-        new MetaDataMuncher().munch("meta_batch", "team_standings", "localhost:9983", schema, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+        new MetaDataMuncher().munch(batchTimeStamp, "meta_batch", "team_standings", "localhost:9983", schema, false, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
 
     }
   }
@@ -52,7 +57,7 @@ object MetaDataMuncher extends Serializable {
 }
 
 class MetaDataMuncher extends Serializable with Muncher {
-  override def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
+  override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -65,10 +70,20 @@ class MetaDataMuncher extends Serializable with Muncher {
     val ds6 = ds5.select(children("metaDataStruct", ds5): _*)
     val ds7 = ds6.withColumn("id", idColumn)
     val ds8 = ds7.filter(testColumn)
+    val ds9 = ds8.withColumn("batchTime", lit(batchTimeStamp))
+    var finalDataFrame:DataFrame = null
+    if (imgRequired) {
+      val allCols = ds9.columns.map { it => col(it) } :+ concat(lit("http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid"), $"id", lit(".png")).alias("img")
+      finalDataFrame = ds9.select(allCols.toSeq:_*)
+    } else {
+      finalDataFrame = ds9
+    }
 
-    if (ds8.count > 0) {
+    if (finalDataFrame.count > 0) {
       val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> "false")
-      ds8.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
+      finalDataFrame.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
+      val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
+      solrCloudClient.commit(outputCollName, true, true)
     }
 
   }
