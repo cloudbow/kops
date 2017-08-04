@@ -8,6 +8,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 
+import java.time.Instant;
+
 
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +19,7 @@ import org.slf4j.LoggerFactory;
 object ExternalHttpDao {
 
       private var closeableHttpClient:CloseableHttpClient = null
-      val log = LoggerFactory.getLogger("AcquireUUIDListApp")    
+      val log = LoggerFactory.getLogger("ExternalHttpDao")    
       def init() {
       	val cm:PoolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();
       	cm.setDefaultMaxPerRoute(2);
@@ -33,12 +35,23 @@ object ExternalHttpDao {
       	 var httpResponse:CloseableHttpResponse  = null;
       	 val httpGet:HttpGet = new HttpGet(url);
       	 try {
+      	 	var startTime = 0
+      	 	var endTime= 0
+      	 	if(log.isTraceEnabled()){
+      	 		startTime = Instant.now().getNano
+      	 	}
       	 	httpResponse = closeableHttpClient.execute(httpGet);
       	 	
       	 	if(httpResponse!=null) {
 				responseString = EntityUtils.toString(httpResponse.getEntity(),"UTF-8");
 		    	EntityUtils.consume(httpResponse.getEntity());
 		    }
+		    if(log.isTraceEnabled()){
+      	 		endTime = Instant.now().getNano
+      	 		val totalTime = endTime-startTime
+      	 		log.trace(s"Total time taken: $totalTime" )
+      	 	}
+      	 	
       	 }  finally {
       	 	if(httpResponse!=null) httpResponse.close()     	 	
       	 }

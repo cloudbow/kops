@@ -4,7 +4,7 @@ import com.slingmedia.sportscloud.offline.batch.Muncher
 
 import org.slf4j.LoggerFactory
 
-import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list, concat_ws }
+import org.apache.spark.sql.functions.{ md5, concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list, concat_ws }
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, FloatType, ArrayType };
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.{ StreamingContext, Seconds }
@@ -12,6 +12,8 @@ import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.streaming.kafka010.{ HasOffsetRanges, CanCommitOffsets, KafkaUtils, LocationStrategies, ConsumerStrategies }
+
+import scala.util.{ Try, Success, Failure }
 
 import java.time.Instant
 import org.apache.spark.sql.types.IntegerType
@@ -21,6 +23,8 @@ object Holder extends Serializable {
   @transient lazy val log = LoggerFactory.getLogger("LiveDataMuncher")
 }
 
+case class Pitcher(isHomePitching: Boolean, hTCurrPlayer: String, aTCurrPlayer: String)
+
 object LiveDataMuncher extends Serializable {
   def main(args: Array[String]) {
     Holder.log.debug("Args is $args")
@@ -28,8 +32,6 @@ object LiveDataMuncher extends Serializable {
   }
 
 }
-
-case class Pitcher(isHomePitching: Boolean, hTCurrPlayer: String, aTCurrPlayer: String)
 
 class LiveDataMuncher extends Serializable with Muncher {
 
@@ -44,7 +46,21 @@ class LiveDataMuncher extends Serializable with Muncher {
 
   val getFieldsCountUDF = udf(getFieldsCount(_: Int, _: Int, _: Int))
 
-  val getImg: (String, String, String) => String = (inningTitle: String, htId: String, atId: String) => {
+  val getFieldState: (String, String, String) => Int = (firstGameBase: String, secondGameBase: String, thirdGameBase: String) => {
+    var map: Int = 0
+    if (!"".equals(firstGameBase)) {
+      map = map | 1
+    } else if (!"".equals(secondGameBase)) {
+      map = map | 2
+    } else if (!"".equals(thirdGameBase)) {
+      map = map | 4
+    }
+    map
+  }
+
+  val getFieldStateUDF = udf(getFieldState(_: String, _: String, _: String))
+
+  val getTeamId: (String, String, String) => String = (inningTitle: String, htId: String, atId: String) => {
     var teamId = "0"
     if (inningTitle != null) {
       if (inningTitle.toLowerCase.startsWith("bottom")) {
@@ -53,11 +69,10 @@ class LiveDataMuncher extends Serializable with Muncher {
         teamId = atId
       }
     }
-    val imgStr = s"http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid$teamId.png"
-    imgStr
+    teamId
   }
 
-  val getImgUDF = udf(getImg(_: String, _: String, _: String))
+  val getTeamIdUDF = udf(getTeamId(_: String, _: String, _: String))
 
   val getPitchingDetails: (String, String, String, String) => Pitcher = (sd: String, curBtr: String, htCurrPName: String, atCurrPName: String) => {
     val isHomePitching = if (sd.equals("Top")) true else false
@@ -76,6 +91,11 @@ class LiveDataMuncher extends Serializable with Muncher {
   }
 
   val getPitchingDetailsUDF = udf(getPitchingDetails(_: String, _: String, _: String, _: String))
+
+  val getReorderedStatusId: (Int => Int) = (statusId: Int) => {
+    if (statusId == 23) 2 else statusId
+  }
+  val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
   //All udfs ends here
 
   val mergeLiveInfo: (String, DataFrame) => Unit = (zkHost: String, kafkaLiveInfoT1DF1: DataFrame) => {
@@ -83,69 +103,110 @@ class LiveDataMuncher extends Serializable with Muncher {
     import spark.implicits._
     val batchTimeStamp = Instant.now().getEpochSecond
 
-    val liveInfoSchema = StructType(        
+    val liveInfoSchema = StructType(
       StructField("srcMonth", StringType, true)
-      :: StructField("srcDate", StringType, true)
-      :: StructField("srcDay", StringType, true)
-      :: StructField("srcYear", StringType, true)
-      :: StructField("srcHour", StringType, true)
-      :: StructField("srcMinute", StringType, true)
-      :: StructField("srcUtcHour", StringType, true)
-      :: StructField("srcUtcMinute", StringType, true)
-      :: StructField("status", StringType, true)
-      :: StructField("statusId", IntegerType, true)
-      :: StructField("gameType", StringType, true)
-      :: StructField("gameCode", StringType, true)
-      :: StructField("balls", IntegerType, true)
-      :: StructField("strikes", IntegerType, true)
-      :: StructField("outs", IntegerType, true)
-      :: StructField("segmentDiv", StringType, true)
-      :: StructField("currBtrName", StringType, true)
-      :: StructField("hTCurrPitcherName", StringType, true)
-      :: StructField("aTCurrPitcherName", StringType, true)
-      :: StructField("lastPlay", StringType, true)
-      :: StructField("inningTitle", StringType, true)
-      :: StructField("inningNo", StringType, true)
-      :: StructField("homeTeamAlias", StringType, true)
-      :: StructField("homeTeamExtId", StringType, true)
-      :: StructField("homeScoreRuns", IntegerType, true)
-      :: StructField("homeScoreHits", IntegerType, true)
-      :: StructField("homeScoreErrors", IntegerType, true)
-      :: StructField("homeTeamInnings", ArrayType(IntegerType), true)
-      :: StructField("awayTeamAlias", StringType, true)
-      :: StructField("awayTeamExtId", StringType, true)
-      :: StructField("awayScoreRuns", IntegerType, true)
-      :: StructField("awayScoreHits", IntegerType, true)
-      :: StructField("awayScoreErrors", IntegerType, true)
-      :: StructField("awayTeamInnings", ArrayType(IntegerType), true)
-      :: Nil)
+        :: StructField("srcDate", StringType, true)
+        :: StructField("srcDay", StringType, true)
+        :: StructField("srcYear", StringType, true)
+        :: StructField("srcHour", StringType, true)
+        :: StructField("srcMinute", StringType, true)
+        :: StructField("srcSecond", StringType, true)
+        :: StructField("srcUtcHour", StringType, true)
+        :: StructField("srcUtcMinute", StringType, true)
+        :: StructField("month", StringType, true)
+        :: StructField("date", StringType, true)
+        :: StructField("day", StringType, true)
+        :: StructField("year", StringType, true)
+        :: StructField("hour", StringType, true)
+        :: StructField("minute", StringType, true)
+        :: StructField("utcHour", StringType, true)
+        :: StructField("utcMinute", StringType, true)
+        :: StructField("status", StringType, true)
+        :: StructField("statusId", IntegerType, true)
+        :: StructField("gameType", StringType, true)
+        :: StructField("division", StringType, true)
+        :: StructField("gameId", StringType, true)
+        :: StructField("gameCode", StringType, true)
+        :: StructField("firstGameBase", StringType, true)
+        :: StructField("secondGameBase", StringType, true)
+        :: StructField("thirdGameBase", StringType, true)
+        :: StructField("balls", IntegerType, true)
+        :: StructField("strikes", IntegerType, true)
+        :: StructField("outs", IntegerType, true)
+        :: StructField("segmentDiv", StringType, true)
+        :: StructField("currBtrName", StringType, true)
+        :: StructField("hTCurrPitcherName", StringType, true)
+        :: StructField("aTCurrPitcherName", StringType, true)
+        :: StructField("lastPlay", StringType, true)
+        :: StructField("inningTitle", StringType, true)
+        :: StructField("inningNo", StringType, true)
+        :: StructField("homeTeamName", StringType, true)
+        :: StructField("homeTeamAlias", StringType, true)
+        :: StructField("homeTeamExtId", StringType, true)
+        :: StructField("homeScoreRuns", IntegerType, true)
+        :: StructField("homeScoreHits", IntegerType, true)
+        :: StructField("homeScoreErrors", IntegerType, true)
+        :: StructField("homeTeamInnings", ArrayType(IntegerType), true)
+        :: StructField("awayTeamName", StringType, true)
+        :: StructField("awayTeamAlias", StringType, true)
+        :: StructField("awayTeamExtId", StringType, true)
+        :: StructField("awayScoreRuns", IntegerType, true)
+        :: StructField("awayScoreHits", IntegerType, true)
+        :: StructField("awayScoreErrors", IntegerType, true)
+        :: StructField("awayTeamInnings", ArrayType(IntegerType), true)
+        :: Nil)
 
     val kafkaLiveInfoT2DF1 = kafkaLiveInfoT1DF1.where("fileName.payload like '%BOXSCORE%' OR fileName.payload like '%FINALBOX%' OR fileName.payload like '%_LIVE%' ")
 
     val kafkaLiveInfoT3DF1 = kafkaLiveInfoT2DF1.select(from_json($"payloadStruct.payload", liveInfoSchema) as "liveInfoStruct")
     val kafkaLiveInfoT3DF2 = kafkaLiveInfoT3DF1.select(children("liveInfoStruct", kafkaLiveInfoT3DF1): _*)
-    val kafkaLiveInfoT4DF2 = kafkaLiveInfoT3DF2.withColumn("srcTimeEpoch", timeStrToEpochUDF(concat(col("srcYear"), lit("-"), lit(getZeroPaddedUDF($"srcMonth")), lit("-"), lit(getZeroPaddedUDF($"srcDate")), lit("T"), col("srcHour"), lit(":"), col("srcMinute"), lit(":00.00"), lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"), col("srcUtcMinute"))))
-    val kafkaLiveInfoT5DF2 = kafkaLiveInfoT4DF2.repartition($"gameCode").coalesce(3).orderBy($"gameCode",$"statusId", $"srcTimeEpoch")
+    val kafkaLiveInfoT4DF2 = kafkaLiveInfoT3DF2.withColumn("srcTimeEpoch", timeStrToEpochUDF(concat(col("srcYear"), lit("-"), lit(getZeroPaddedUDF($"srcMonth")), lit("-"), lit(getZeroPaddedUDF($"srcDate")), lit("T"), lit(getZeroPaddedUDF($"srcHour")), lit(":"), col("srcMinute"), lit(":"), col("srcSecond"), lit(".00"), lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"), col("srcUtcMinute"))))
+    // filte only data with non null gameId
+    val kafkaLiveInfoT5DF1 = kafkaLiveInfoT4DF2.filter(col("gameId").isNotNull)
+    //reorder statusId so that the ordering is right
+    val kafkaLiveInfoT5DF2 = kafkaLiveInfoT5DF1.withColumn("rStatusId", getReorderedStatusIdUDF($"statusId"))
+    //order by new statusId 
+    //Repartition by gameId as we can update solr paralley for each game
+    //Order it so that the order is updated
+    val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.repartition($"gameId").coalesce(3).orderBy($"gameId", $"rStatusId", $"srcTimeEpoch")
+    val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameId").
+      withColumn("fieldCountsTxt", getFieldsCountUDF($"balls", $"strikes", $"outs")).
+      withColumn("fieldState", getFieldStateUDF($"firstGameBase", $"secondGameBase", $"thirdGameBase")).
+      withColumn("date", concat(col("year"), lit("-"), lit(getZeroPaddedUDF($"month")), lit("-"), lit(getZeroPaddedUDF($"date")), lit("T"), col("hour"), lit(":"), col("minute"), lit(":00.00"), lit(getZeroPaddedUDF($"utcHour")), lit(":"), col("utcMinute")))
 
-    val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.filter(col("gameCode").isNotNull)
-    val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameCode").withColumn("fieldsCountHome", getFieldsCountUDF($"balls", $"strikes", $"outs"))
-    val kafkaLiveInfoT8DF2 = kafkaLiveInfoT7DF2.withColumn("batchTime", lit(batchTimeStamp))
+    val kafkaLiveInfoT8DF2 = kafkaLiveInfoT7DF2.
+      withColumn("batchTime", lit(batchTimeStamp)).
+      withColumn("game_date_epoch", timeStrToEpochUDF($"date")).
+      withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
     val kafkaLiveInfoT9DF2 = kafkaLiveInfoT8DF2.withColumn("playerData", getPitchingDetailsUDF($"segmentDiv", $"currBtrName", $"hTCurrPitcherName", $"aTCurrPitcherName"))
-    kafkaLiveInfoT9DF2.select($"statusId").distinct.show(false)
-    if (kafkaLiveInfoT9DF2.count > 0) {
+    val allCols = kafkaLiveInfoT8DF2.columns.map { it => col(it) } ++ children("playerData", kafkaLiveInfoT9DF2)
+    val kafkaLiveInfoT9DF3 = kafkaLiveInfoT9DF2.select(allCols.toSeq: _*).drop("playerData")
+    kafkaLiveInfoT9DF3.select($"gameId", $"gameCode", $"statusId", $"isHomePitching", $"hTCurrPlayer", $"aTCurrPlayer", $"srcTimeEpoch", $"awayTeamInnings", $"homeTeamInnings", $"inningTitle").show(false)
 
-      indexToSolr(zkHost, "live_info", "false", kafkaLiveInfoT9DF2)
-
-      val kafkaLiveInfoT10DF2 = kafkaLiveInfoT9DF2.select($"lastPlay",
-        $"homeTeamExtId",
-        $"awayTeamExtId",
-        $"inningTitle",
-        $"gameCode", concat($"gameCode", lit("_"), $"inningNo").alias("id")).
-        withColumn("img", getImgUDF($"inningTitle", $"homeTeamExtId", $"awayTeamExtId")).
-        drop("homeTeamExtId", "awayTeamExtId")
-
-      indexToSolr(zkHost, "scoring_events", "false", kafkaLiveInfoT10DF2)
-
+    val indexResult = indexToSolr(zkHost, "live_info", "false", kafkaLiveInfoT9DF3)
+    indexResult match {
+      case Success(data) =>
+        Holder.log.info(data.toString)
+        val kafkaLiveInfoT10DF2 = kafkaLiveInfoT9DF3.select($"lastPlay",
+          $"batchTime",
+          $"srcTimeEpoch".alias("srcTime"),
+          $"homeTeamExtId",
+          $"awayTeamExtId",
+          $"inningTitle",
+          $"gameId", concat($"gameId", lit("_"), $"inningNo", lit("-"), md5($"lastPlay")).alias("id")).
+          withColumn("img", concat(lit("http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid"), lit(getTeamIdUDF($"inningTitle", $"homeTeamExtId", $"awayTeamExtId")), lit(".png"))).
+          withColumn("teamId", getTeamIdUDF($"inningTitle", $"homeTeamExtId", $"awayTeamExtId")).
+          drop("homeTeamExtId", "awayTeamExtId")
+        val kafkaLiveInfoT11DF3 = kafkaLiveInfoT10DF2.filter("lastPlay != ''")
+        val indexResult2 = indexToSolr(zkHost, "scoring_events", "false", kafkaLiveInfoT11DF3)
+        indexResult2 match {
+          case Success(data) =>
+            Holder.log.info(data.toString)
+          case Failure(e) =>
+            Holder.log.error("Error occurred in scoring_events indexing ", e)
+        }
+      case Failure(e) =>
+        Holder.log.error("Error occurred in live_info indexing ", e)
     }
 
   }

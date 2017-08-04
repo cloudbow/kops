@@ -17,7 +17,7 @@ class PlayerStatsParser extends ParsedItem {
   override def generateRows(data: Elem, in: SourceRecord,xmlRoot:NodeSeq): java.util.List[SourceRecord] = {
     log.trace("Generating rows for schedule parsing")
     val rows = xmlRoot.map { rowData =>
-      val playerExternalId = (rowData \\ "player-code" \ "@global-id").toString
+      val playerExternalId = (rowData \\ "player-code" \ "@global-id").text
       val playerWins = toInt((rowData  \\ "wins" \ "@number").text).getOrElse(0)
       val playerLosses = toInt((rowData  \\ "losses" \ "@number").text).getOrElse(0)
       val message = PlayerStats(playerExternalId, playerWins, playerLosses)

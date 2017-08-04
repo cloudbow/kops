@@ -51,6 +51,7 @@ sports-cloud-no-network:
 	@docker run --rm \
 		--name=$@ \
 	    -p 8983:8983 \
+	    -p 4040:4040 \
 		-v /root/.m2:/root/.m2 \
 	 	-v /root/.ivy2:/root/.ivy2 \
 	 	-v /data/apps/content-matcher/feeds:/data/feeds \
@@ -58,5 +59,5 @@ sports-cloud-no-network:
 		-v /var/log:/var/log \
 		-v $(current_path)/sports-cloud-schedulers/src/main/resources:/spark-log4j-config \
 		-v $(current_path):/project \
-		-it $(TAG)
+		-it --cap-add=SYS_PTRACE --security-opt=apparmor:unconfined $(TAG)
 

@@ -4,7 +4,7 @@ import com.slingmedia.sportscloud.offline.batch.Muncher
 
 import org.slf4j.LoggerFactory;
 
-
+import scala.util.{ Try, Success, Failure }
 
 import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
@@ -36,8 +36,8 @@ object MetaDataMuncher extends Serializable {
         schema = StructType(StructField("playerCode", StringType, true)
           :: StructField("wins", IntegerType, true)
           :: StructField("losses", IntegerType, true) :: Nil)
-          //"meta_batch", "player_stats", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, true, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+        //"meta_batch", "player_stats", "localhost:9983"
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
       case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
           StructField("alias", StringType, true) ::
@@ -49,11 +49,11 @@ object MetaDataMuncher extends Serializable {
           StructField("wins", IntegerType, true) ::
           StructField("losses", IntegerType, true) ::
           StructField("pct", FloatType, true) :: Nil)
-          //"meta_batch", "team_standings", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, false, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+        //"meta_batch", "team_standings", "localhost:9983"
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
       case MetaBatchJobType.LIVEINFO =>
         //live_info, live_info, localhost:9983
-        new LiveDataMuncher().munch(args(1),args(2),args(3))
+        new LiveDataMuncher().munch(args(1), args(2), args(3))
     }
   }
 
@@ -74,19 +74,20 @@ class MetaDataMuncher extends Serializable with Muncher {
     val ds7 = ds6.withColumn("id", idColumn)
     val ds8 = ds7.filter(testColumn)
     val ds9 = ds8.withColumn("batchTime", lit(batchTimeStamp))
-    var finalDataFrame:DataFrame = null
+    var finalDataFrame: DataFrame = null
     if (imgRequired) {
       val allCols = ds9.columns.map { it => col(it) } :+ concat(lit("http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid"), $"id", lit(".png")).alias("img")
-      finalDataFrame = ds9.select(allCols.toSeq:_*)
+      finalDataFrame = ds9.select(allCols.toSeq: _*)
     } else {
       finalDataFrame = ds9
     }
 
-    if (finalDataFrame.count > 0) {
-      val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> "false")
-      finalDataFrame.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save()
-      val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
-      solrCloudClient.commit(outputCollName, true, true)
+    val indexResult = indexToSolr(zkHost, outputCollName, "false", finalDataFrame)
+    indexResult match {
+      case Success(data) =>
+        LDMHolder.log.info(data.toString)
+      case Failure(e) =>
+        LDMHolder.log.error("Error occurred in indexing ", e)
     }
 
   }

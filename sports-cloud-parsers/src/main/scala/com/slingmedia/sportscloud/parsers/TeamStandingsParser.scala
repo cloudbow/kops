@@ -17,20 +17,20 @@ class TeamStandingsParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-    val leagueStr = (data \\ "league" \ "@alias").toString
+    val leagueStr = (data \\ "league" \ "@alias").text
 
     var teamStandingsRows = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     xmlRoot.map { leagueStandings =>
-      val subLeague = (leagueStandings \ "@league").toString
+      val subLeague = (leagueStandings \ "@league").text
       val mlbDivisionStandingsRows = (leagueStandings \\ "baseball-mlb-division-standings").map {
         mlbDivisionStandings =>
-          val division = (mlbDivisionStandings \ "@division").toString
+          val division = (mlbDivisionStandings \ "@division").text
           (mlbDivisionStandings \\ "baseball-mlb-team-standings").map {
             teamStandings =>
-              val teamName = (teamStandings \\ "team-name" \ "@name").toString
-              val alias = (teamStandings \\ "team-name" \ "@alias").toString
-              val teamCity = (teamStandings \\ "team-city" \ "@city").toString
-              val teamCode = (teamStandings \\ "team-code" \ "@global-id").toString
+              val teamName = (teamStandings \\ "team-name" \ "@name").text
+              val alias = (teamStandings \\ "team-name" \ "@alias").text
+              val teamCity = (teamStandings \\ "team-city" \ "@city").text
+              val teamCode = (teamStandings \\ "team-code" \ "@global-id").text
               val wins = toInt((teamStandings \\ "wins" \ "@number").text).getOrElse(0)
               val losses = toInt((teamStandings \\ "losses" \ "@number").text).getOrElse(0)
               val pct = toFloat((teamStandings \\ "winning-percentage" \ "@percentage").text).getOrElse(0f)

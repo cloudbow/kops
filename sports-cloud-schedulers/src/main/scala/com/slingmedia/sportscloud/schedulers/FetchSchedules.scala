@@ -45,7 +45,7 @@ object SportsCloudSchedulers  {
 	    allBatchJobs = downloadSchedulesJob :: allBatchJobs
 		  Holder.log.debug("Adding downloadSchedulesJob")
 		  
-		  val  contentMatchJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 0 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+		  val  contentMatchJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 0 8 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = contentMatchJob :: allBatchJobs
 	    Holder.log.debug("Adding contentMatchJob")
 	    
@@ -68,24 +68,73 @@ object SportsCloudSchedulers  {
 	    Holder.log.debug("Publishing all batch jobs")
 	    quartzSchedulerWrapper.publishJobs(allBatchJobs)
 	    
-	    var allStreamingJobs:List[ScheduledJob] = List()
+	    var allRestartableJobs:List[ScheduledJob] = List()
 	    
-	    val  liveStreamJob:ScheduledJob = ScheduledJob("liveStreamJob","sportscloud-batch-schedules",classOf[LiveStreamJob].asInstanceOf[Class[Any]],null,ScheduleType.FIRE_ONCE)
-	    allStreamingJobs = liveStreamJob :: allStreamingJobs
+	    val  liveStreamJob:ScheduledJob = ScheduledJob("liveStreamJob","sportscloud-restartable-schedules",classOf[LiveStreamJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    allRestartableJobs = liveStreamJob :: allRestartableJobs
 	    Holder.log.debug("Adding liveStreamJob")
 	    
+	    val  kakfkConnCM:ScheduledJob = ScheduledJob("kafkaConnContentMatch","sportscloud-restartable-schedules",classOf[KafkaConnectContentMatchJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    allRestartableJobs = kakfkConnCM :: allRestartableJobs
+	    Holder.log.debug("Adding kafkaConnContentMatch")
+	    
+	    val  kakfkConnLI:ScheduledJob = ScheduledJob("kafkaConnLiveInfo","sportscloud-restartable-schedules",classOf[KafkaConnectLiveInfoJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    allRestartableJobs = kakfkConnLI :: allRestartableJobs
+	    Holder.log.debug("Adding kafkaConnLiveInfo")
+	    
+	    val  kakfkConnMB:ScheduledJob = ScheduledJob("kafkaConnMetaBatch","sportscloud-restartable-schedules",classOf[KafkaConnectMetaBatchJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    allRestartableJobs = kakfkConnMB :: allRestartableJobs
+	    Holder.log.debug("Adding kafkaConnMetaBatch")
+	    
 	    Holder.log.debug("Publishing all streaming jobs")
-	    quartzSchedulerWrapper.publishJobs(allStreamingJobs)
+	    quartzSchedulerWrapper.publishJobs(allRestartableJobs)
 
 	}
 
 }
 
+
+class KafkaConnectContentMatchJob extends Job {
+  private val log = LoggerFactory.getLogger("KafkaConnectContentMatchJob")
+	override def execute(context:JobExecutionContext) {
+    log.trace("Executing task : KafkaConnectContentMatchJob")	  
+    Seq("/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_kafka_connect_jobs.sh",
+        "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
+        "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-connect-content-match.properties",
+        "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log" ) !      
+	}
+}
+
+
+class KafkaConnectMetaBatchJob extends Job {
+  private val log = LoggerFactory.getLogger("KafkaConnectMetaBatchJob")
+	override def execute(context:JobExecutionContext) {
+    log.trace("Executing task : KafkaConnectMetaBatchJob")	  
+    Seq("/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_kafka_connect_jobs.sh",
+    "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
+    "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-meta-batch.properties",
+    "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect.log") !
+    
+	}
+}
+
+class KafkaConnectLiveInfoJob extends Job {
+  private val log = LoggerFactory.getLogger("KafkaConnectLiveInfoJob")
+	override def execute(context:JobExecutionContext) {
+    log.trace("Executing task : KafkaConnectLiveInfoJob")	  
+    Seq("/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_kafka_connect_jobs.sh",
+    "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
+    "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-live-scores.properties",
+    "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect.log" ) !  
+	}
+}
+
+
 class ThuuzJob extends Job {
   private val log = LoggerFactory.getLogger("ThuuzJob")
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : ThuuzJob")	  
-		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=3&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/data/feeds/thuuz.json") !!
+		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=3&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/data/feeds/thuuz.json") !
 	}
 }
 
@@ -108,7 +157,9 @@ abstract class SparkSubmitJob extends Job {
         "--driver-memory", "7G", 
         "--executor-memory", "7G", 
         "--total-executor-cores", "4", 
-        "--conf", "spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties")    ++ 
+        "--conf", "spark.default.parallelism=4",
+        "--conf", "spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties",
+        "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer") ++
       sparkPackages ++
       Seq("--jars",sparkExtraJars) ++
       Seq(jarName) ++
@@ -128,7 +179,7 @@ class ContentMatchJob extends SparkSubmitJob {
     log.trace("Executing task : SparkSubmitJob")
     val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"content_match game_schedule localhost:9983")
     log.trace(s"Executing command $sparkSumbitCommand")
-    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
+    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !
 
 	}
 }
@@ -143,7 +194,7 @@ class TeamStandingsMetaDataBatchJob extends SparkSubmitJob {
    
     val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"TEAMSTANDINGS meta_batch team_standings localhost:9983")
     log.trace(s"Executing command $sparkSumbitCommand")
-    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
+    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !
 
 	}
 }
@@ -158,7 +209,7 @@ class PlayerStatsMetaDataBatchJob extends SparkSubmitJob {
    
     val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"PLAYERSTATS meta_batch player_stats localhost:9983")
     log.trace(s"Executing command $sparkSumbitCommand")
-    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !!
+    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !
 
 	}
 }
@@ -173,7 +224,7 @@ class BatchScoreJob extends SparkSubmitJob {
    
     val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"LIVEINFO live_info live_info localhost:9983")
     log.trace(s"Executing command $sparkSumbitCommand")
-    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-stream-job.log") !!
+    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-stream-job.log") !
 
 	}
 }
@@ -182,14 +233,8 @@ class LiveStreamJob extends SparkSubmitJob {
   private val log = LoggerFactory.getLogger("LiveStreamJob")
   
   override def execute(context:JobExecutionContext) {
-    mainClass = "com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher"
-    name = "LiveDataMucher"
-    log.trace("Executing task : LiveStreamJob")
-   
-    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"live_info live_info localhost:9983")
-    log.trace(s"Executing command $sparkSumbitCommand")
-    sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-stream-job.log") !!
-
+    //This needs to be a long running job and hence for reliability we use a shell script
+    "/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_live_info_streaming.sh"  !
 	}
 }
 
@@ -267,7 +312,8 @@ class DownloadSummaryJob extends Job {
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : DownloadSummaryJob")
 		val cmsHost =  System.getProperty("cmsHost")
-		s"curl http://$cmsHost.cdn.cms.movetv.com/cms/publish3/domain/summary/1.json" #> new File("/data/feeds/summary.json") !!
+		val cmsSummaryUrl = System.getProperty("cmsSummaryUrl")
+		s"curl http://$cmsHost.cdn.cms.movetv.com/$cmsSummaryUrl" #> new File("/data/feeds/summary.json") !
 	}
 
 }
