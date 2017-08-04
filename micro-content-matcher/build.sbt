@@ -1,6 +1,7 @@
 import Dependencies._
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
+scalacOptions ++= Seq("-feature")
 
 lazy val root = (project in file(".")).
   settings(
@@ -15,10 +16,10 @@ lazy val root = (project in file(".")).
   		spark,
   		sparkStreaming,
   		logback,
-  		scalaLoggerSl4j,
   		scalaLogger,
-  		kafka,
+  		kafkaSql,
   		kafkaSparkStreaming,
+  		kafkaSparkSql,
   		databricksCSV,
   		solrj
 	),

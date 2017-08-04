@@ -28,9 +28,9 @@ cd /project/sports-cloud-parsers
 $SBT_HOME/bin/sbt clean assembly
 cp -f target/scala-2.11/kafka-schedule-parser-assembly-0.1.0.jar $KAFKA_HOME/libs
 mkdir /var/log/sports-cloud-kafka-jobs
-nohup $KAFKA_HOME/bin/connect-standalone.sh /project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties /project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-connect-content-match.properties &> /var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log &
-nohup $KAFKA_HOME/bin/connect-standalone.sh /project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties /project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-meta-batch.properties  &> /var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect.log &
-nohup $KAFKA_HOME/bin/connect-standalone.sh /project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties /project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-live-scores.properties  &> /var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect.log &
+nohup $KAFKA_HOME/bin/connect-standalone.sh /project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties /project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-connect-content-match.properties >> /var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log 2>&1 &
+nohup $KAFKA_HOME/bin/connect-standalone.sh /project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties /project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-meta-batch.properties  >> /var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect.log 2>&1 &
+nohup $KAFKA_HOME/bin/connect-standalone.sh /project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties /project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-live-scores.properties  >> /var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect.log 2>&1 &
 
 # Start solr 
 $SOLR_HOME/bin/solr start -cloud -p 8983 -s "/data/solr/cloud/node1/solr" -force
@@ -38,7 +38,7 @@ $SOLR_HOME/bin/solr create -c game_schedule  -d data_driven_schema_configs -forc
 $SOLR_HOME/bin/solr create -c live_info  -d data_driven_schema_configs -force
 $SOLR_HOME/bin/solr create -c team_standings  -d data_driven_schema_configs -force
 $SOLR_HOME/bin/solr create -c player_stats  -d data_driven_schema_configs -force
-$SOLR_HOME/bin/solr create -c scoring_plays  -d data_driven_schema_configs -force
+$SOLR_HOME/bin/solr create -c scoring_events  -d data_driven_schema_configs -force
 
 
 # Building content matcher offline batch job
@@ -47,4 +47,4 @@ $SBT_HOME/bin/sbt clean assembly
 # Building sports cloud scheduler
 cd /project/sports-cloud-schedulers
 $SBT_HOME/bin/sbt clean assembly 
-java -DsparkHomeLoc=$SPARK_HOME -DsparkExtraJars=/project/micro-content-matcher/non-transitive/spark-solr-3.0.2.jar  -DcmsHost=cbd46b77 -DsportsCloudBatchJarLoc=/project/micro-content-matcher/target/scala-2.11/micro-container-matcher-assembly-0.1.0.jar -jar target/scala-2.12/sports-cloud-schedulers-assembly-0.1.0.jar 
+java -DsparkHomeLoc=$SPARK_HOME -DsparkExtraJars=/project/micro-content-matcher/non-transitive/spark-solr-3.0.2.jar  -DcmsHost=cbd46b77 -DsportsCloudBatchJarLoc=/project/micro-content-matcher/target/scala-2.11/micro-container-matcher-assembly-0.1.0.jar -jar /project/sports-cloud-schedulers/target/scala-2.12/sports-cloud-schedulers-assembly-0.1.0.jar 

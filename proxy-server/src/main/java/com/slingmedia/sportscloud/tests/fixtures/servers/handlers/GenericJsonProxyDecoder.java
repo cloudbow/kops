@@ -82,6 +82,36 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		HOME, AWAY, NONE
 	}
 
+	enum League {
+		MLB
+	}
+	
+	enum GameStatus {
+		
+		UPCOMING, COMPLETED, INPROGRESS,POSTPONED,NONE;
+		
+		public static GameStatus getValue(int statusId){
+			
+			if(statusId==1) return UPCOMING;
+			else if(statusId==2) return INPROGRESS;
+			else if(statusId==4) return COMPLETED;
+			else if(statusId==5) return POSTPONED;
+			else return NONE;
+			
+		}
+		
+	}
+	
+	enum GameType {
+		REGULAR_SEASON,UNKNOWN;
+		
+		public static GameType getValue(String gameType) {
+			if(gameType.equalsIgnoreCase("regular season")) return REGULAR_SEASON;
+			else return UNKNOWN;
+		}
+		
+	}
+
 	class GameRole {
 		private String gameId;
 		private Role role;
@@ -169,25 +199,24 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 								.getAsJsonArray();
 						for (JsonElement solrDoc : docs) {
 							JsonObject mainObj = new JsonObject();
-							mainObj.add("id", new JsonPrimitive(solrDoc.getAsJsonObject().get("id").getAsString()));
+							JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
+							mainObj.add("id", new JsonPrimitive(gameScheduleJson.get("id").getAsString()));
 							mainObj.add("sport",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
+									new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
 							mainObj.add("league",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("league").getAsString()));
-							long gameDateEpoch = solrDoc.getAsJsonObject().get("game_date_epoch").getAsLong();
+									new JsonPrimitive(gameScheduleJson.get("league").getAsString()));
+							long gameDateEpoch = gameScheduleJson.get("game_date_epoch").getAsLong();
 							Instant epochTime = Instant.ofEpochSecond(gameDateEpoch);
 							ZonedDateTime utc = epochTime.atZone(ZoneId.of("Z"));
 							String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
 							String scheduledDate = utc.format(DateTimeFormatter.ofPattern(pattern));
 							mainObj.add("scheduledDate", new JsonPrimitive(scheduledDate));
-							// todo create this enum based on other solr
 							// collection
-							mainObj.add("gameStatus", new JsonPrimitive("UPCOMING"));
 							mainObj.add("rating",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("gexPredict").getAsString()));
+									new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
 							String teaser = "-";
-							if (solrDoc.getAsJsonObject().has("preGameTeaser")) {
-								teaser = solrDoc.getAsJsonObject().get("preGameTeaser").getAsString();
+							if (gameScheduleJson.has("preGameTeaser")) {
+								teaser = gameScheduleJson.get("preGameTeaser").getAsString();
 							}
 							mainObj.add("teaser", new JsonPrimitive(teaser));
 							JsonObject homeTeam = new JsonObject();
@@ -197,22 +226,22 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 							mainObj.add("homeTeam", homeTeam);
 							homeTeam.add("name",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("homeTeamName").getAsString()));
+									new JsonPrimitive(gameScheduleJson.get("homeTeamName").getAsString()));
 							// todo
 							homeTeam.add("alias", new JsonPrimitive("-"));
 							homeTeam.add("img",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("homeTeamImg").getAsString()));
+									new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
 							homeTeam.add("id", new JsonPrimitive(
-									solrDoc.getAsJsonObject().get("homeTeamExternalId").getAsString()));
+									gameScheduleJson.get("homeTeamExternalId").getAsString()));
 							mainObj.add("awayTeam", awayTeam);
 							awayTeam.add("name",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("awayTeamName").getAsString()));
+									new JsonPrimitive(gameScheduleJson.get("awayTeamName").getAsString()));
 							// todo
 							awayTeam.add("alias", new JsonPrimitive("-"));
 							awayTeam.add("img",
-									new JsonPrimitive(solrDoc.getAsJsonObject().get("awayTeamImg").getAsString()));
+									new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
 							awayTeam.add("id", new JsonPrimitive(
-									solrDoc.getAsJsonObject().get("awayTeamExternalId").getAsString()));
+									gameScheduleJson.get("awayTeamExternalId").getAsString()));
 
 							// todo
 							homeTeamRecord.add("wins", new JsonPrimitive(0l));
@@ -273,7 +302,6 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 					GameRole gameRole = new GameRole("0", null, null, Role.NONE);
 					if (gameId != null) {
 
-						JsonArray allGames = new JsonArray();
 						try {
 							JsonArray currGameDocs = getGameForGameId(gameId);
 							gameRole = getGameRole(teamId, currGameDocs);
@@ -311,7 +339,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 						gameFinderDrillDownJson.add("active_team", new JsonPrimitive(teamId));
 						gameFinderDrillDownJson.add("gamesSchedule", gameSchedules);
 						gameFinderDrillDownJson.add("mc", mc);
-						gameFinderDrillDownJson.add("scoringEvents", scoringEvents);
+						gameFinderDrillDownJson.add("drives", scoringEvents);
 						gameFinderDrillDownJson.add("division_series", divisionSeries);
 						gameFinderDrillDownJson.add("standings", standings);
 
@@ -320,7 +348,9 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 						prepareMediaCardData(gameId, mc);
 
 						// http://localhost:8983/solr/techproducts/select?wt=json&indent=true&fl=id,name&q=solr+memory&group=true&group.field=manu_exact
-						prepareTeamStandings(gameRole, standings);
+						prepareTeamStandings(gameRole, standings, League.MLB.toString().toLowerCase());
+
+						prepareDrives(gameId, teamId, scoringEvents);
 
 					}
 
@@ -356,7 +386,24 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		}
 	}
 
-	private void prepareTeamStandings(GameRole gameRole, JsonObject standings) {
+	private void prepareDrives(String gameId, String teamId, JsonArray scoringEvents) {
+		StringBuilder scoringEvtReqBuilder = new StringBuilder();
+		scoringEvtReqBuilder.append("http://cqaneat02.sling.com:8983/solr/scoring_events/select?indent=on&q=gameCode:")
+				.append(gameId).append("&wt=json");
+		JsonArray scoringEvtsResponse = getJsonObject(scoringEvtReqBuilder).getAsJsonObject().get("response")
+				.getAsJsonObject().get("docs").getAsJsonArray();
+		for (JsonElement drive : scoringEvtsResponse) {
+			JsonObject scoringEventItem = new JsonObject();
+			scoringEventItem.add("comment", new JsonPrimitive(drive.getAsJsonObject().get("lastPlay").getAsString()));
+			scoringEventItem.add("img", new JsonPrimitive(drive.getAsJsonObject().get("img").getAsString()));
+			scoringEventItem.add("title", new JsonPrimitive(drive.getAsJsonObject().get("inningTitle").getAsString()));
+			scoringEventItem.add("teamId", new JsonPrimitive(teamId));
+			scoringEvents.add(scoringEventItem);
+		}
+	}
+
+	private void prepareTeamStandings(GameRole gameRole, JsonObject standings, String league) {
+		standings.add("league", new JsonPrimitive(league));
 		StringBuilder teamStandingsLeagueRequestBuilder = new StringBuilder(
 				"http://cqaneat02.sling.com:8983/solr/team_standings/select");
 		teamStandingsLeagueRequestBuilder.append("?q=id:(").append(gameRole.getHomeTeamId()).append("+")
@@ -412,7 +459,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 						JsonObject divisionObj = new JsonObject();
 						divisionObj.add("division", new JsonPrimitive(entry.getKey()));
-						
+
 						JsonArray leagueStandings = new JsonArray();
 						JsonArray divisionsArray = entry.getValue().getAsJsonObject().get("docs").getAsJsonArray();
 						divisionsArray.forEach(divisionTeam -> {
@@ -444,8 +491,8 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 							leagueStandings.add(leagueStanding);
 						});
-						
-						divisionObj.add("league-standings", leagueStandings);
+
+						divisionObj.add("league_standings", leagueStandings);
 
 						teamArray.add(divisionObj);
 
@@ -494,9 +541,9 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 						.get("docs").getAsJsonArray();
 
 				for (JsonElement solrDoc : docs) {
-
-					JsonObject sportData = getSportData(solrDoc);
-
+					JsonObject sportData = new JsonObject();
+					JsonObject sportDataItem = getSportData(solrDoc, false, 0, 0, 0, 0);
+					sportData.add("sport_data", sportDataItem);
 					gameSchedules.add(sportData);
 
 				}
@@ -514,28 +561,94 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 				.get("docs").getAsJsonArray();
 		if (gameResponse != null && gameResponse.size() != 0) {
 			JsonObject solrDoc = gameResponse.get(0).getAsJsonObject();
-			JsonObject sportData = getSportData(solrDoc);
-			mc.add("sport-data", sportData);
+			String awayPitcherId = solrDoc.getAsJsonObject().get("awayPlayerExtId").getAsString();
+			String homePitcherId = solrDoc.getAsJsonObject().get("homePlayerExtId").getAsString();
+			StringBuilder htPlayerStatsBuilder = new StringBuilder(
+					"http://cqaneat02.sling.com:8983/solr/player_stats/select?q=id:").append(homePitcherId)
+							.append("&fl=wins,losses&wt=json");
+			JsonArray htPlayerStatsJson = getJsonObject(htPlayerStatsBuilder).getAsJsonObject().get("response")
+					.getAsJsonObject().get("docs").getAsJsonArray();
+			StringBuilder atPlayerStatsBuilder = new StringBuilder(
+					"http://cqaneat02.sling.com:8983/solr/player_stats/select?q=id:").append(awayPitcherId)
+							.append("&fl=wins,losses&wt=json");
+			JsonArray atPlayerStatsJson = getJsonObject(atPlayerStatsBuilder).getAsJsonObject().get("response")
+					.getAsJsonObject().get("docs").getAsJsonArray();
+			int homePitcherWins = 0;
+			int homePitcherLosses = 0;
+			if (htPlayerStatsJson.size() > 0) {
+				homePitcherWins = htPlayerStatsJson.get(0).getAsJsonObject().get("wins").getAsInt();
+				homePitcherLosses = htPlayerStatsJson.get(0).getAsJsonObject().get("losses").getAsInt();
+			}
+
+			int awayPitcherWins = 0;
+			int awayPitcherLosses = 0;
+			if (atPlayerStatsJson.size() > 0) {
+				awayPitcherWins = atPlayerStatsJson.get(0).getAsJsonObject().get("wins").getAsInt();
+				awayPitcherLosses = atPlayerStatsJson.get(0).getAsJsonObject().get("losses").getAsInt();
+			}
+
+			JsonObject mcSportData = getSportData(solrDoc, true, homePitcherWins, homePitcherLosses, awayPitcherWins,
+					awayPitcherLosses);
+			mc.add("sport_data", mcSportData);
 			String teaser = "-";
 			if (solrDoc.getAsJsonObject().has("preGameTeaser")) {
 				teaser = solrDoc.getAsJsonObject().get("preGameTeaser").getAsString();
 			}
 			mc.add("anons", new JsonPrimitive(teaser));
 			mc.add("anons_title", new JsonPrimitive(solrDoc.getAsJsonObject().get("anonsTitle").getAsString()));
+
+			mergeLiveInfoToMediaCard(mc, solrDoc, mcSportData);
+			
+		}
+	}
+
+	private void mergeLiveInfoToMediaCard(JsonObject mc, JsonObject solrDoc, JsonObject mcSportData) {
+		
+		String gameCode = solrDoc.get("gameCode").getAsString();
+		StringBuilder liveGameInfoReqBuilder = new StringBuilder(
+				"http://cqaneat02.sling.com:8983/solr/live_info/select");
+		liveGameInfoReqBuilder.append("?q=gameCode:").append(gameCode).append("&wt=json");
+		JsonArray liveGameInfoRespJson = getJsonObject(liveGameInfoReqBuilder).getAsJsonObject().get("response")
+				.getAsJsonObject().get("docs").getAsJsonArray();
+		if (liveGameInfoRespJson.size() > 0) {
+			//pick the first item 
+			JsonObject liveGameJsonObj = liveGameInfoRespJson.get(0).getAsJsonObject();
+			
+			//update home&away scores to media card
+			mcSportData.add("homeScore", new JsonPrimitive(liveGameJsonObj.get("homeScoreRuns").getAsInt()));
+			mcSportData.add("awayScore", new JsonPrimitive(liveGameJsonObj.get("awayScoreRuns").getAsInt()));
+
+			
+			//update score data into media card
 			JsonObject scoreData = new JsonObject();
-			JsonObject scoreHomeTeam = new JsonObject();
-			JsonObject scoreAwayTeam = new JsonObject();
-			// todo
-			scoreHomeTeam.add("runs", new JsonPrimitive(0));
-			// todo
-			scoreAwayTeam.add("runs", new JsonPrimitive(0));
+			mc.add("score_data", scoreData);
+			JsonObject scHomeTeam = new JsonObject();
+			JsonObject scAwayTeam = new JsonObject();
+			scoreData.add("homeTeam", scHomeTeam);
+			scoreData.add("awayTeam", scAwayTeam);
 
-			scoreData.add("homeTeam", scoreHomeTeam);
-			scoreData.add("awayTeam", scoreAwayTeam);
-
+			scHomeTeam.add("errors", new JsonPrimitive(
+					liveGameJsonObj.get("homeScoreErrors").getAsInt()));
+			scHomeTeam.add("runs", new JsonPrimitive(
+					liveGameJsonObj.get("homeScoreRuns").getAsInt()));
+			scHomeTeam.add("hits", new JsonPrimitive(
+					liveGameJsonObj.get("homeScoreHits").getAsInt()));
+			scAwayTeam.add("errors", new JsonPrimitive(
+					liveGameJsonObj.get("awayScoreErrors").getAsInt()));
+			scAwayTeam.add("runs", new JsonPrimitive(
+					liveGameJsonObj.get("awayScoreRuns").getAsInt()));
+			scAwayTeam.add("hits", new JsonPrimitive(
+					liveGameJsonObj.get("awayScoreHits").getAsInt()));
+			JsonArray htScoreDetails = liveGameJsonObj.get("homeTeamInnings")
+					.getAsJsonArray();
+			JsonArray atScoreDetails = liveGameJsonObj.get("awayTeamInnings")
+					.getAsJsonArray();
+			scHomeTeam.add("scoreDetails", htScoreDetails);
+			scAwayTeam.add("scoreDetails", atScoreDetails);
 			// todo
 			scoreData.add("scoreboard_title", new JsonPrimitive("-"));
 			scoreData.add("sport", new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
+			updateGameStatusAndType(mcSportData, liveGameJsonObj);
 		}
 	}
 
@@ -549,40 +662,72 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		return currGameDocs;
 	}
 
-	private JsonObject getSportData(JsonElement solrDoc) {
-		JsonObject sportData = new JsonObject();
+	private JsonObject getSportData(JsonElement solrDoc, boolean addPitcherDetails, int homePitcherWins,
+			int homePitcherLosses, int awayPitcherWins, int awayPitcherLosses) {
+
+		JsonObject sportDataItem = new JsonObject();
 		// todo
-		sportData.add("homeScore", new JsonPrimitive(0));
+		sportDataItem.add("homeScore", new JsonPrimitive(0));
 		// todo
-		sportData.add("awayScore", new JsonPrimitive(0));
+		sportDataItem.add("awayScore", new JsonPrimitive(0));
 		JsonObject homeTeam = new JsonObject();
 		JsonObject awayTeam = new JsonObject();
 		JsonObject homeTeamRecord = new JsonObject();
 		JsonObject awayTeamRecord = new JsonObject();
-		sportData.add("homeTeam", homeTeam);
-		homeTeam.add("name", new JsonPrimitive(solrDoc.getAsJsonObject().get("homeTeamName").getAsString()));
-		homeTeam.add("city", new JsonPrimitive(solrDoc.getAsJsonObject().get("homeTeamCity").getAsString()));
+		sportDataItem.add("homeTeam", homeTeam);
+		JsonObject gameScheduleJsonObj = solrDoc.getAsJsonObject();
+		homeTeam.add("name", new JsonPrimitive(gameScheduleJsonObj.get("homeTeamName").getAsString()));
+		homeTeam.add("city", new JsonPrimitive(gameScheduleJsonObj.get("homeTeamCity").getAsString()));
 
+		if (gameScheduleJsonObj.has("playerData")) {
+			JsonObject playerData = gameScheduleJsonObj.get("playerData").getAsJsonObject();
+			Boolean isHomePitching = playerData.get("isHomePitching").getAsBoolean();
+			String homeCurrPlayer = playerData.get("hTCurrPlayer").getAsString();
+			String awayCurrPlayer = playerData.get("aTCurrPlayer").getAsString();
+			String homePlayerRole = "-";
+			String awayPlayerRole = "-";
+			if (isHomePitching) {
+				homePlayerRole = "pitching";
+				awayPlayerRole = "atbat";
+			} else {
+				homePlayerRole = "atbat";
+				awayPlayerRole = "pitching";
+			}
+			homeTeam.add("player_name", new JsonPrimitive(homeCurrPlayer));
+			homeTeam.add("player_role", new JsonPrimitive(homePlayerRole));
+
+			awayTeam.add("player_name", new JsonPrimitive(awayCurrPlayer));
+			awayTeam.add("player_role", new JsonPrimitive(awayPlayerRole));
+		}
 		// todo
 		homeTeam.add("alias", new JsonPrimitive("-"));
-		// todo
-		homeTeam.add("img", new JsonPrimitive(solrDoc.getAsJsonObject().get("homeTeamImg").getAsString()));
-		homeTeam.add("id", new JsonPrimitive(solrDoc.getAsJsonObject().get("homeTeamExternalId").getAsString()));
-		// todo
-		homeTeam.add("pitcherName", new JsonPrimitive("-"));
+		String homeTeamExtId = gameScheduleJsonObj.get("homeTeamExternalId").getAsString();
+		homeTeam.add("img", new JsonPrimitive(
+				String.format("http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid%s.png", homeTeamExtId)));
+		homeTeam.add("id", new JsonPrimitive(homeTeamExtId));
+		homeTeam.add("pitcherName",
+				new JsonPrimitive(gameScheduleJsonObj.get("homeTeamPitcherName").getAsString()));
 
-		sportData.add("awayTeam", awayTeam);
-		awayTeam.add("name", new JsonPrimitive(solrDoc.getAsJsonObject().get("awayTeamName").getAsString()));
-		awayTeam.add("city", new JsonPrimitive(solrDoc.getAsJsonObject().get("awayTeamCity").getAsString()));
+		if (addPitcherDetails) {
+			addPitcherWinsLosses(homePitcherWins, homePitcherLosses, homeTeam);
+		}
+
+		sportDataItem.add("awayTeam", awayTeam);
+		awayTeam.add("name", new JsonPrimitive(gameScheduleJsonObj.get("awayTeamName").getAsString()));
+		awayTeam.add("city", new JsonPrimitive(gameScheduleJsonObj.get("awayTeamCity").getAsString()));
 
 		// todo
 		awayTeam.add("alias", new JsonPrimitive("-"));
-		// todo
-		awayTeam.add("img", new JsonPrimitive(solrDoc.getAsJsonObject().get("awayTeamImg").getAsString()));
+		String awayTeamExtId = gameScheduleJsonObj.get("awayTeamExternalId").getAsString();
+		awayTeam.add("img", new JsonPrimitive(
+				String.format("http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid%s.png", awayTeamExtId)));
 
-		awayTeam.add("id", new JsonPrimitive(solrDoc.getAsJsonObject().get("awayTeamExternalId").getAsString()));
-		// todo
-		awayTeam.add("pitcherName", new JsonPrimitive("-"));
+		awayTeam.add("id", new JsonPrimitive(awayTeamExtId));
+		awayTeam.add("pitcherName",
+				new JsonPrimitive(gameScheduleJsonObj.get("awayTeamPitcherName").getAsString()));
+		if (addPitcherDetails) {
+			addPitcherWinsLosses(awayPitcherWins, awayPitcherLosses, awayTeam);
+		}
 
 		// todo
 		homeTeamRecord.add("wins", new JsonPrimitive(0l));
@@ -600,29 +745,49 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 		homeTeam.add("teamRecord", homeTeamRecord);
 		awayTeam.add("teamRecord", awayTeamRecord);
+		
 		// todo
-		sportData.add("gameId", new JsonPrimitive("-"));
+		sportDataItem.add("division", new JsonPrimitive("-"));
 		// todo
-		sportData.add("gameStatus", new JsonPrimitive("UPCOMING"));
-		// todo
-		sportData.add("gameType", new JsonPrimitive("-"));
-		// todo
-		sportData.add("division", new JsonPrimitive("-"));
-		// todo
-		long gameDateEpoch = solrDoc.getAsJsonObject().get("game_date_epoch").getAsLong();
+		long gameDateEpoch = gameScheduleJsonObj.get("game_date_epoch").getAsLong();
 		Instant epochTime = Instant.ofEpochSecond(gameDateEpoch);
 		ZonedDateTime utc = epochTime.atZone(ZoneId.of("Z"));
 		String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
 		String scheduledDate = utc.format(DateTimeFormatter.ofPattern(pattern));
-		sportData.add("scheduledDate", new JsonPrimitive(scheduledDate));
-		sportData.add("sport", new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
-		sportData.add("league", new JsonPrimitive(solrDoc.getAsJsonObject().get("league").getAsString()));
+		sportDataItem.add("scheduledDate", new JsonPrimitive(scheduledDate));
+		sportDataItem.add("sport", new JsonPrimitive(gameScheduleJsonObj.get("sport").getAsString()));
+		sportDataItem.add("league", new JsonPrimitive(gameScheduleJsonObj.get("league").getAsString()));
 		JsonArray contentIds = new JsonArray();
 		// todo
 		contentIds.add(0);
 
-		sportData.add("contentId", contentIds);
-		return sportData;
+		sportDataItem.add("contentId", contentIds);
+
+		String fieldCountsTxt = "";
+		if (gameScheduleJsonObj.has("fieldCountsTxt")) {
+			fieldCountsTxt = gameScheduleJsonObj.get("fieldCountsTxt").getAsString();
+			sportDataItem.add("fieldCountsTxt", new JsonPrimitive(fieldCountsTxt));
+		}
+		
+		if (gameScheduleJsonObj.has("stadiumName")) {
+			sportDataItem.add("location", new JsonPrimitive(gameScheduleJsonObj.get("stadiumName").getAsString()));
+		}
+		updateGameStatusAndType(sportDataItem, gameScheduleJsonObj);
+
+		return sportDataItem;
+	}
+
+	private void updateGameStatusAndType(JsonObject sportDataItem, JsonObject gameScheduleJsonObj) {
+		//information is contianed in both live and scheduled game and hence separated out.
+		sportDataItem.add("gameStatus", new JsonPrimitive(GameStatus.getValue(gameScheduleJsonObj.get("statusId").getAsInt()).toString()));
+		sportDataItem.add("gameType", new JsonPrimitive(GameType.getValue(gameScheduleJsonObj.get("gameType").getAsString()).toString()));
+	}
+
+	private void addPitcherWinsLosses(int homePitcherWins, int homePitcherLosses, JsonObject team) {
+
+		team.add("pitcherWins", new JsonPrimitive(homePitcherWins));
+		team.add("pitcherLosses", new JsonPrimitive(homePitcherLosses));
+
 	}
 
 	private GameRole getGameRole(String teamId, JsonArray currGameDocs) {

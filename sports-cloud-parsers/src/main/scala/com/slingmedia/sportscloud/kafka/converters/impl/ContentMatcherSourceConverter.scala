@@ -1,24 +1,26 @@
-package com.slingmedia.sportscloud.kafka.converters
+package com.slingmedia.sportscloud.kafka.converters.impl
+
+import com.slingmedia.sportscloud.kafka.converters.ConverterBase
+import com.slingmedia.sportscloud.parsers.factory.{ Parsers, ParserType}
+
 
 import com.eneco.trading.kafka.connect.ftp.source.SourceRecordConverter
 import org.apache.kafka.connect.source.SourceRecord
-import org.apache.kafka.connect.data.{ Schema, SchemaBuilder, Struct }
 import scala.collection.JavaConverters._
 import java.util
-import com.slingmedia.sportscloud.parsers.factory.{ Parsers , ParserType}
 import org.slf4j.LoggerFactory
-import com.typesafe.scalalogging.slf4j.Logger
 import scala.xml.Elem
+import scala.util.{Try, Success, Failure}
 
-class ContentMatcherSourceConverter extends SourceRecordConverter {
+class ContentMatcherSourceConverter extends SourceRecordConverter with ConverterBase{
   private val log = LoggerFactory.getLogger("ContentMatcherSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {
     val line = new String(in.value.asInstanceOf[Array[Byte]])
-    val dataElem: Option[Elem] = Some(scala.xml.XML.loadString(line))
+    val dataElem: Try[Elem] = loadXML(line)
 
     dataElem match {
-      case Some  (data) =>
+      case Success(data) =>
         val fileName = in.key
         val schedule = ".*MLB_SCHEDULE\\.XML.*".r
         fileName match {
@@ -27,7 +29,8 @@ class ContentMatcherSourceConverter extends SourceRecordConverter {
           case _ =>
             Parsers(ParserType.Default).generateRows(data, in)
         }
-      case None =>
+      case Failure(e) =>
+        log.error("Error occurred in parsing xml ",e)
         Array[SourceRecord]().toList.asJava
     }
   }

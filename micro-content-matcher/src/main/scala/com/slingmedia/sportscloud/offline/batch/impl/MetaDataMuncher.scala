@@ -1,12 +1,10 @@
 package com.slingmedia.sportscloud.offline.batch.impl
 
-import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
 import com.slingmedia.sportscloud.offline.batch.Muncher
 
 import org.slf4j.LoggerFactory;
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
-import com.typesafe.scalalogging.slf4j.Logger
+
 
 import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
@@ -15,6 +13,7 @@ import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
 
 import java.time.Instant
+import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
 
 object LDMHolder extends Serializable {
   val serialVersionUID = 1L;
@@ -23,7 +22,7 @@ object LDMHolder extends Serializable {
 
 object MetaBatchJobType extends Enumeration {
   type MetaBatchJobType = Value
-  val TEAMSTANDINGS, PLAYERSTATS = Value
+  val TEAMSTANDINGS, PLAYERSTATS, LIVEINFO = Value
 }
 
 object MetaDataMuncher extends Serializable {
@@ -37,7 +36,8 @@ object MetaDataMuncher extends Serializable {
         schema = StructType(StructField("playerCode", StringType, true)
           :: StructField("wins", IntegerType, true)
           :: StructField("losses", IntegerType, true) :: Nil)
-        new MetaDataMuncher().munch(batchTimeStamp, "meta_batch", "player_stats", "localhost:9983", schema, true, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+          //"meta_batch", "player_stats", "localhost:9983"
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, true, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
       case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
           StructField("alias", StringType, true) ::
@@ -49,8 +49,11 @@ object MetaDataMuncher extends Serializable {
           StructField("wins", IntegerType, true) ::
           StructField("losses", IntegerType, true) ::
           StructField("pct", FloatType, true) :: Nil)
-        new MetaDataMuncher().munch(batchTimeStamp, "meta_batch", "team_standings", "localhost:9983", schema, false, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
-
+          //"meta_batch", "team_standings", "localhost:9983"
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, false, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+      case MetaBatchJobType.LIVEINFO =>
+        //live_info, live_info, localhost:9983
+        new LiveDataMuncher().munch(args(1),args(2),args(3))
     }
   }
 

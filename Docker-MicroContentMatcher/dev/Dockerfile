@@ -15,6 +15,7 @@ RUN apk update && \
     apk add bash && \ 
     apk add wget && \
     apk add curl && \
+    apk add strace && \
     apk add screen && \
     apk add --update netcat-openbsd && rm -rf /var/cache/apk/* && \
     apk add --no-cache --virtual=.build-dependencies wget ca-certificates && \

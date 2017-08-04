@@ -5,7 +5,6 @@ import org.quartz.{ JobBuilder, TriggerBuilder, CronTrigger, CronScheduleBuilder
 import java.util.TimeZone
 
 import org.slf4j.LoggerFactory;
-import com.typesafe.scalalogging.slf4j.Logger
 
 object ScheduleType extends Enumeration {
   type ScheduleType = Value

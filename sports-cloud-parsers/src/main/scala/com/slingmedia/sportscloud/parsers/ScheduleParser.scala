@@ -18,17 +18,17 @@ class ScheduleParser extends ParsedItem {
     val rows = (data \\ "game-schedule").map { rowData =>
       val visitingTeamScore = (rowData \\ "visiting-team-score" \ "@score").toString
       val homeTeamScore = (rowData \\ "home-team-score" \ "@score").toString
-      val homeStartingPitcher = (rowData \\ "home-starting-pitcher" \\ "name" \ "@first-name").toString
-      val awayStartingPitcher = (rowData \\ "away-starting-pitcher" \\ "name" \ "@first-name").toString
+      val homeStartingPitcher = (rowData \\ "home-starting-pitcher" \\ "name" \ "@last-name").toString
+      val awayStartingPitcher = (rowData \\ "away-starting-pitcher" \\ "name" \ "@last-name").toString
       val awaySPExtId = (rowData \\ "away-starting-pitcher" \\ "player-code" \ "@global-id").toString
       val homeSPExtId = (rowData \\ "home-starting-pitcher" \\ "player-code" \ "@global-id").toString
-      val homeTeamName = (rowData \\ "home-team" \\ "team-name" \ "@name").toString
-      val homeTeamCity = (rowData \\ "home-team" \\ "team-city" \ "@city").toString
+      val homeTeamName = (rowData \\ "home-team" \\ "team-name" \ "@name").text
+      val homeTeamCity = (rowData \\ "home-team" \\ "team-city" \ "@city").text
       val homeTeamExtId = (rowData \\ "home-team" \\ "team-code" \ "@global-id").toString
-      val awayTeamName = (rowData \\ "visiting-team" \\ "team-name" \ "@name").toString
-      val awayTeamCity = (rowData \\ "visiting-team" \\ "team-city" \ "@city").toString
+      val awayTeamName = (rowData \\ "visiting-team" \\ "team-name" \ "@name").text
+      val awayTeamCity = (rowData \\ "visiting-team" \\ "team-city" \ "@city").text
       val awayTeamExtId = (rowData \\ "visiting-team" \\ "team-code" \ "@global-id").toString
-      val stadiumName = (rowData \\ "stadium" \ "@name").toString
+      val stadiumName = (rowData \\ "stadium" \ "@name").text
       val month = (rowData \\ "date" \ "@month").toString
       val date = (rowData \\ "date" \ "@date").toString
       val day = (rowData \\ "date" \ "@day").toString
@@ -38,14 +38,18 @@ class ScheduleParser extends ParsedItem {
       val utcHour = (rowData \\ "time" \ "@utc-hour").toString
       val utcMinute = (rowData \\ "time" \ "@utc-minute").toString
       val gameCode = (rowData \\ "gamecode" \ "@global-id").toString
-      val message = MLBSchedule(league, sport, stadiumName, visitingTeamScore, homeTeamScore, homeStartingPitcher, awayStartingPitcher,awaySPExtId,homeSPExtId, homeTeamName, homeTeamCity, homeTeamExtId, awayTeamName, awayTeamCity, awayTeamExtId, month, date, day, year, hour, minute, utcHour, utcMinute, gameCode)
+      val gameType = (rowData \\ "gametype" \ "@type").toString
+      val gameStatus = (rowData \\ "status" \ "@status").toString
+      val gameStatusId = toInt((rowData \\ "status" \ "@status-id").text).getOrElse(0)
+
+      val message = MLBSchedule(league, sport, stadiumName, visitingTeamScore, homeTeamScore, homeStartingPitcher, awayStartingPitcher,awaySPExtId,homeSPExtId, homeTeamName, homeTeamCity, homeTeamExtId, awayTeamName, awayTeamCity, awayTeamExtId, month, date, day, year, hour, minute, utcHour, utcMinute, gameCode,gameType,gameStatus,gameStatusId)
       new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
     }
     log.trace("Generated rows")
     rows.toList.asJava
   }
 
-  case class MLBSchedule(league:String, sport:String, stadiumName: String, visitingTeamScore: String, homeTeamScore: String, homeStartingPitcher: String, awayStartingPitcher: String, awaySPExtId:String,homeSPExtId:String, homeTeamName: String, homeTeamCity: String, homeTeamExternalId: String, awayTeamName: String, awayTeamCity: String, awayTeamExternalId: String, month: String, date: String, day: String, year: String, hour: String, minute: String, utcHour: String, utcMinute: String, gameCode: String) {
+  case class MLBSchedule(league:String, sport:String, stadiumName: String, visitingTeamScore: String, homeTeamScore: String, homeStartingPitcher: String, awayStartingPitcher: String, awaySPExtId:String,homeSPExtId:String, homeTeamName: String, homeTeamCity: String, homeTeamExternalId: String, awayTeamName: String, awayTeamCity: String, awayTeamExternalId: String, month: String, date: String, day: String, year: String, hour: String, minute: String, utcHour: String, utcMinute: String, gameCode: String,gameType:String,gameStatus: String, gameStatusId: Int) {
     log.trace("preparing schema")
     val scoreSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Score").field("score", Schema.STRING_SCHEMA).build()
     val stadiumSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Stadium").field("name", Schema.STRING_SCHEMA).build()
@@ -57,6 +61,9 @@ class ScheduleParser extends ParsedItem {
 
     val gameScheduleItemSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.GameScheduleItem")
       .field("gamecode", Schema.STRING_SCHEMA)
+      .field("status", Schema.STRING_SCHEMA)
+      .field("statusId", Schema.INT32_SCHEMA)
+      .field("gameType", Schema.STRING_SCHEMA)
       .field("league", Schema.STRING_SCHEMA)
       .field("sport", Schema.STRING_SCHEMA)
       .field("stadium", stadiumSchema)
@@ -101,6 +108,9 @@ class ScheduleParser extends ParsedItem {
       .put("date", dateStruct)
       .put("time", timeStruct)
       .put("gamecode", gameCode)
+      .put("status", gameStatus)
+      .put("statusId", gameStatusId)
+      .put("gameType", gameType)
       .put("league", league)
       .put("sport", sport)
       
