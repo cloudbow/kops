@@ -12,8 +12,8 @@ import scala.language.postfixOps
 import collection.JavaConverters._
 
 import com.jayway.jsonpath.{ Configuration,JsonPath, Option, ReadContext ,Criteria , Filter , TypeRef}
-import com.jayway.jsonpath.spi.json. { JsonProvider , GsonJsonProvider }
-import com.jayway.jsonpath.spi.mapper.{ MappingProvider, JacksonMappingProvider }
+import com.jayway.jsonpath.spi.json. { JsonSmartJsonProvider, JsonProvider , GsonJsonProvider }
+import com.jayway.jsonpath.spi.mapper.{ JsonSmartMappingProvider, MappingProvider, JacksonMappingProvider }
 
 import com.google.gson.{JsonArray,JsonElement}
 
@@ -45,7 +45,7 @@ object SportsCloudSchedulers  {
 	    allBatchJobs = downloadSchedulesJob :: allBatchJobs
 		  Holder.log.debug("Adding downloadSchedulesJob")
 		  
-		  val  contentMatchJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 0 8 ? * *",ScheduleType.CRON_MISFIRE_NOW)
+		  val  contentMatchJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 10 8 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = contentMatchJob :: allBatchJobs
 	    Holder.log.debug("Adding contentMatchJob")
 	    
@@ -248,23 +248,22 @@ class DownloadSchedulesJob extends Job {
 		
 		val conf :Configuration= Configuration.defaultConfiguration();
     Configuration.setDefaults(new Configuration.Defaults() {
-
-    		val  jsonProviderObj:JsonProvider = new GsonJsonProvider();
-    		val  mappingProviderObj:MappingProvider = new JacksonMappingProvider();
+          		val  jsonProviderObj:JsonProvider = new JsonSmartJsonProvider();
+          		val  mappingProviderObj:MappingProvider = new JsonSmartMappingProvider();
+            
+            		override def jsonProvider():JsonProvider = {
+            			jsonProviderObj;
+            		}
       
-      		override def jsonProvider():JsonProvider = {
-      			jsonProviderObj;
-      		}
-
-      		override def mappingProvider():MappingProvider = {
-      			 mappingProviderObj;
-      		}
-
-      		override def options():java.util.Set[Option] = {
-      			EnumSet.noneOf(classOf[Option])
-      		}
-    
-		});
+            		override def mappingProvider():MappingProvider = {
+            			 mappingProviderObj;
+            		}
+      
+            		override def options():java.util.Set[Option] = {
+            			EnumSet.noneOf(classOf[Option])
+            		}
+          
+    });
 		"cat /dev/null" #> new File("/data/feeds/schedules_plus_3") ! ;
 		getFileContents("/data/feeds/summary.json").foreach( it => {
 
@@ -272,6 +271,23 @@ class DownloadSchedulesJob extends Job {
 				val ctx:ReadContext = JsonPath.using(conf).parse(it)
 				val  sportsGenreFilter:Filter = Filter.filter(Criteria.where("metadata.genre").contains("Sports"))
 				val filteredChannels:String = ctx.read("$.channels[?]", sportsGenreFilter).toString
+				Configuration.setDefaults(new Configuration.Defaults() {
+          		val  jsonProviderObj:JsonProvider = new GsonJsonProvider();
+          		val  mappingProviderObj:MappingProvider = new JacksonMappingProvider();
+            
+            		override def jsonProvider():JsonProvider = {
+            			jsonProviderObj;
+            		}
+      
+            		override def mappingProvider():MappingProvider = {
+            			 mappingProviderObj;
+            		}
+      
+            		override def options():java.util.Set[Option] = {
+            			EnumSet.noneOf(classOf[Option])
+            		}
+          
+      		});
 				val jsonArray:JsonArray = JsonPath.read[com.google.gson.JsonArray](filteredChannels,"$.[*].channel_guid")
 				val  iterator:Iterator[JsonElement] = jsonArray.iterator.asScala
 				while(iterator.hasNext) {
@@ -282,7 +298,7 @@ class DownloadSchedulesJob extends Job {
 							val utc = epochTimeOffset.atZone(ZoneId.of("Z"));        				  
 							def pattern = "yyyyMMdd";
 							val formattedDate = utc.format(DateTimeFormatter.ofPattern(pattern)); 
-							val cmsHost =  System.getProperty("cmsHost")
+							val cmsHost =  "93a256a7"
 							val fullUrl = s"http://$cmsHost.cdn.cms.movetv.com/cms/api/linear_feed/channels/v1/$channel_guid/" + formattedDate
 							log.trace(s"Full url is $fullUrl")
 							Thread sleep 3000

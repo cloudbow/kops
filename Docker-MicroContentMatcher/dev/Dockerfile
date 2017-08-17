@@ -10,7 +10,8 @@ ENV SCALA_VERSION=2.12.2 \
     MAVEN_VERSION=3.3.9 \
     MAVEN_HOME=/usr/lib/maven \
     SOLR_VERSION=6.6.0 \
-    SOLR_HOME=/solr
+    SOLR_HOME=/solr \
+    KAFKA_HEAP_OPTS="-Xms512m -Xmx1g"
 RUN apk update && \
     apk add bash && \ 
     apk add wget && \

@@ -67,7 +67,7 @@ class ContentMatcher extends Serializable with Muncher {
   val getAnonsTitle: (String, String, String) => String = (homeTeamName: String, awayTeamName: String, stadium: String) => {
     var anonsTitle = awayTeamName.concat(" take on ").concat(homeTeamName)
     if (stadium != null) {
-      anonsTitle.concat(" at ").concat(stadium)
+      anonsTitle = anonsTitle.concat(" at ").concat(stadium)
     }
     anonsTitle
   }
@@ -145,9 +145,9 @@ class ContentMatcher extends Serializable with Muncher {
     val programScheduleChannelJoin2 = spark.sql("select * from programSchedules").toDF
     CMHolder.log.trace("Joining with target programs using a cross join")
     val statsTargetProgramsJoin = mlbScheduleDF5.crossJoin(programScheduleChannelJoin2)
-    val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where("( start_time_epoch < game_date_epoch + 3600 AND start_time_epoch > game_date_epoch - 3600 ) AND ((program_title rlike regexp1) OR (program_title rlike regexp2) OR (program_title rlike regexp3) OR (program_title rlike regexp4))")
+    val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where("( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 ) AND ((program_title rlike regexp1) OR (program_title rlike regexp2) OR (program_title rlike regexp3) OR (program_title rlike regexp4))")
     CMHolder.log.trace("Matched with stats data");
-    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4", "subpack_int_id", "start_time", "start_time_epoch", "date")
+    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4", "subpack_int_id", "date")
     val gameScheduleOrig = fetchMLBSchedule().coalesce(3)
     val allStatsNullFills = Map(
       "program_guid" -> "0",
@@ -156,7 +156,9 @@ class ContentMatcher extends Serializable with Muncher {
       "callsign" -> "-",
       "asset_guid" -> "-",
       "program_id" -> 0,
-      "channel_no" -> 0)
+      "channel_no" -> 0,
+      "startTimeEpoch" -> 0,
+      "stopTimeEpoch" -> 0)
     val allStatsArrayColumns = Seq("subpackage_guids", "subpack_titles")
     val allSelectedColumns = gameScheduleOrig.columns.map(gameScheduleOrig(_)) ++ (allStatsNullFills.keys ++ allStatsArrayColumns).map(statsTargetProgramsJoin2(_))
     //join with all stats data to fetch the full schedules for programs not availabe in slingtv
@@ -254,8 +256,9 @@ class ContentMatcher extends Serializable with Muncher {
 
     val schedulesDF = linearFeedDF.select($"schedule")
     val schedulesDF1 = schedulesDF.withColumn("schedulesExp", explode(schedulesDF.col("schedule"))).drop("schedule");
-    val schedulesDF2 = schedulesDF1.select($"schedulesExp.program_id" as "s_program_id", $"schedulesExp.asset_guid", $"schedulesExp.start" as "start_time", $"schedulesExp.guid" as "schedule_guid")
-    val schedulesDF3 = schedulesDF2.withColumn("start_time_epoch", timeISO8601ToEpochUDF($"start_time"))
+    val schedulesDF2 = schedulesDF1.select($"schedulesExp.program_id" as "s_program_id", $"schedulesExp.asset_guid", $"schedulesExp.start" as "startTime",$"schedulesExp.stop" as "stopTime", $"schedulesExp.guid" as "schedule_guid")
+    val schedulesDF3 = schedulesDF2.withColumn("startTimeEpoch", timeISO8601ToEpochUDF($"startTime")).
+                                   withColumn("stopTimeEpoch", timeISO8601ToEpochUDF($"stopTime"))
 
     val programScheduleJoinDF = programsDF31.join(schedulesDF3, programsDF31("program_id") === schedulesDF3("s_program_id"), "inner").drop("s_program_id")
     val programScheduleJoinDF1 = programScheduleJoinDF.distinct.toDF

@@ -24,6 +24,7 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.tests.fixtures.servers.handlers;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.time.Instant;
@@ -125,13 +126,22 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 	}
 
 	enum GameType {
-		REGULAR_SEASON, UNKNOWN;
-
+		REGULAR_SEASON("Regular Season"), UNKNOWN("uknown");
+		GameType(String gts){
+			gameTypeStr = gts;
+		}
+		private String gameTypeStr; 
 		public static GameType getValue(String gameType) {
 			if (gameType.equalsIgnoreCase("regular season"))
 				return REGULAR_SEASON;
 			else
 				return UNKNOWN;
+		}
+		public String getGameTypeStr() {
+			return gameTypeStr;
+		}
+		public void setGameTypeStr(String gameTypeStr) {
+			this.gameTypeStr = gameTypeStr;
 		}
 
 	}
@@ -144,9 +154,11 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		private String awayTeamId;
 		private String homeTeamName;
 		private String awayTeamName;
+		private GameType gameType;
 
-		ActiveTeamGame(String gameId, String activeTeamId, String homeTeamId, String awayTeamId, String homeTeamName,
+		ActiveTeamGame(String gameId, GameType gameType, String activeTeamId, String homeTeamId, String awayTeamId, String homeTeamName,
 				String awayTeamName, Role role) {
+			this.setGameType(gameType);
 			this.setHomeTeamName(homeTeamName);
 			this.setAwayTeamName(awayTeamName);
 			this.setActiveTeamId(activeTeamId);
@@ -210,6 +222,14 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 		public void setAwayTeamName(String awayTeamName) {
 			this.awayTeamName = awayTeamName;
+		}
+
+		public GameType getGameType() {
+			return gameType;
+		}
+
+		public void setGameType(GameType gameType) {
+			this.gameType = gameType;
 		}
 
 	}
@@ -297,7 +317,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 	private String prepareResponseForMC(String gameScheduleId, String teamId, Set<String> subpackIds) {
 		String finalResponse;
 		JsonObject gameFinderDrillDownJson = new JsonObject();
-		ActiveTeamGame activeGame = new ActiveTeamGame("0", "0", null, null, null, null, Role.NONE);
+		ActiveTeamGame activeGame = new ActiveTeamGame("0",null, "0", null, null, null, null, Role.NONE);
 		if (gameScheduleId != null) {
 
 			try {
@@ -364,7 +384,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 		requestURLBuilder.append("?q=game_date_epoch:[").append(startDate).append("%20TO%20").append(endDate)
 				.append("]").append("&start=0&rows=500").append("&sort=game_date_epoch%20asc")
-				.append("&group=true&group.field=gameCode&wt=json");
+				.append("&group=true&group.field=gameCode&group.limit=10").append("&wt=json");
 		JsonElement gameSchedulesJson = getJsonObject(requestURLBuilder);
 
 		// &fq=%7B!collapse%20field=gameId%7D&expand=true&fl=homeTeamScore,awayTeamScore&expand.rows=100&wt=json
@@ -386,16 +406,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 					JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
 					String gameId = solrDoc.get("gameId").getAsString();
 
-					if (liveResponseJson.get(gameId) != null) {
-						String awayTeamScore = liveResponseJson.get(gameId).get("awayScoreRuns").getAsString();
-						String homeTeamScore = liveResponseJson.get(gameId).get("homeScoreRuns").getAsString();
-						mainObj.add("homeScore", new JsonPrimitive(homeTeamScore));
-						mainObj.add("awayScore", new JsonPrimitive(awayTeamScore));
-						mainObj.add("gameStatus", new JsonPrimitive(GameStatus
-								.getValue(liveResponseJson.get(gameId).get("statusId").getAsInt()).toString()));
-					} else {
-						mainObj.add("gameStatus", new JsonPrimitive(GameStatus.UPCOMING.toString()));
-					}
+					updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
 					mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
 					mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
 					mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
@@ -403,14 +414,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 					mainObj.add("sport", new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
 					mainObj.add("league",
 							new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
-					long gameDateEpoch = gameScheduleJson.get("game_date_epoch").getAsLong();
-					Instant epochTime = Instant.ofEpochSecond(gameDateEpoch);
-					ZonedDateTime utc = epochTime.atZone(ZoneId.of("Z"));
-					String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
-					String scheduledDate = utc.format(java.time.format.DateTimeFormatter.ofPattern(pattern));
-					addSubPackIds(mainObj, gameScheduleJson);
-					mainObj.add("scheduledDate", new JsonPrimitive(scheduledDate));
-					mainObj.add("gameDateEpoch", new JsonPrimitive(gameDateEpoch));
+					addGameScheduleDates(mainObj, gameScheduleJson);
 
 					// collection
 					mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
@@ -484,12 +488,26 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		return finalResponse;
 	}
 
+	private void updateScoreStatusFromLive(Map<String, JsonObject> liveResponseJson, JsonObject mainObj,
+			String gameId) {
+		if (liveResponseJson.get(gameId) != null) {
+			String awayTeamScore = liveResponseJson.get(gameId).get("awayScoreRuns").getAsString();
+			String homeTeamScore = liveResponseJson.get(gameId).get("homeScoreRuns").getAsString();
+			mainObj.add("homeScore", new JsonPrimitive(homeTeamScore));
+			mainObj.add("awayScore", new JsonPrimitive(awayTeamScore));
+			mainObj.add("gameStatus", new JsonPrimitive(GameStatus
+					.getValue(liveResponseJson.get(gameId).get("statusId").getAsInt()).toString()));
+		} else {
+			mainObj.add("gameStatus", new JsonPrimitive(GameStatus.UPCOMING.toString()));
+		}
+	}
+
 	private Map<String, JsonObject> prepareLiveGameInfoData(long startDate, String endDate) {
 		StringBuilder liveInfoRequestBuilder = new StringBuilder(
 				"http://"+solrHost+":"+solrPort+"/solr/live_info/select");
 		liveInfoRequestBuilder.append("?q=game_date_epoch:[").append(startDate).append("%20TO%20").append(endDate)
 				.append("]").append("&fl=gameId,homeScoreRuns,awayScoreRuns,statusId")
-				.append("&start=0&rows=100&wt=json");
+				.append("&start=0&rows=500&wt=json");
 		JsonElement liveResponseJson = getJsonObject(liveInfoRequestBuilder);
 		Map<String, JsonObject> liveJsonObjects = new HashMap<>();
 		liveResponseJson.getAsJsonObject().get("response").getAsJsonObject().get("docs").getAsJsonArray()
@@ -548,7 +566,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 	private void prepareMCDrives(String gameId, String teamId, JsonArray scoringEvents) {
 		StringBuilder scoringEvtReqBuilder = new StringBuilder();
 		scoringEvtReqBuilder.append("http://"+solrHost+":"+solrPort+"/solr/scoring_events/select?indent=on&q=gameId:")
-				.append(gameId).append("&sort=srcTime%20desc").append("&wt=json");
+				.append(gameId).append("&sort=srcTime%20desc").append("&start=0&rows=100").append("&wt=json");
 		JsonArray scoringEvtsResponse = getJsonObject(scoringEvtReqBuilder).getAsJsonObject().get("response")
 				.getAsJsonObject().get("docs").getAsJsonArray();
 		for (JsonElement drive : scoringEvtsResponse) {
@@ -704,10 +722,10 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 		switch (gameRole.getActiveTeamRole()) {
 		case AWAY:
-			gameScheduleReqBuilder.append("?q=awayTeamExternalId=").append(teamId);
+			gameScheduleReqBuilder.append("?q=awayTeamExternalId:").append(teamId);
 			break;
 		case HOME:
-			gameScheduleReqBuilder.append("?q=homeTeamExternalId=").append(teamId);
+			gameScheduleReqBuilder.append("?q=homeTeamExternalId:").append(teamId);
 			break;
 		case NONE:
 			break;
@@ -715,13 +733,14 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 			break;
 
 		}
-
+		long prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
 		gameScheduleReqBuilder.append("+AND+").append("game_date_epoch:").append("[")
-				.append(Instant.now().getEpochSecond()).append("%20TO%20*]");
+				.append(prevSixMonth).append("%20TO%20*]");
 
 		gameScheduleReqBuilder.append("&start=0&rows=100").append("&group=true&group.field=gameCode")
 				.append("&sort=game_date_epoch%20asc&wt=json");
 		JsonElement gameScheduleResponseJson = getJsonObject(gameScheduleReqBuilder);
+		Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(prevSixMonth, "*");
 
 		// create game schedule json part
 		if (gameScheduleResponseJson != null) {
@@ -737,6 +756,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 					JsonObject sportData = new JsonObject();
 					JsonObject sportDataItem = new JsonObject();
 					getSportData(solrDoc, sportDataItem, false, 0, 0, 0, 0);
+					updateScoreStatusFromLive(liveResponseJson, sportDataItem, solrDoc.get("gameId").getAsString());
 					sportData.add("sport_data", sportDataItem);
 					gameSchedules.add(sportData);
 
@@ -818,11 +838,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		// Fill in the live scores and other details
 		//
 		String gameId = solrDoc.get("gameId").getAsString();
-		StringBuilder liveGameInfoReqBuilder = new StringBuilder(
-				"http://"+solrHost+":"+solrPort+"/solr/live_info/select");
-		liveGameInfoReqBuilder.append("?q=gameId:").append(gameId).append("&wt=json");
-		JsonArray liveGameInfoRespJson = getJsonObject(liveGameInfoReqBuilder).getAsJsonObject().get("response")
-				.getAsJsonObject().get("docs").getAsJsonArray();
+		JsonArray liveGameInfoRespJson = getLiveGamesById(gameId);
 		if (liveGameInfoRespJson.size() > 0) {
 			// pick the first item
 			JsonObject liveGameJsonObj = liveGameInfoRespJson.get(0).getAsJsonObject();
@@ -830,132 +846,169 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 			// update home&away scores to media card
 			mcSportData.add("homeScore", new JsonPrimitive(liveGameJsonObj.get("homeScoreRuns").getAsInt()));
 			mcSportData.add("awayScore", new JsonPrimitive(liveGameJsonObj.get("awayScoreRuns").getAsInt()));
-			String fieldCountsTxt = "";
-			if (liveGameJsonObj.has("fieldCountsTxt")) {
-				fieldCountsTxt = liveGameJsonObj.get("fieldCountsTxt").getAsString();
-
-			}
-			mcSportData.add("fieldCountsTxt", new JsonPrimitive(fieldCountsTxt));
-
-			int fieldState = 0;
-			if (liveGameJsonObj.has("fieldState")) {
-				fieldState = FIELD_STATE_MAP[liveGameJsonObj.get("fieldState").getAsInt() & 7];
-			}
-			mcSportData.add("fieldState", new JsonPrimitive(fieldState));
+			addFieldsCount(mcSportData, liveGameJsonObj);
 
 			// update score data into media card
-			JsonObject scoreData = new JsonObject();
-			mc.add("score_data", scoreData);
-			JsonObject scHomeTeam = new JsonObject();
-			JsonObject scAwayTeam = new JsonObject();
-			scoreData.add("homeTeam", scHomeTeam);
-			scoreData.add("awayTeam", scAwayTeam);
-
-			scHomeTeam.add("errors", new JsonPrimitive(liveGameJsonObj.get("homeScoreErrors").getAsInt()));
-			scHomeTeam.add("runs", new JsonPrimitive(liveGameJsonObj.get("homeScoreRuns").getAsInt()));
-			scHomeTeam.add("hits", new JsonPrimitive(liveGameJsonObj.get("homeScoreHits").getAsInt()));
-			scAwayTeam.add("errors", new JsonPrimitive(liveGameJsonObj.get("awayScoreErrors").getAsInt()));
-			scAwayTeam.add("runs", new JsonPrimitive(liveGameJsonObj.get("awayScoreRuns").getAsInt()));
-			scAwayTeam.add("hits", new JsonPrimitive(liveGameJsonObj.get("awayScoreHits").getAsInt()));
-			JsonArray htScoreDetails = new JsonArray();
-			if (liveGameJsonObj.has("homeTeamInnings")) {
-				htScoreDetails = liveGameJsonObj.get("homeTeamInnings").getAsJsonArray();
-			}
-
-			JsonArray atScoreDetails = new JsonArray();
-			if (liveGameJsonObj.has("awayTeamInnings")) {
-				atScoreDetails = liveGameJsonObj.get("awayTeamInnings").getAsJsonArray();
-			}
-			scHomeTeam.add("scoreDetails", htScoreDetails);
-			scAwayTeam.add("scoreDetails", atScoreDetails);
-			scoreData.add("scoreboard_title",
-					new JsonPrimitive(getScoreBoardTitle(activeGame, liveGameInfoReqBuilder)));
-			scoreData.add("sport", new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
-			GameStatus status = GameStatus.getValue(liveGameJsonObj.get("statusId").getAsInt());
-			if (liveGameJsonObj.has("isHomePitching") && status != GameStatus.COMPLETED) {
-				JsonObject homeTeam = mcSportData.get("homeTeam").getAsJsonObject();
-				JsonObject awayTeam = mcSportData.get("awayTeam").getAsJsonObject();
-				Boolean isHomePitching = liveGameJsonObj.get("isHomePitching").getAsBoolean();
-				String homeCurrPlayer = "-";
-				if (liveGameJsonObj.has("hTCurrPlayer")) {
-					homeCurrPlayer = liveGameJsonObj.get("hTCurrPlayer").getAsString();
-				}
-				String awayCurrPlayer = "-";
-				if (liveGameJsonObj.has("hTCurrPlayer")) {
-					awayCurrPlayer = liveGameJsonObj.get("aTCurrPlayer").getAsString();
-				}
-
-				String homePlayerRole = "-";
-				String awayPlayerRole = "-";
-				if (isHomePitching) {
-					homePlayerRole = "pitching";
-					awayPlayerRole = "atbat";
-				} else {
-					homePlayerRole = "atbat";
-					awayPlayerRole = "pitching";
-				}
-				homeTeam.add("player_name", new JsonPrimitive(homeCurrPlayer));
-				homeTeam.add("player_role", new JsonPrimitive(homePlayerRole));
-
-				awayTeam.add("player_name", new JsonPrimitive(awayCurrPlayer));
-				awayTeam.add("player_role", new JsonPrimitive(awayPlayerRole));
-			}
-
+			addScoreData(activeGame, mc, solrDoc, liveGameJsonObj);
+			addCurrentPlayerDetails(mcSportData, liveGameJsonObj);
 			updateGameStatusAndType(mcSportData, liveGameJsonObj);
 		}
 
 	}
 
-	private String getScoreBoardTitle(ActiveTeamGame activeGame, StringBuilder liveGameInfoReqBuilder) {
+	private void addCurrentPlayerDetails(JsonObject mcSportData, JsonObject liveGameJsonObj) {
+		GameStatus status = GameStatus.getValue(liveGameJsonObj.get("statusId").getAsInt());
+		if (liveGameJsonObj.has("isHomePitching") && status != GameStatus.COMPLETED) {
+			JsonObject homeTeam = mcSportData.get("homeTeam").getAsJsonObject();
+			JsonObject awayTeam = mcSportData.get("awayTeam").getAsJsonObject();
+			Boolean isHomePitching = liveGameJsonObj.get("isHomePitching").getAsBoolean();
+			String homeCurrPlayer = "-";
+			if (liveGameJsonObj.has("hTCurrPlayer")) {
+				homeCurrPlayer = liveGameJsonObj.get("hTCurrPlayer").getAsString();
+			}
+			String awayCurrPlayer = "-";
+			if (liveGameJsonObj.has("hTCurrPlayer")) {
+				awayCurrPlayer = liveGameJsonObj.get("aTCurrPlayer").getAsString();
+			}
+
+			String homePlayerRole = "-";
+			String awayPlayerRole = "-";
+			if (isHomePitching) {
+				homePlayerRole = "pitching";
+				awayPlayerRole = "atbat";
+			} else {
+				homePlayerRole = "atbat";
+				awayPlayerRole = "pitching";
+			}
+			homeTeam.add("player_name", new JsonPrimitive(homeCurrPlayer));
+			homeTeam.add("player_role", new JsonPrimitive(homePlayerRole));
+
+			awayTeam.add("player_name", new JsonPrimitive(awayCurrPlayer));
+			awayTeam.add("player_role", new JsonPrimitive(awayPlayerRole));
+		}
+	}
+
+	private void addScoreData(ActiveTeamGame activeGame, JsonObject mc, JsonObject solrDoc,
+			JsonObject liveGameJsonObj) {
+		JsonObject scoreData = new JsonObject();
+		mc.add("score_data", scoreData);
+		JsonObject scHomeTeam = new JsonObject();
+		JsonObject scAwayTeam = new JsonObject();
+		scoreData.add("homeTeam", scHomeTeam);
+		scoreData.add("awayTeam", scAwayTeam);
+
+		scHomeTeam.add("errors", new JsonPrimitive(liveGameJsonObj.get("homeScoreErrors").getAsInt()));
+		scHomeTeam.add("runs", new JsonPrimitive(liveGameJsonObj.get("homeScoreRuns").getAsInt()));
+		scHomeTeam.add("hits", new JsonPrimitive(liveGameJsonObj.get("homeScoreHits").getAsInt()));
+		scAwayTeam.add("errors", new JsonPrimitive(liveGameJsonObj.get("awayScoreErrors").getAsInt()));
+		scAwayTeam.add("runs", new JsonPrimitive(liveGameJsonObj.get("awayScoreRuns").getAsInt()));
+		scAwayTeam.add("hits", new JsonPrimitive(liveGameJsonObj.get("awayScoreHits").getAsInt()));
+		JsonArray htScoreDetails = new JsonArray();
+		if (liveGameJsonObj.has("homeTeamInnings")) {
+			htScoreDetails = liveGameJsonObj.get("homeTeamInnings").getAsJsonArray();
+		}
+
+		JsonArray atScoreDetails = new JsonArray();
+		if (liveGameJsonObj.has("awayTeamInnings")) {
+			atScoreDetails = liveGameJsonObj.get("awayTeamInnings").getAsJsonArray();
+		}
+		scHomeTeam.add("scoreDetails", htScoreDetails);
+		scAwayTeam.add("scoreDetails", atScoreDetails);
+		scoreData.add("scoreboard_title",
+				new JsonPrimitive(getScoreBoardTitle(activeGame)));
+		scoreData.add("sport", new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
+	}
+
+	private void addFieldsCount(JsonObject mcSportData, JsonObject liveGameJsonObj) {
+		String fieldCountsTxt = "";
+		if (liveGameJsonObj.has("fieldCountsTxt")) {
+			fieldCountsTxt = liveGameJsonObj.get("fieldCountsTxt").getAsString();
+
+		}
+		mcSportData.add("fieldCountsTxt", new JsonPrimitive(fieldCountsTxt));
+
+		int fieldState = 0;
+		if (liveGameJsonObj.has("fieldState")) {
+			fieldState = FIELD_STATE_MAP[liveGameJsonObj.get("fieldState").getAsInt() & 7];
+		}
+		mcSportData.add("fieldState", new JsonPrimitive(fieldState));
+	}
+
+	private JsonArray getLiveGamesById(String gameId) {
+		StringBuilder liveGameInfoReqBuilder = new StringBuilder(
+				"http://"+solrHost+":"+solrPort+"/solr/live_info/select");
+		liveGameInfoReqBuilder.append("?q=gameId:").append(gameId).append("&wt=json");
+		JsonArray liveGameInfoRespJson = getJsonObject(liveGameInfoReqBuilder).getAsJsonObject().get("response")
+				.getAsJsonObject().get("docs").getAsJsonArray();
+		return liveGameInfoRespJson;
+	}
+
+	private String getScoreBoardTitle(ActiveTeamGame activeGame) {
 		//
 		// Fill the score card title
 		//
+		String scoreCardTitle = "";
 		String activeHomeTeamId = activeGame.getHomeTeamId();
 		String activeAwayTeamId = activeGame.getAwayTeamId();
+		
+		
 		StringBuilder allTeamGamesRequestBuilder = new StringBuilder(
 				"http://"+solrHost+":"+solrPort+"/solr/live_info/select");
-		allTeamGamesRequestBuilder.append("?q=homeTeamExtId:(").append(activeHomeTeamId).append("+")
-				.append(activeAwayTeamId).append(")").append("+OR+").append("awayTeamExtId:(").append(activeHomeTeamId)
-				.append("+").append(activeAwayTeamId).append(")").append("&wt=json");
-		JsonArray allTeamGamesJson = getJsonObject(allTeamGamesRequestBuilder).getAsJsonObject().get("response")
-				.getAsJsonObject().get("docs").getAsJsonArray();
-		int team1Wins = 0; // awayTeam
-		int team2Wins = 0; // homeTeam
-		String team1ExtId = activeAwayTeamId;
-		for (JsonElement it : allTeamGamesJson) {
-			int homeWins = it.getAsJsonObject().get("homeScoreRuns").getAsInt();
-			int awayWins = it.getAsJsonObject().get("awayScoreRuns").getAsInt();
-			String awayTeamId = it.getAsJsonObject().get("awayTeamExtId").getAsString();
-			int t1Score = 0;
-			int t2Score = 0;
-			if (awayTeamId.equals(team1ExtId)) {
-				t1Score = awayWins;
-				t2Score = homeWins;
-			} else {
-				t1Score = homeWins;
-				t2Score = awayWins;
+		try {
+			//@formatter:off
+			allTeamGamesRequestBuilder.
+			append("?q=gameType:%22").append(URLEncoder.encode(activeGame.getGameType().getGameTypeStr(), "UTF-8")).append("%22").
+			append("+AND+(").
+			append("homeTeamExtId:").append(activeGame.getActiveTeamId()).
+			append("+OR+").
+			append("awayTeamExtId:").append(activeGame.getActiveTeamId()).append(")").
+			append("&wt=json");
+			//@formatter:on
+			JsonArray allTeamGamesJson = getJsonObject(allTeamGamesRequestBuilder).getAsJsonObject().get("response")
+					.getAsJsonObject().get("docs").getAsJsonArray();
+			int team1Wins = 0; // awayTeam
+			int team2Wins = 0; // homeTeam
+			String team1ExtId = activeAwayTeamId;
+			for (JsonElement it : allTeamGamesJson) {
+				int homeWins = it.getAsJsonObject().get("homeScoreRuns").getAsInt();
+				int awayWins = it.getAsJsonObject().get("awayScoreRuns").getAsInt();
+				String awayTeamId = it.getAsJsonObject().get("awayTeamExtId").getAsString();
+				int t1Score = 0;
+				int t2Score = 0;
+				if (awayTeamId.equals(team1ExtId)) {
+					t1Score = awayWins;
+					t2Score = homeWins;
+				} else {
+					t1Score = homeWins;
+					t2Score = awayWins;
+				}
+				if (t1Score > t2Score) {
+					team1Wins++;
+				} else {
+					team2Wins++;
+				}
+	
 			}
-			if (t1Score > t2Score) {
-				team1Wins++;
+	
+			String seriesLeaderName = "-";
+			String seriesTitle = "-";
+			if (team1Wins > team2Wins) {
+				seriesLeaderName = activeGame.getAwayTeamName();
+				seriesTitle = "lead series " + team1Wins + "-" + team2Wins;
+			} else if (team1Wins < team2Wins) {
+				seriesLeaderName = activeGame.getHomeTeamName();
+				seriesTitle = "lead series " + team2Wins + "-" + team1Wins;
 			} else {
-				team2Wins++;
+				seriesTitle = "Series tied " + team1Wins + "-" + team2Wins;
 			}
-
+			
+			scoreCardTitle = String.format("%s %s", seriesLeaderName, seriesTitle);
+		
+		} catch (UnsupportedEncodingException e) {
+			
 		}
 
-		String seriesLeaderName = "-";
-		String seriesTitle = "-";
-		if (team1Wins > team2Wins) {
-			seriesLeaderName = activeGame.getAwayTeamName();
-			seriesTitle = "lead series " + team1Wins + "-" + team2Wins;
-		} else if (team1Wins < team2Wins) {
-			seriesLeaderName = activeGame.getHomeTeamName();
-			seriesTitle = "lead series " + team2Wins + "-" + team1Wins;
-		} else {
-			seriesTitle = "Series tied " + team1Wins + "-" + team2Wins;
-		}
-
-		String scoreCardTitle = String.format("%s %s", seriesLeaderName, seriesTitle);
+		 
 		return scoreCardTitle;
 	}
 
@@ -971,6 +1024,9 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 	private void getSportData(JsonElement solrDoc, JsonObject sportDataItem, boolean addPitcherDetails,
 			int homePitcherWins, int homePitcherLosses, int awayPitcherWins, int awayPitcherLosses) {
+		JsonObject gameScheduleJsonObj = solrDoc.getAsJsonObject();
+		sportDataItem.add("gameId", new JsonPrimitive(gameScheduleJsonObj.get("id").getAsString()));
+		sportDataItem.add("gameCode", new JsonPrimitive(gameScheduleJsonObj.get("gameCode").getAsString()));
 
 		// todo
 		sportDataItem.add("homeScore", new JsonPrimitive(0));
@@ -981,7 +1037,6 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		JsonObject homeTeamRecord = new JsonObject();
 		JsonObject awayTeamRecord = new JsonObject();
 		sportDataItem.add("homeTeam", homeTeam);
-		JsonObject gameScheduleJsonObj = solrDoc.getAsJsonObject();
 		homeTeam.add("name", new JsonPrimitive(gameScheduleJsonObj.get("homeTeamName").getAsString()));
 		homeTeam.add("city", new JsonPrimitive(gameScheduleJsonObj.get("homeTeamCity").getAsString()));
 
@@ -1045,14 +1100,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 		// todo
 		sportDataItem.add("division", new JsonPrimitive("-"));
-		// todo
-		long gameDateEpoch = gameScheduleJsonObj.get("game_date_epoch").getAsLong();
-		Instant epochTime = Instant.ofEpochSecond(gameDateEpoch);
-		ZonedDateTime utc = epochTime.atZone(ZoneId.of("Z"));
-		String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
-		String scheduledDate = utc.format(java.time.format.DateTimeFormatter.ofPattern(pattern));
-		sportDataItem.add("scheduledDate", new JsonPrimitive(scheduledDate));
-		sportDataItem.add("gameDateEpoch", new JsonPrimitive(gameDateEpoch));
+		addGameScheduleDates(sportDataItem, gameScheduleJsonObj);
 		sportDataItem.add("sport", new JsonPrimitive(gameScheduleJsonObj.get("sport").getAsString()));
 		sportDataItem.add("league", new JsonPrimitive(gameScheduleJsonObj.get("league").getAsString()));
 		sportDataItem.add("rating", new JsonPrimitive(gameScheduleJsonObj.get("gexPredict").getAsString()));
@@ -1072,6 +1120,52 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 	}
 
+	private void addGameScheduleDates(JsonObject sportDataItem, JsonObject gameScheduleJsonObj) {
+		//Change this once done
+		long gameDateEpoch = gameScheduleJsonObj.get("game_date_epoch").getAsLong()+ Math.round(4*60*60) ;
+
+		long startTimeEpoch =  0;
+		long stopTimeEpoch = 0;
+		if(gameScheduleJsonObj.has("startTimeEpoch")) {
+			startTimeEpoch = gameScheduleJsonObj.get("startTimeEpoch").getAsLong();
+		}
+		if(gameScheduleJsonObj.has("stopTimeEpoch")){
+			stopTimeEpoch = gameScheduleJsonObj.get("stopTimeEpoch").getAsLong();		
+		} else {
+			if(startTimeEpoch==0){
+				stopTimeEpoch = gameDateEpoch + Math.round(3.5*60*60);
+			} else {
+				stopTimeEpoch = startTimeEpoch + Math.round(3.5*60*60);
+			}
+		}
+		sportDataItem.add("stopTimeEpoch", new JsonPrimitive(stopTimeEpoch));
+		sportDataItem.add("startTimeEpoch", new JsonPrimitive(startTimeEpoch));
+		if(startTimeEpoch!=0 && startTimeEpoch > gameDateEpoch ){
+			addTapeDelay(sportDataItem,true);
+		} else {
+			addTapeDelay(sportDataItem,false);
+		}	
+		addScheduledDate(sportDataItem, gameDateEpoch);
+		addGameDateEpoch(sportDataItem, gameDateEpoch);
+
+	}
+
+	private void addTapeDelay(JsonObject sportDataItem, boolean tapeDelay) {
+		sportDataItem.add("tape_delayed_game", new JsonPrimitive(tapeDelay));
+	}
+
+	private void addGameDateEpoch(JsonObject sportDataItem, long gameDateEpoch) {
+		sportDataItem.add("gameDateEpoch", new JsonPrimitive(gameDateEpoch));
+	}
+
+	private void addScheduledDate(JsonObject sportDataItem, long gameDateEpoch) {
+		Instant epochTime = Instant.ofEpochSecond(gameDateEpoch);
+		ZonedDateTime utc = epochTime.atZone(ZoneId.of("Z"));
+		String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
+		String scheduledDate = utc.format(java.time.format.DateTimeFormatter.ofPattern(pattern));
+		sportDataItem.add("scheduledDate", new JsonPrimitive(scheduledDate));
+	}
+
 	private void addSubPackIds(JsonObject sportDataItem, JsonObject gameScheduleJsonObj) {
 		JsonArray subPackIds = new JsonArray();
 		if(gameScheduleJsonObj.has("subpackage_guids")){
@@ -1082,13 +1176,23 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 	private JsonArray createContentIds(JsonObject gameScheduleJsonObj) {
 		JsonArray contentIds = new JsonArray();
-		String scheduleGuid = new StringBuilder("noid_").append(UUID.randomUUID().toString()).toString();
+		String scheduleGuid = getDummyContentId();
 		if (gameScheduleJsonObj.has("schedule_guid")) {
-			scheduleGuid = gameScheduleJsonObj.get("schedule_guid").getAsString();
+			String discoveredScheduleGuid = gameScheduleJsonObj.get("schedule_guid").getAsString();
+			if(discoveredScheduleGuid.equals("0")){
+				scheduleGuid = getDummyContentId();
+			}else {
+				scheduleGuid = discoveredScheduleGuid;
+			}
 		}
 		contentIds.add(new JsonPrimitive(scheduleGuid));
 		return contentIds;
 	}
+
+	private String getDummyContentId() {
+		return new StringBuilder("noid_").append(UUID.randomUUID().toString()).toString();
+	}
+
 
 	private void updateGameStatusAndType(JsonObject sportDataItem, JsonObject gameScheduleJsonObj) {
 		// information is contianed in both live and scheduled game and hence
@@ -1120,19 +1224,21 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		String awayTeamName = "-";
 		String homeTeamName = "-";
 		String gameId = "0";
+		GameType gameType = GameType.REGULAR_SEASON;
 		for (JsonElement doc : currGameDocs) {
 			homeTeamId = doc.getAsJsonObject().get("homeTeamExternalId").getAsString();
 			awayTeamId = doc.getAsJsonObject().get("awayTeamExternalId").getAsString();
 			awayTeamName = doc.getAsJsonObject().get("awayTeamName").getAsString();
 			homeTeamName = doc.getAsJsonObject().get("homeTeamName").getAsString();
 			gameId = doc.getAsJsonObject().get("id").getAsString();
+			gameType = GameType.getValue(doc.getAsJsonObject().get("gameType").getAsString());
 		}
 		if (teamId.equals(homeTeamId)) {
 			role = Role.HOME;
 		} else if (teamId.equals(awayTeamId)) {
 			role = Role.AWAY;
 		}
-		return new ActiveTeamGame(gameId, teamId, homeTeamId, awayTeamId, homeTeamName, awayTeamName, role);
+		return new ActiveTeamGame(gameId,gameType, teamId, homeTeamId, awayTeamId, homeTeamName, awayTeamName, role);
 	}
 
 	private void legacy(final ChannelHandlerContext ctx, final FullHttpRequest request) {
