@@ -12,8 +12,8 @@ import scala.language.postfixOps
 import collection.JavaConverters._
 
 import com.jayway.jsonpath.{ Configuration,JsonPath, Option, ReadContext ,Criteria , Filter , TypeRef}
-import com.jayway.jsonpath.spi.json. { JsonProvider , GsonJsonProvider }
-import com.jayway.jsonpath.spi.mapper.{ MappingProvider, JacksonMappingProvider }
+import com.jayway.jsonpath.spi.json. { JsonSmartJsonProvider, JsonProvider , GsonJsonProvider }
+import com.jayway.jsonpath.spi.mapper.{ JsonSmartMappingProvider, MappingProvider, JacksonMappingProvider }
 
 import com.google.gson.{JsonArray,JsonElement}
 
@@ -37,31 +37,32 @@ object SportsCloudSchedulers  {
 	    Holder.log.debug("Args is $args")	
 	    var allBatchJobs:List[ScheduledJob] = List()
 	    
-	    val downloadSummaryJob:ScheduledJob = ScheduledJob("downloadSummaryJob","sportscloud-batch-schedules",classOf[DownloadSummaryJob].asInstanceOf[Class[Any]],"0 0 7 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val downloadSummaryJob:ScheduledJob = new ScheduledJob("downloadSummaryJob","sportscloud-batch-schedules",classOf[DownloadSummaryJob].asInstanceOf[Class[Any]],"0 30 5 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allBatchJobs = downloadSummaryJob :: allBatchJobs
 	    Holder.log.debug("Adding downloadSummaryJob")
 	    
-	    val  downloadSchedulesJob:ScheduledJob = ScheduledJob("downloadShedulesJob","sportscloud-batch-schedules",classOf[DownloadSchedulesJob].asInstanceOf[Class[Any]],"0 15 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
+	    val  downloadSchedulesJob:ScheduledJob =  new ScheduledJob("downloadShedulesJob","sportscloud-batch-schedules",classOf[DownloadSchedulesJob].asInstanceOf[Class[Any]],"0 40 5 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = downloadSchedulesJob :: allBatchJobs
 		  Holder.log.debug("Adding downloadSchedulesJob")
 		  
-		  val  contentMatchJob:ScheduledJob = ScheduledJob("contentMatchJob","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 0 8 ? * *",ScheduleType.CRON_MISFIRE_NOW)
+		  val  contentMatchJob:ScheduledJob =  new ScheduledJob("contentMatchJobSchedule1","sportscloud-batch-schedules",classOf[ContentMatchJob].asInstanceOf[Class[Any]],"0 30 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = contentMatchJob :: allBatchJobs
 	    Holder.log.debug("Adding contentMatchJob")
+	   
 	    
-	    val  teamStandingsMetaDataBatchJob:ScheduledJob = ScheduledJob("teamStandingsMetaDataBatchJob","sportscloud-batch-schedules",classOf[TeamStandingsMetaDataBatchJob].asInstanceOf[Class[Any]],"0 30 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val  teamStandingsMetaDataBatchJob:ScheduledJob =  new ScheduledJob("teamStandingsMetaDataBatchJob","sportscloud-batch-schedules",classOf[TeamStandingsMetaDataBatchJob].asInstanceOf[Class[Any]],"0 30 9 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = teamStandingsMetaDataBatchJob :: allBatchJobs
 	    Holder.log.debug("Adding metaDataBatchJob")
 	    
-	    val  playerStatsMetaDataBatchJob:ScheduledJob = ScheduledJob("playerStatsMetaDataBatchJob","sportscloud-batch-schedules",classOf[PlayerStatsMetaDataBatchJob].asInstanceOf[Class[Any]],"0 45 8 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val  playerStatsMetaDataBatchJob:ScheduledJob =  new ScheduledJob("playerStatsMetaDataBatchJob","sportscloud-batch-schedules",classOf[PlayerStatsMetaDataBatchJob].asInstanceOf[Class[Any]],"0 0 10 ? * *",ScheduleType.CRON_MISFIRE_NOW)
 	    allBatchJobs = playerStatsMetaDataBatchJob :: allBatchJobs
 	    Holder.log.debug("Adding metaDataBatchJob")
 	    
-	    val  batchScoreJob:ScheduledJob = ScheduledJob("batchScoreJob","sportscloud-batch-schedules",classOf[BatchScoreJob].asInstanceOf[Class[Any]],null,ScheduleType.FIRE_ONCE)
+	    val  batchScoreJob:ScheduledJob =  new ScheduledJob("batchScoreJob","sportscloud-batch-schedules",classOf[BatchScoreJob].asInstanceOf[Class[Any]],null,ScheduleType.FIRE_ONCE)
 	    allBatchJobs = batchScoreJob :: allBatchJobs
 	    Holder.log.debug("Adding batchScoreJob")
 
-	    val  thuuzJob:ScheduledJob = ScheduledJob("thuuzJob","sportscloud-batch-schedules",classOf[ThuuzJob].asInstanceOf[Class[Any]],"0 0 7 ? * *",ScheduleType.CRON_MISFIRE_NOW)
+	    val  thuuzJob:ScheduledJob =  new ScheduledJob("thuuzJob","sportscloud-batch-schedules",classOf[ThuuzJob].asInstanceOf[Class[Any]],null,ScheduleType.SCHEDULE_EVERY_X_SEC,10800)
 	    allBatchJobs = thuuzJob :: allBatchJobs
 	    Holder.log.debug("Adding thuuzJob")
 	   	
@@ -70,19 +71,19 @@ object SportsCloudSchedulers  {
 	    
 	    var allRestartableJobs:List[ScheduledJob] = List()
 	    
-	    val  liveStreamJob:ScheduledJob = ScheduledJob("liveStreamJob","sportscloud-restartable-schedules",classOf[LiveStreamJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val  liveStreamJob:ScheduledJob =  new ScheduledJob("liveStreamJob","sportscloud-restartable-schedules",classOf[LiveStreamJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allRestartableJobs = liveStreamJob :: allRestartableJobs
 	    Holder.log.debug("Adding liveStreamJob")
 	    
-	    val  kakfkConnCM:ScheduledJob = ScheduledJob("kafkaConnContentMatch","sportscloud-restartable-schedules",classOf[KafkaConnectContentMatchJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val  kakfkConnCM:ScheduledJob =  new ScheduledJob("kafkaConnContentMatch","sportscloud-restartable-schedules",classOf[KafkaConnectContentMatchJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allRestartableJobs = kakfkConnCM :: allRestartableJobs
 	    Holder.log.debug("Adding kafkaConnContentMatch")
 	    
-	    val  kakfkConnLI:ScheduledJob = ScheduledJob("kafkaConnLiveInfo","sportscloud-restartable-schedules",classOf[KafkaConnectLiveInfoJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val  kakfkConnLI:ScheduledJob =  new ScheduledJob("kafkaConnLiveInfo","sportscloud-restartable-schedules",classOf[KafkaConnectLiveInfoJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allRestartableJobs = kakfkConnLI :: allRestartableJobs
 	    Holder.log.debug("Adding kafkaConnLiveInfo")
 	    
-	    val  kakfkConnMB:ScheduledJob = ScheduledJob("kafkaConnMetaBatch","sportscloud-restartable-schedules",classOf[KafkaConnectMetaBatchJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val  kakfkConnMB:ScheduledJob =  new ScheduledJob("kafkaConnMetaBatch","sportscloud-restartable-schedules",classOf[KafkaConnectMetaBatchJob].asInstanceOf[Class[Any]],"0 * * ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allRestartableJobs = kakfkConnMB :: allRestartableJobs
 	    Holder.log.debug("Adding kafkaConnMetaBatch")
 	    
@@ -99,9 +100,14 @@ class KafkaConnectContentMatchJob extends Job {
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : KafkaConnectContentMatchJob")	  
     Seq("/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_kafka_connect_jobs.sh",
+        "content_match",
+        "5",
+        "15",
+        System.getProperty("zkHost"),
+        "1800000",
         "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
         "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-connect-content-match.properties",
-        "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log" ) !      
+        "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log") !      
 	}
 }
 
@@ -111,6 +117,11 @@ class KafkaConnectMetaBatchJob extends Job {
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : KafkaConnectMetaBatchJob")	  
     Seq("/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_kafka_connect_jobs.sh",
+    "meta_batch",
+    "5",
+    "15",  
+    System.getProperty("zkHost"),
+    "1800000",
     "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
     "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-meta-batch.properties",
     "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect.log") !
@@ -123,9 +134,14 @@ class KafkaConnectLiveInfoJob extends Job {
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : KafkaConnectLiveInfoJob")	  
     Seq("/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_kafka_connect_jobs.sh",
+    "live_info",
+    "0",
+    "0",
+    System.getProperty("zkHost"),
+    "1800000",
     "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
     "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-live-scores.properties",
-    "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect.log" ) !  
+    "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect.log") !  
 	}
 }
 
@@ -149,6 +165,8 @@ abstract class SparkSubmitJob extends Job {
   protected var name:String =null
   
   def buildSparkCommand(name:String, mainClass:String, extraJars:String, jarName:String, args:String):Seq[String] = {  
+    val gcPrintFlags = " -XX:+PrintFlagsFinal -XX:+PrintReferenceGC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintAdaptiveSizePolicy -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark "
+    val g1gcOpts = "-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30  -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000"
     val sparkCommand:Seq[String] = Seq(s"$sparkHomeLoc/bin/spark-submit",
         "--name",name,
         "--class", mainClass ,
@@ -158,8 +176,9 @@ abstract class SparkSubmitJob extends Job {
         "--executor-memory", "7G", 
         "--total-executor-cores", "4", 
         "--conf", "spark.default.parallelism=4",
-        "--conf", "spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties",
-        "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer") ++
+        "--conf", s"spark.executor.extraJavaOptions=$g1gcOpts $gcPrintFlags -XX:+UseCompressedOops -Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties",
+        "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
+        "--conf", s"spark.driver.extraJavaOptions=$g1gcOpts $gcPrintFlags -XX:+UseCompressedOops ") ++
       sparkPackages ++
       Seq("--jars",sparkExtraJars) ++
       Seq(jarName) ++
@@ -234,7 +253,13 @@ class LiveStreamJob extends SparkSubmitJob {
   
   override def execute(context:JobExecutionContext) {
     //This needs to be a long running job and hence for reliability we use a shell script
-    "/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_live_info_streaming.sh"  !
+   Seq( "/project/sports-cloud-schedulers/src/main/resources/scripts/allenv/launch_live_info_streaming.sh" ,
+       "14",
+       "23",
+       "0",
+       "6",
+       "/var/log/sports-cloud-streaming-jobs/sc-live-stream-job.log") !
+       
 	}
 }
 
@@ -248,23 +273,22 @@ class DownloadSchedulesJob extends Job {
 		
 		val conf :Configuration= Configuration.defaultConfiguration();
     Configuration.setDefaults(new Configuration.Defaults() {
-
-    		val  jsonProviderObj:JsonProvider = new GsonJsonProvider();
-    		val  mappingProviderObj:MappingProvider = new JacksonMappingProvider();
+          		val  jsonProviderObj:JsonProvider = new JsonSmartJsonProvider();
+          		val  mappingProviderObj:MappingProvider = new JsonSmartMappingProvider();
+            
+            		override def jsonProvider():JsonProvider = {
+            			jsonProviderObj;
+            		}
       
-      		override def jsonProvider():JsonProvider = {
-      			jsonProviderObj;
-      		}
-
-      		override def mappingProvider():MappingProvider = {
-      			 mappingProviderObj;
-      		}
-
-      		override def options():java.util.Set[Option] = {
-      			EnumSet.noneOf(classOf[Option])
-      		}
-    
-		});
+            		override def mappingProvider():MappingProvider = {
+            			 mappingProviderObj;
+            		}
+      
+            		override def options():java.util.Set[Option] = {
+            			EnumSet.noneOf(classOf[Option])
+            		}
+          
+    });
 		"cat /dev/null" #> new File("/data/feeds/schedules_plus_3") ! ;
 		getFileContents("/data/feeds/summary.json").foreach( it => {
 
@@ -272,7 +296,28 @@ class DownloadSchedulesJob extends Job {
 				val ctx:ReadContext = JsonPath.using(conf).parse(it)
 				val  sportsGenreFilter:Filter = Filter.filter(Criteria.where("metadata.genre").contains("Sports"))
 				val filteredChannels:String = ctx.read("$.channels[?]", sportsGenreFilter).toString
+				Configuration.setDefaults(new Configuration.Defaults() {
+          		val  jsonProviderObj:JsonProvider = new GsonJsonProvider();
+          		val  mappingProviderObj:MappingProvider = new JacksonMappingProvider();
+            
+            		override def jsonProvider():JsonProvider = {
+            			jsonProviderObj;
+            		}
+      
+            		override def mappingProvider():MappingProvider = {
+            			 mappingProviderObj;
+            		}
+      
+            		override def options():java.util.Set[Option] = {
+            			EnumSet.noneOf(classOf[Option])
+            		}
+          
+      		});
 				val jsonArray:JsonArray = JsonPath.read[com.google.gson.JsonArray](filteredChannels,"$.[*].channel_guid")
+        var randomNum = scala.util.Random
+        var higher = 300
+        var lower = 1
+
 				val  iterator:Iterator[JsonElement] = jsonArray.iterator.asScala
 				while(iterator.hasNext) {
 				  val channel_guid=iterator.next.getAsString
@@ -282,10 +327,10 @@ class DownloadSchedulesJob extends Job {
 							val utc = epochTimeOffset.atZone(ZoneId.of("Z"));        				  
 							def pattern = "yyyyMMdd";
 							val formattedDate = utc.format(DateTimeFormatter.ofPattern(pattern)); 
-							val cmsHost =  System.getProperty("cmsHost")
+							val cmsHost = System.getProperty("cmsHost")
 							val fullUrl = s"http://$cmsHost.cdn.cms.movetv.com/cms/api/linear_feed/channels/v1/$channel_guid/" + formattedDate
 							log.trace(s"Full url is $fullUrl")
-							Thread sleep 3000
+							Thread sleep  randomNum.nextInt(higher - lower) + lower
 							(s"curl $fullUrl" #>> new File("/data/feeds/schedules_plus_3")).!
 							(s"echo "  #>> new File("/data/feeds/schedules_plus_3")).!
 						}

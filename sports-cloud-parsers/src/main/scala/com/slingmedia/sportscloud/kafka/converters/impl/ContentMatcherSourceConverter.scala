@@ -27,7 +27,7 @@ class ContentMatcherSourceConverter extends SourceRecordConverter with Converter
           case schedule(_*) =>
             Parsers(ParserType.ScheduleParser).generateRows(data, in, "MLB", "baseball")
           case _ =>
-            Parsers(ParserType.Default).generateRows(data, in)
+            Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
         log.error("Error occurred in parsing xml ",e)

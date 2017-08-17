@@ -13,6 +13,9 @@ import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.streaming.kafka010.{ HasOffsetRanges, CanCommitOffsets, KafkaUtils, LocationStrategies, ConsumerStrategies }
 
+import com.lucidworks.spark.util.{ SolrSupport }
+import org.apache.solr.client.solrj.impl.CloudSolrClient
+
 import scala.util.{ Try, Success, Failure }
 
 import java.time.Instant
@@ -98,7 +101,7 @@ class LiveDataMuncher extends Serializable with Muncher {
   val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
   //All udfs ends here
 
-  val mergeLiveInfo: (String, DataFrame) => Unit = (zkHost: String, kafkaLiveInfoT1DF1: DataFrame) => {
+  val mergeLiveInfo: (String, DataFrame, CloudSolrClient) => Unit = (zkHost: String, kafkaLiveInfoT1DF1: DataFrame, solrCloudClient:CloudSolrClient) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val batchTimeStamp = Instant.now().getEpochSecond
@@ -168,7 +171,7 @@ class LiveDataMuncher extends Serializable with Muncher {
     //order by new statusId 
     //Repartition by gameId as we can update solr paralley for each game
     //Order it so that the order is updated
-    val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.repartition($"gameId").coalesce(3).orderBy($"gameId", $"rStatusId", $"srcTimeEpoch")
+    val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.coalesce(4)
     val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameId").
       withColumn("fieldCountsTxt", getFieldsCountUDF($"balls", $"strikes", $"outs")).
       withColumn("fieldState", getFieldStateUDF($"firstGameBase", $"secondGameBase", $"thirdGameBase")).
@@ -180,10 +183,11 @@ class LiveDataMuncher extends Serializable with Muncher {
       withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
     val kafkaLiveInfoT9DF2 = kafkaLiveInfoT8DF2.withColumn("playerData", getPitchingDetailsUDF($"segmentDiv", $"currBtrName", $"hTCurrPitcherName", $"aTCurrPitcherName"))
     val allCols = kafkaLiveInfoT8DF2.columns.map { it => col(it) } ++ children("playerData", kafkaLiveInfoT9DF2)
-    val kafkaLiveInfoT9DF3 = kafkaLiveInfoT9DF2.select(allCols.toSeq: _*).drop("playerData")
+    val kafkaLiveInfoT9DF3 = kafkaLiveInfoT9DF2.select(allCols.toSeq: _*).drop("playerData").orderBy($"gameId", $"rStatusId", $"srcTimeEpoch").repartition($"gameId").coalesce(4)
+
     kafkaLiveInfoT9DF3.select($"gameId", $"gameCode", $"statusId", $"isHomePitching", $"hTCurrPlayer", $"aTCurrPlayer", $"srcTimeEpoch", $"awayTeamInnings", $"homeTeamInnings", $"inningTitle").show(false)
 
-    val indexResult = indexToSolr(zkHost, "live_info", "false", kafkaLiveInfoT9DF3)
+    val indexResult = indexToSolrWithCSC(zkHost, "live_info", solrCloudClient , "false", kafkaLiveInfoT9DF3)
     indexResult match {
       case Success(data) =>
         Holder.log.info(data.toString)
@@ -198,7 +202,7 @@ class LiveDataMuncher extends Serializable with Muncher {
           withColumn("teamId", getTeamIdUDF($"inningTitle", $"homeTeamExtId", $"awayTeamExtId")).
           drop("homeTeamExtId", "awayTeamExtId")
         val kafkaLiveInfoT11DF3 = kafkaLiveInfoT10DF2.filter("lastPlay != ''")
-        val indexResult2 = indexToSolr(zkHost, "scoring_events", "false", kafkaLiveInfoT11DF3)
+        val indexResult2 = indexToSolrWithCSC(zkHost, "scoring_events", solrCloudClient, "false", kafkaLiveInfoT11DF3)
         indexResult2 match {
           case Success(data) =>
             Holder.log.info(data.toString)
@@ -218,7 +222,7 @@ class LiveDataMuncher extends Serializable with Muncher {
     val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
     val kafkaLiveInfoT1DF1 = ds2.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
-    mergeLiveInfo(zkHost, kafkaLiveInfoT1DF1)
+    mergeLiveInfo(zkHost, kafkaLiveInfoT1DF1, null)
 
   }
 
@@ -227,7 +231,8 @@ class LiveDataMuncher extends Serializable with Muncher {
 
     val sc = SparkContext.getOrCreate()
     val spark = SparkSession.builder().getOrCreate()
-    val ssc = new StreamingContext(sc, Seconds(1))
+    val ssc = new StreamingContext(sc, Seconds(5))
+    val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
 
     val kafkaParams = Map[String, Object](
       "bootstrap.servers" -> "localhost:9092",
@@ -249,7 +254,7 @@ class LiveDataMuncher extends Serializable with Muncher {
       import spark.implicits._
       val kafkaLiveInfoDF1 = kafkaRDD.toDF
       val kafkaLiveInfoT1DF1 = kafkaLiveInfoDF1.select(from_json($"_1", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"_2", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
-      mergeLiveInfo(zkHost, kafkaLiveInfoT1DF1)
+      mergeLiveInfo(zkHost, kafkaLiveInfoT1DF1,solrCloudClient)
       //dstream0.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
     })
 
