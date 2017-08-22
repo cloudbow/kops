@@ -24,19 +24,18 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.tests.fixtures.servers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.slingmedia.sportscloud.tests.facade.*;
+import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
+import com.slingmedia.sportscloud.tests.fixtures.servers.handlers.GenericJsonProxyServerInitializer;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.concurrent.DefaultThreadFactory;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.slingmedia.sportscloud.tests.fixtures.servers.config.JsonProxyServerConfiguration;
-import com.slingmedia.sportscloud.tests.fixtures.servers.handlers.GenericJsonProxyServerInitializer;
-
 /**
  * The Class GenericJsonProxyServer.
  */
@@ -74,7 +73,8 @@ public class GenericJsonProxyServer {
 			System.exit(1);
 		}
 		JsonProxyServerConfiguration.setTARGET_HOST_TO_PROXY(System.getProperty("target-host-to-proxy"));
-		
+		//ContentMatchFacade$.MODULE$.init("mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage");
+		ExternalHttpClient$.MODULE$.init();
 		if (args.length > 3) {
 			GenericJsonProxyServer.IS_SECURE = Boolean.parseBoolean(args[3]);
 		}
@@ -107,8 +107,8 @@ public class GenericJsonProxyServer {
 		try {
 			final ServerBootstrap batchBootstrap = new ServerBootstrap();
 
-			bossGroup = new NioEventLoopGroup(bossThreads, new DefaultThreadFactory("JsonProxyServerThreads"));
-			workerGroup = new NioEventLoopGroup(workerThreads, new DefaultThreadFactory("JsonProxyWorkerThreads"));
+			bossGroup = new NioEventLoopGroup();
+			workerGroup = new NioEventLoopGroup();
 			//@formatter:off
             batchBootstrap
             	.group(bossGroup, workerGroup)

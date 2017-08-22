@@ -3,11 +3,11 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.slingmedia</groupId>
-	<artifactId>json-proxy-server</artifactId>
+	<artifactId>slingtv-proxy-server</artifactId>
 	<version>1.0</version>
 	<packaging>jar</packaging>
 
-	<name>json-proxy-server</name>
+	<name>slingtv-proxy-server</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
@@ -34,7 +34,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.1.0.Beta1</version>
+			<version>4.1.12.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -57,11 +57,10 @@
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
-			<groupId>com.github.cloudbow</groupId>
-			<artifactId>netty-http-client</artifactId>
-			<version>0.0.3</version>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.5</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.glassfish/javax.json -->
@@ -70,11 +69,45 @@
 			<artifactId>javax.json</artifactId>
 			<version>1.0.2</version>
 		</dependency>
+
+    	<dependency>
+    		<groupId>com.google.code.gson</groupId>
+    		<artifactId>gson</artifactId>
+    		<version>2.8.0</version>
+		</dependency>
+		
+	<dependency>
+    	<groupId>org.mongodb.scala</groupId>
+    	<artifactId>mongo-scala-driver_2.12</artifactId>
+    	<version>2.1.0</version>
+	</dependency>
+		
 	</dependencies>
 
 	<build>
-		<finalName>json-proxy-server</finalName>
+		<finalName>slingtv-proxy-server</finalName>
 		<plugins>
+			<plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>scala-compile-first</id>
+                    <phase>process-resources</phase>
+                    <goals>
+                        <goal>add-source</goal>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>scala-test-compile</id>
+                    <phase>process-test-resources</phase>
+                    <goals>
+                        <goal>testCompile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        	</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
@@ -160,16 +193,6 @@
 			<url>http://repo1.maven.org/maven2</url>
 		</repository>
 		<repository>
-			<id>com.slingmedia</id>
-			<name>internal repository</name>
-			<url>https://svn.slingmedia.com/repos/maven2</url>
-		</repository>
-		<repository>
-			<id>com.slingmedia.common</id>
-			<name>internal repository</name>
-			<url>https://svn.slingmedia.com/repos/maven2</url>
-		</repository>
-		<repository>
 			<id>jta</id>
 			<name>jta</name>
 			<url>http://mirrors.ibiblio.org/pub/mirrors/maven2</url>
@@ -195,12 +218,22 @@
 			<name>couchbase</name>
 			<url>http://files.couchbase.com/maven2</url>
 		</repository>
+				<repository>
+			<id>com.slingmedia</id>
+			<name>internal repository</name>
+			<url>https://svn.slingmedia.com/repos/maven2</url>
+		</repository>
+		<repository>
+			<id>com.slingmedia.common</id>
+			<name>internal repository</name>
+			<url>https://svn.slingmedia.com/repos/maven2</url>
+		</repository>
 
 	</repositories>
 	<distributionManagement>
 		<repository>
 			<id>com.slingmedia</id>
-			<name>json-proxy-server</name>
+			<name>slingtv-proxy-server</name>
 			<url>svn:https://svn.slingmedia.com/repos/maven2</url>
 		</repository>
 	</distributionManagement>
