@@ -12,7 +12,7 @@ import java.time.{ ZonedDateTime, OffsetDateTime, ZoneOffset, Instant, ZoneId }
 import java.time.format.DateTimeFormatter
 
 import org.apache.solr.client.solrj.response.UpdateResponse
-
+import org.apache.solr.client.solrj.impl.CloudSolrClient
 import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
 object MLogHolder extends Serializable {
@@ -71,9 +71,18 @@ trait Muncher {
   }
   val timeEpochtoStrUDF = udf(timeEpochToStr(_: Long))
   
-  val indexToSolr: (String, String, String, DataFrame) => Try[UpdateResponse] = (zkHost: String, outputCollName: String, generateKey: String, input: DataFrame) => {
+  val indexToSolr: (String, String, String, DataFrame) => Try[UpdateResponse] = indexToSolrWithAllArgs(_:String,_:String,null,_:String,_:DataFrame)
+  val indexToSolrWithCSC: (String, String, CloudSolrClient, String, DataFrame) => Try[UpdateResponse] = indexToSolrWithAllArgs(_:String,_:String,_:CloudSolrClient,_:String,_:DataFrame)
+  
+  val indexToSolrWithAllArgs: (String, String, CloudSolrClient, String, DataFrame) => Try[UpdateResponse] = (zkHost: String, outputCollName: String, solrCloudClientIns:CloudSolrClient,generateKey: String, input: DataFrame) => {
+    var solrCloudClient:CloudSolrClient = null
     val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> generateKey)
-    val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
+    if(solrCloudClientIns==null) {
+      solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
+    } else {
+      solrCloudClient = solrCloudClientIns;
+    }
+   
     val saveResult = Try(input.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save())
     saveResult match {
       case Success(data) =>

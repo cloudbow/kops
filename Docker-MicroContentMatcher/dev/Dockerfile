@@ -18,6 +18,7 @@ RUN apk update && \
     apk add curl && \
     apk add strace && \
     apk add screen && \
+    apk add --update coreutils && rm -rf /var/cache/apk/* && \
     apk add --update netcat-openbsd && rm -rf /var/cache/apk/* && \
     apk add --no-cache --virtual=.build-dependencies wget ca-certificates && \
     apk add --no-cache bash && \

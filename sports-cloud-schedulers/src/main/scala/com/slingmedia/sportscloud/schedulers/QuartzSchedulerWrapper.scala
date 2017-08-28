@@ -1,6 +1,6 @@
 package com.slingmedia.sportscloud.schedulers
 
-import org.quartz.{ JobBuilder, TriggerBuilder, CronTrigger, CronScheduleBuilder, SchedulerFactory, Scheduler, Job, JobDetail, Trigger, JobExecutionContext }
+import org.quartz.{ JobBuilder, TriggerBuilder, CronTrigger, SimpleScheduleBuilder, CronScheduleBuilder, SchedulerFactory, Scheduler, Job, JobDetail, Trigger, JobExecutionContext }
 
 import java.util.TimeZone
 
@@ -8,14 +8,16 @@ import org.slf4j.LoggerFactory;
 
 object ScheduleType extends Enumeration {
   type ScheduleType = Value
-  val CRON_MISFIRE_DO_NOTHING, CRON_MISFIRE_NOW, FIRE_ONCE = Value
+  val CRON_MISFIRE_DO_NOTHING, CRON_MISFIRE_NOW, FIRE_ONCE , SCHEDULE_EVERY_X_SEC = Value
 }
 import ScheduleType._;
 import org.quartz.CronTrigger
 import org.quartz.Trigger
 import org.quartz.TriggerBuilder
 
-case class ScheduledJob(name: String, group: String, jobClass: Class[Any], cronSchedule: String, scheduleType: ScheduleType)
+case class ScheduledJob(name: String, group: String, jobClass: Class[Any], cronSchedule: String, scheduleType: ScheduleType , repeatSeconds:Int) {
+  def this(name: String, group: String, jobClass: Class[Any], cronSchedule: String, scheduleType: ScheduleType) = this(name, group, jobClass, cronSchedule, scheduleType, 0)
+}
 
 class QuartzSchedulerWrapper {
   private val log = LoggerFactory.getLogger("QuartzSchedulerWrapper")
@@ -28,14 +30,14 @@ class QuartzSchedulerWrapper {
 
   }
 
-  private[this] val createTrigger: (String, String, String, String, String, ScheduleType) => Trigger = (triggerName: String, triggerGroup: String, jobName: String, jobGroup: String, cronScheduleStr: String, scheduleTypeEnum: ScheduleType) => {
+  private[this] val createCronTrigger: (String, String, String, String, String, ScheduleType) => Trigger = (triggerName: String, triggerGroup: String, jobName: String, jobGroup: String, cronScheduleStr: String, scheduleTypeEnum: ScheduleType) => {
 
     val triggerBuilder: TriggerBuilder[CronTrigger] = TriggerBuilder.newTrigger().withIdentity(triggerName, triggerGroup).forJob(jobName, jobGroup).asInstanceOf[TriggerBuilder[CronTrigger]]
     scheduleTypeEnum match {
       case ScheduleType.CRON_MISFIRE_DO_NOTHING =>
         triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule(cronScheduleStr).withMisfireHandlingInstructionDoNothing().inTimeZone(TimeZone.getTimeZone("UTC")))
       case ScheduleType.CRON_MISFIRE_NOW =>
-        triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule(cronScheduleStr).withMisfireHandlingInstructionFireAndProceed().inTimeZone(TimeZone.getTimeZone("UTC")))
+        triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule(cronScheduleStr).withMisfireHandlingInstructionFireAndProceed().inTimeZone(TimeZone.getTimeZone("UTC")))       
       case _ =>
       // do nothing
     }
@@ -47,13 +49,22 @@ class QuartzSchedulerWrapper {
     job.scheduleType match {
       case ScheduleType.CRON_MISFIRE_DO_NOTHING | CRON_MISFIRE_NOW =>
         val jobDetail = createJob(job.jobClass, job.name, job.group)
-        val jobTrigger = createTrigger(job.name.concat("-trigger"), job.group.concat("-trigger"), job.name, job.group, job.cronSchedule, job.scheduleType)
+        val jobTrigger = createCronTrigger(job.name.concat("-trigger"), job.group.concat("-trigger"), job.name, job.group, job.cronSchedule, job.scheduleType)
         sched.scheduleJob(jobDetail, jobTrigger)
       case ScheduleType.FIRE_ONCE =>
         val jobDetail = createJob(job.jobClass, job.name, job.group)
         val trigger = TriggerBuilder.newTrigger()
           .startNow()
           .build();
+        sched.scheduleJob(jobDetail, trigger)
+      case ScheduleType.SCHEDULE_EVERY_X_SEC =>
+        val jobDetail = createJob(job.jobClass, job.name, job.group)
+        val trigger = TriggerBuilder.newTrigger().
+          startNow().
+          withSchedule(SimpleScheduleBuilder.simpleSchedule().
+            withIntervalInSeconds(job.repeatSeconds).
+            repeatForever()).            
+            build();
         sched.scheduleJob(jobDetail, trigger)
       case _ =>
       //throw new IllegalArgumentException

@@ -24,12 +24,14 @@ public class ClearInvalidSolrDocuments {
 		ExternalHttpClient$.MODULE$.init();
 		StringBuilder builder = new StringBuilder();
 		//builder.append("http://cqaneat02.sling.com:8983/solr/game_schedule/select?q=game_date_epoch:[123%20TO%20*]&fl=id&start=0&rows=500&wt=json");
-		builder.append("http://cqhlsdatacenter01.sling.com:8983/solr/game_schedule/select?q=batchTime:[123%20TO%20*]&rows=3000&wt=json");
+		//builder.append("http://cqhlsdatacenter01.sling.com:8983/solr/game_schedule/select?q=gameCode:370823103&wt=json");
+		builder.append("http://cqhlsdatacenter01.sling.com:8983/solr/game_schedule/select?q=game_date_epoch:[1503909071%20TO%20*]&start=0&rows=3000&wt=json");
+
 		JsonElement jsonElement = getJsonObject(builder);
 		jsonElement.getAsJsonObject().get("response").getAsJsonObject().get("docs").getAsJsonArray().forEach(it -> {
 			
 			String id = it.getAsJsonObject().get("id").getAsString();
-			if(id.split("_").length==2){
+			if(id.split("_").length==3){
 				//delete
 				StringBuilder deleteRequestBuilder  = new StringBuilder();
 				deleteRequestBuilder.append("http://cqhlsdatacenter01.sling.com:8983/solr/game_schedule/update?stream.body=")

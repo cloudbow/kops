@@ -34,7 +34,7 @@ class LiveGameInfoSourceConverter extends SourceRecordConverter with ConverterBa
           case liveData(_*) =>
             Parsers(ParserType.BoxScoreParser).generateRows(data, in, (data \\ "baseball-mlb-score"))
           case _ =>
-            Parsers(ParserType.Default).generateRows(data, in)
+            Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
         log.error("Error occurred in parsing xml ",e)

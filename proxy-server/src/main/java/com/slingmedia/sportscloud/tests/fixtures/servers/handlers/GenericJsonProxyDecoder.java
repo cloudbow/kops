@@ -468,6 +468,12 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 					mainObj.add("contentId", contentIds);
 
+					String callsign = "-";
+					if(gameScheduleJson.has("callsign")){
+						callsign = gameScheduleJson.get("callsign").getAsString();
+					}
+					mainObj.add("callsign", new JsonPrimitive(callsign));
+
 					JsonObject statsObj = new JsonObject();
 					JsonObject statsHomeTeam = new JsonObject();
 					JsonObject statsAwayTeam = new JsonObject();
@@ -539,10 +545,27 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 		JsonObject solrDoc = null;
 		if (foundItems.isEmpty()) {
+			//get the first of unmatched content not available in slingtv
 			solrDoc = gameScheduleArray.get(0).getAsJsonObject();
 			sportDataItem.add("contentInfo", new JsonPrimitive(GameAvailability.UNAVAILABLE.toString()));
 		} else {
-			solrDoc = foundItems.get(0);
+			//found at least one/more intersection with slingtv
+			//Do a priority ordering and findout for poc.
+			List<JsonObject> priorityOrdered = new ArrayList<>();
+			foundItems.forEach( it -> {
+				String callsign = "" ;
+				if(it.has("callsign")) {
+					callsign = it.get("callsign").getAsString();
+				}
+				if(callsign.startsWith("CSNCH") || callsign.startsWith("ESPN") ){
+					priorityOrdered.add(it);
+				}			
+			});
+			if(priorityOrdered.size()!=0) {
+				solrDoc = priorityOrdered.get(0);
+			} else {
+				solrDoc = foundItems.get(0);
+			}
 			sportDataItem.add("contentInfo", new JsonPrimitive(GameAvailability.AVAILABLE.toString()));
 		}
 
@@ -1109,7 +1132,9 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 		sportDataItem.add("programGuid", new JsonPrimitive(gameScheduleJsonObj.get("program_guid").getAsString()));
 		sportDataItem.add("assetGuid", new JsonPrimitive(gameScheduleJsonObj.get("asset_guid").getAsString()));
 		sportDataItem.add("contentId", contentIds);
-
+		if(gameScheduleJsonObj.has("callsign")){
+			sportDataItem.add("callsign", new JsonPrimitive(gameScheduleJsonObj.get("callsign").getAsString()));
+		}
 		if (gameScheduleJsonObj.has("stadiumName")) {
 			sportDataItem.add("location", new JsonPrimitive(gameScheduleJsonObj.get("stadiumName").getAsString()));
 		}
@@ -1122,7 +1147,7 @@ public class GenericJsonProxyDecoder extends SimpleChannelInboundHandler<FullHtt
 
 	private void addGameScheduleDates(JsonObject sportDataItem, JsonObject gameScheduleJsonObj) {
 		//Change this once done
-		long gameDateEpoch = gameScheduleJsonObj.get("game_date_epoch").getAsLong()+ Math.round(4*60*60) ;
+		long gameDateEpoch = gameScheduleJsonObj.get("game_date_epoch").getAsLong();
 
 		long startTimeEpoch =  0;
 		long stopTimeEpoch = 0;
