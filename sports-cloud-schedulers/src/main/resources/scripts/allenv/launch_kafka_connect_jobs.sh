@@ -19,10 +19,11 @@ echo "Params $topicName $start $stop $standAloneConfig $connectConfig $logFile"
 function restartOnError() {
     runCheck="$(fuser ${logFile})"
     echo "Is it running $runCheck"
-    errorCheck0="$(grep 'java.net.ConnectException: Connection refused' ${logFile})"
-    errorCheck1="$(grep 'org.apache.commons.net.io.CopyStreamException: IOException caught while copying' ${logFile})"
-    errorCheck2="$(grep 'java.lang.OutOfMemoryError: Java heap space' ${logFile})"
-    errorCheck3="$(grep 'java.net.NoRouteToHostException: No route to host' ${logFile})"
+    errorCheck0="$(grep 'java.net.ConnectException:' ${logFile})"
+    errorCheck1="$(grep 'org.apache.commons.net.io.CopyStreamException:' ${logFile})"
+    errorCheck2="$(grep 'java.lang.OutOfMemoryError:' ${logFile})"
+    errorCheck3="$(grep 'java.net.NoRouteToHostException:' ${logFile})"
+    errorCheck4="$(grep 'java.net.SocketTimeoutException:' ${logFile})"
     if [ "$runCheck" == "" ]
     then
         echo "The kafka job $topicName is not running"
@@ -32,7 +33,7 @@ function restartOnError() {
     fi
     
     
-    if [ "$errorCheck0" != "" ] || [ "$errorCheck1" != "" ] || [ "$errorCheck2" != "" ] || [ "$errorCheck3" != "" ]
+    if [ "$errorCheck0" != "" ] || [ "$errorCheck1" != "" ] || [ "$errorCheck2" != "" ] || [ "$errorCheck3" != "" ] || [ "$errorCheck4" != "" ]
     then
         echo "The kafka job $topicName is stuck.Restarting it"
         "$(fuser -k  ${logFile})"
@@ -58,7 +59,11 @@ else
       else
          echo "Killing kafka job $topicName as it is out of time "
          ret="$(kill -9 ${runCheck})"
-	 ret1="$(${KAFKA_HOME}/bin/kafka-topics.sh --zookeeper ${zkHost} --alter --topic ${topicName}  --config retention.ms=${retention})"
+         if [ "$topicName" == "content_match" ]
+		 then
+		 	cat /dev/null > /tmp/cm-connect.offsets
+    	 fi
+	     ret1="$(${KAFKA_HOME}/bin/kafka-topics.sh --zookeeper ${zkHost} --alter --topic ${topicName}  --config retention.ms=${retention})"
       fi
    fi
 fi

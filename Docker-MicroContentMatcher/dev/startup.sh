@@ -22,12 +22,12 @@ $KAFKA_HOME/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replicatio
 $KAFKA_HOME/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic meta_batch
 
 # Add retention policy topic mlb meta
-# Setting up for close to a day
-$KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic content_match --config retention.ms=10800000
-# Retain live data for 2.5 hrs
+# Setting up for 9hrs
+$KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic content_match --config retention.ms=36000000
+# Retain live data for 30min
 $KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic live_info --config retention.ms=9000000
-# Retain for 4hrs
-$KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic meta_batch --config retention.ms=10800000
+# Retain for 9hrs
+$KAFKA_HOME/bin/kafka-topics.sh --zookeeper localhost:2181 --alter --topic meta_batch --config retention.ms=36000000
 
 # building and starting kafka connect
 cd /project/sports-cloud-parsers
@@ -54,4 +54,4 @@ $SOLR_HOME/bin/solr create -c scoring_events  -d data_driven_schema_configs -for
 # Building sports cloud scheduler
 cd /project/sports-cloud-schedulers
 $SBT_HOME/bin/sbt clean assembly 
-java -DsparkHomeLoc=$SPARK_HOME -DzkHost=localhost:2181 -DsparkExtraJars=/project/micro-content-matcher/non-transitive/spark-solr-3.0.2.jar  -DcmsSummaryUrl=cms/publish3/domain/summary/4.json -DcmsHost=93a256a7 -DsportsCloudBatchJarLoc=/project/micro-content-matcher/target/scala-2.11/micro-container-matcher-assembly-0.1.0.jar -jar /project/sports-cloud-schedulers/target/scala-2.12/sports-cloud-schedulers-assembly-0.1.0.jar 
+java -DsparkHomeLoc=$SPARK_HOME -DzkHost=localhost:2181 -DsparkExtraJars=/project/micro-content-matcher/non-transitive/spark-solr-3.0.2.jar  -DcmsSummaryUrl=cms/publish3/domain/summary/1.json -DcmsHost=cbd46b77 -DsportsCloudBatchJarLoc=/project/micro-content-matcher/target/scala-2.11/micro-container-matcher-assembly-0.1.0.jar -jar /project/sports-cloud-schedulers/target/scala-2.12/sports-cloud-schedulers-assembly-0.1.0.jar 

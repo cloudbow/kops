@@ -237,7 +237,7 @@ class ContentMatcher extends Serializable with Muncher {
     val summaryJson = spark.read.json("/data/feeds/summary.json")
     val subPackIds = summaryJson.select($"subscriptionpacks")
     val subPackIds2 = subPackIds.withColumn("subpacksExploded", explode($"subscriptionpacks")).drop("spIdsExploded");
-    val subPackIds21 = subPackIds2.select(children("subpacksExploded", subPackIds2): _*).withColumnRenamed("title", "subpack_title").withColumnRenamed("subpack_id", "subpackage_guid").where("subpack_title != 'Ops Test' OR subpack_title != 'Ops Test - D'");
+    val subPackIds21 = subPackIds2.select(children("subpacksExploded", subPackIds2): _*).withColumnRenamed("title", "subpack_title").withColumnRenamed("subpack_id", "subpackage_guid");
 
     val channelsSummaryJsonDF = summaryJson.select($"channels");
     val channelsSummaryJsonDF1 = channelsSummaryJsonDF.withColumn("channels", explode(channelsSummaryJsonDF.col("channels")));

@@ -37,7 +37,7 @@ object SportsCloudSchedulers  {
 	    Holder.log.debug("Args is $args")	
 	    var allBatchJobs:List[ScheduledJob] = List()
 	    
-	    val downloadSummaryJob:ScheduledJob = new ScheduledJob("downloadSummaryJob","sportscloud-batch-schedules",classOf[DownloadSummaryJob].asInstanceOf[Class[Any]],"0 30 5 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
+	    val downloadSummaryJob:ScheduledJob = new ScheduledJob("downloadSummaryJob","sportscloud-batch-schedules",classOf[DownloadSummaryJob].asInstanceOf[Class[Any]],"0 20 5 ? * *",ScheduleType.CRON_MISFIRE_DO_NOTHING)
 	    allBatchJobs = downloadSummaryJob :: allBatchJobs
 	    Holder.log.debug("Adding downloadSummaryJob")
 	    
@@ -104,7 +104,7 @@ class KafkaConnectContentMatchJob extends Job {
         "5",
         "15",
         System.getProperty("zkHost"),
-        "1800000",
+        "36000000",
         "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
         "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-connect-content-match.properties",
         "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log") !      
@@ -121,7 +121,7 @@ class KafkaConnectMetaBatchJob extends Job {
     "5",
     "15",  
     System.getProperty("zkHost"),
-    "1800000",
+    "36000000",
     "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
     "/project/sports-cloud-parsers/src/main/resources/kafka-connect/ftp-meta-batch.properties",
     "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect.log") !
@@ -150,7 +150,7 @@ class ThuuzJob extends Job {
   private val log = LoggerFactory.getLogger("ThuuzJob")
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : ThuuzJob")	  
-		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=3&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/data/feeds/thuuz.json") !
+		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/data/feeds/thuuz.json") !
 	}
 }
 
@@ -271,8 +271,13 @@ class DownloadSchedulesJob extends Job {
 	override def execute(context:JobExecutionContext) {
     log.trace("Executing task : DownloadSchedulesJob")
 		
-		val conf :Configuration= Configuration.defaultConfiguration();
-    Configuration.setDefaults(new Configuration.Defaults() {
+		
+		"cat /dev/null" #> new File("/data/feeds/schedules_plus_3") ! ;
+		getFileContents("/data/feeds/summary.json").foreach( it => {
+		     val json = it  
+		     // There is a need for switching configuration and its done here
+		     val conf :Configuration= Configuration.defaultConfiguration();
+         Configuration.setDefaults(new Configuration.Defaults() {
           		val  jsonProviderObj:JsonProvider = new JsonSmartJsonProvider();
           		val  mappingProviderObj:MappingProvider = new JsonSmartMappingProvider();
             
@@ -288,11 +293,7 @@ class DownloadSchedulesJob extends Job {
             			EnumSet.noneOf(classOf[Option])
             		}
           
-    });
-		"cat /dev/null" #> new File("/data/feeds/schedules_plus_3") ! ;
-		getFileContents("/data/feeds/summary.json").foreach( it => {
-
-				val json = it
+         });				
 				val ctx:ReadContext = JsonPath.using(conf).parse(it)
 				val  sportsGenreFilter:Filter = Filter.filter(Criteria.where("metadata.genre").contains("Sports"))
 				val filteredChannels:String = ctx.read("$.channels[?]", sportsGenreFilter).toString
@@ -322,7 +323,7 @@ class DownloadSchedulesJob extends Job {
 				while(iterator.hasNext) {
 				  val channel_guid=iterator.next.getAsString
 					if(channel_guid!=null) { 
-						for( i <- 0 to 3){
+						for( i <- 0 to 5){
 							val epochTimeOffset = Instant.now().plus(i, ChronoUnit.DAYS);      				  
 							val utc = epochTimeOffset.atZone(ZoneId.of("Z"));        				  
 							def pattern = "yyyyMMdd";
