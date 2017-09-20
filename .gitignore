@@ -13,3 +13,4 @@ sports-cloud-parsers/metastore_db
 sports-cloud-schedulers/metastore_db
 micro-content-matcher/non-transitive/metastore_db
 proxy-server/bin
+sports-cloud-rest-server/bin
