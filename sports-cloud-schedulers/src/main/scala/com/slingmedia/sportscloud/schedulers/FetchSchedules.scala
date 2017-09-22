@@ -175,6 +175,12 @@ abstract class SparkSubmitJob extends Job {
         "--driver-memory", "7G", 
         "--executor-memory", "7G", 
         "--total-executor-cores", "4", 
+        "--conf", "spark.es.index.auto.create=false",
+        "--conf", "spark.es.resource=sports-cloud/game_schedule",
+        "--conf", "spark.es.nodes=localhost",
+        "--conf", "spark.es.net.http.auth.user=elastic",
+        "--conf", "spark.es.net.http.auth.pass=changeme",
+        "--conf", "spark.es.write.operation=upsert",
         "--conf", "spark.default.parallelism=4",
         "--conf", s"spark.executor.extraJavaOptions=$g1gcOpts $gcPrintFlags -XX:+UseCompressedOops -Dlog4j.configuration=file:/spark-log4j-config/log4j-executor.properties",
         "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
@@ -196,7 +202,7 @@ class ContentMatchJob extends SparkSubmitJob {
     mainClass = "com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher"
     name = "SportsCloudContentMatch"
     log.trace("Executing task : SparkSubmitJob")
-    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"content_match game_schedule localhost:9983")
+    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"content_match game_schedule")
     log.trace(s"Executing command $sparkSumbitCommand")
     sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !
 
@@ -211,7 +217,7 @@ class TeamStandingsMetaDataBatchJob extends SparkSubmitJob {
     name = "TeamStandingsMetaDataMuncher"
     log.trace("Executing task : TeamStandingsMetaDataBatchJob")
    
-    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"TEAMSTANDINGS meta_batch team_standings localhost:9983")
+    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"TEAMSTANDINGS meta_batch team_standings")
     log.trace(s"Executing command $sparkSumbitCommand")
     sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !
 
@@ -226,7 +232,7 @@ class PlayerStatsMetaDataBatchJob extends SparkSubmitJob {
     name = "PlayerStatsDataMuncher"
     log.trace("Executing task : PlayerStatsMetaDataBatchJob")
    
-    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"PLAYERSTATS meta_batch player_stats localhost:9983")
+    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"PLAYERSTATS meta_batch player_stats")
     log.trace(s"Executing command $sparkSumbitCommand")
     sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-batch-job.log") !
 
@@ -241,7 +247,7 @@ class BatchScoreJob extends SparkSubmitJob {
     name = "BatchScoreJob"
     log.trace("Executing task : BatchScoreJob")
    
-    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"LIVEINFO live_info live_info localhost:9983")
+    val sparkSumbitCommand = buildSparkCommand(name,mainClass,sparkExtraJars,sportsCloudBatchJarLoc,"LIVEINFO live_info live_info")
     log.trace(s"Executing command $sparkSumbitCommand")
     sparkSumbitCommand #>> new File("/var/log/sports-cloud-schedulers/sc-stream-job.log") !
 

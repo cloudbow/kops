@@ -34,19 +34,20 @@ public class AbstractSportsCloudRestDelegate {
 			LOGGER.trace(String.format("Getting date for %s",gameId));
 		}
 		JsonElement currentGameRespJson = SportsDataFacade$.MODULE$.getGameScheduleByGameCode(gameId);
-		JsonArray currGameDocs = currentGameRespJson.getAsJsonObject().get("response").getAsJsonObject().get("docs")
+		JsonArray currGameDocs = currentGameRespJson.getAsJsonObject().get("hits").getAsJsonObject().get("hits")
 				.getAsJsonArray();
 		return currGameDocs;
 	}
 	
-	public JsonObject createContentIdAssetInfoMap(JsonArray asJsonArray) {
+	public JsonObject createContentIdAssetInfoMap(JsonArray gameResponseArr) {
 		JsonObject contentIdChGuid = new JsonObject();
-		asJsonArray.forEach(it -> {
-			if(it.getAsJsonObject().has("channel_guid") && it.getAsJsonObject().has("schedule_guid")) {
+		gameResponseArr.forEach(it -> {
+			JsonObject gameJsonObj = it.getAsJsonObject().get("_source").getAsJsonObject();
+			if(gameJsonObj.has("channel_guid") && gameJsonObj.has("schedule_guid")) {
 				JsonObject assetInfoJson = new JsonObject();
-				contentIdChGuid.add(it.getAsJsonObject().get("schedule_guid").getAsString(),assetInfoJson);
-				assetInfoJson.add("channelGuid",new JsonPrimitive(it.getAsJsonObject().get("channel_guid").getAsString()));
-				assetInfoJson.add("assetGuid",new JsonPrimitive(it.getAsJsonObject().get("asset_guid").getAsString()));
+				contentIdChGuid.add(gameJsonObj.get("schedule_guid").getAsString(),assetInfoJson);
+				assetInfoJson.add("channelGuid",new JsonPrimitive(gameJsonObj.get("channel_guid").getAsString()));
+				assetInfoJson.add("assetGuid",new JsonPrimitive(gameJsonObj.get("asset_guid").getAsString()));
 			}
 		});
 		return contentIdChGuid;
@@ -68,12 +69,13 @@ public class AbstractSportsCloudRestDelegate {
 		String gameId = "0";
 		GameType gameType = GameType.REGULAR_SEASON;
 		for (JsonElement doc : currGameDocs) {
-			homeTeamId = doc.getAsJsonObject().get("homeTeamExternalId").getAsString();
-			awayTeamId = doc.getAsJsonObject().get("awayTeamExternalId").getAsString();
-			awayTeamName = doc.getAsJsonObject().get("awayTeamName").getAsString();
-			homeTeamName = doc.getAsJsonObject().get("homeTeamName").getAsString();
-			gameId = doc.getAsJsonObject().get("gameCode").getAsString();
-			gameType = GameType.getValue(doc.getAsJsonObject().get("gameType").getAsString());
+			JsonObject currGamesDoc = doc.getAsJsonObject().get("_source").getAsJsonObject();
+			homeTeamId = currGamesDoc.get("homeTeamExternalId").getAsString();
+			awayTeamId = currGamesDoc.get("awayTeamExternalId").getAsString();
+			awayTeamName = currGamesDoc.get("awayTeamName").getAsString();
+			homeTeamName = currGamesDoc.get("homeTeamName").getAsString();
+			gameId = currGamesDoc.get("gameCode").getAsString();
+			gameType = GameType.getValue(currGamesDoc.get("gameType").getAsString());
 		}
 		if (teamId.equals(homeTeamId)) {
 			role = Role.HOME;
@@ -83,13 +85,13 @@ public class AbstractSportsCloudRestDelegate {
 		return new ActiveTeamGame( gameId,gameType, teamId, homeTeamId, awayTeamId, homeTeamName, awayTeamName, role);
 	}
 
-	public Map<String, JsonObject> prepareLiveGameInfoData(long startDate, String endDate) {
-		JsonElement liveResponseJson = SportsDataFacade$.MODULE$.getAllLiveGamesInDateRange(startDate,endDate);
+	public Map<String, JsonObject> prepareLiveGameInfoData(long startDate, long endDate, int sizeToReturn) {
+		JsonArray liveResponseJsonArr = SportsDataFacade$.MODULE$.getAllLiveGamesInDateRange(startDate,endDate,sizeToReturn).getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
 		Map<String, JsonObject> liveJsonObjects = new HashMap<>();
-		liveResponseJson.getAsJsonObject().get("response").getAsJsonObject().get("docs").getAsJsonArray()
+		liveResponseJsonArr
 				.forEach(it -> {
-	
-					liveJsonObjects.put(it.getAsJsonObject().get("gameId").getAsString(), it.getAsJsonObject());
+					JsonObject liveJsonObject = it.getAsJsonObject().get("_source").getAsJsonObject();
+					liveJsonObjects.put(liveJsonObject.get("gameId").getAsString(), liveJsonObject);
 	
 				});
 		return liveJsonObjects;
@@ -115,7 +117,7 @@ public class AbstractSportsCloudRestDelegate {
 		List<JsonObject> foundItems = new ArrayList<>();
 		gameScheduleArray.forEach(it -> {
 			Set<String> intersectedSubPacks = new HashSet<String>();
-			JsonObject item = it.getAsJsonObject();
+			JsonObject item = it.getAsJsonObject().get("_source").getAsJsonObject();
 			if (item.has("subpackage_guids")) {
 				item.get("subpackage_guids").getAsJsonArray().forEach(it2 -> {
 					intersectedSubPacks.add(it2.getAsString());
@@ -130,7 +132,7 @@ public class AbstractSportsCloudRestDelegate {
 		JsonObject solrDoc = null;
 		if (foundItems.isEmpty()) {
 			//get the first of unmatched content not available in slingtv
-			solrDoc = gameScheduleArray.get(0).getAsJsonObject();
+			solrDoc = gameScheduleArray.get(0).getAsJsonObject().get("_source").getAsJsonObject();
 			sportDataItem.add("contentInfo", new JsonPrimitive(GameAvailability.UNAVAILABLE.toString()));
 		} else {
 			//found at least one/more intersection with slingtv
@@ -309,7 +311,7 @@ public class AbstractSportsCloudRestDelegate {
 	Set<String> getUniqueScheduleGuids(JsonArray alldocs) {
 		Set<String>  scheduleGuids = new HashSet<String>();
 		alldocs.forEach(it -> {
-			JsonObject item = it.getAsJsonObject();
+			JsonObject item = it.getAsJsonObject().get("_source").getAsJsonObject();
 			if(item.has("schedule_guid") 
 					&& 
 			  ! "0".equals(item.get("schedule_guid").getAsString())) {
@@ -344,10 +346,10 @@ public class AbstractSportsCloudRestDelegate {
 		// Fill in the live scores and other details
 		//
 		String gameId = solrDoc.get("gameId").getAsString();
-		JsonArray liveGameInfoRespJson = getLiveGamesById(gameId);
-		if (liveGameInfoRespJson.size() > 0) {
+		JsonArray liveGameInfoRespJsonArr = getLiveGamesById(gameId);
+		if (liveGameInfoRespJsonArr.size() > 0) {
 			// pick the first item
-			JsonObject liveGameJsonObj = liveGameInfoRespJson.get(0).getAsJsonObject();
+			JsonObject liveGameJsonObj = liveGameInfoRespJsonArr.get(0).getAsJsonObject().get("_source").getAsJsonObject();
 	
 			// update home&away scores to media card
 			mcSportData.add("homeScore", new JsonPrimitive(liveGameJsonObj.get("homeScoreRuns").getAsInt()));
@@ -388,8 +390,8 @@ public class AbstractSportsCloudRestDelegate {
 	}
 
 	JsonArray getLiveGamesById(String gameId) {
-		JsonArray liveGameInfoRespJson = SportsDataFacade$.MODULE$.getLiveGameById(gameId).getAsJsonObject().get("response")
-				.getAsJsonObject().get("docs").getAsJsonArray();
+		JsonArray liveGameInfoRespJson = SportsDataFacade$.MODULE$.getLiveGameById(gameId).getAsJsonObject().get("hits")
+				.getAsJsonObject().get("hits").getAsJsonArray();
 		return liveGameInfoRespJson;
 	}
 
@@ -477,15 +479,16 @@ public class AbstractSportsCloudRestDelegate {
 		String scoreCardTitle = "";
 		String activeAwayTeamId = activeGame.getAwayTeamId();
 		
-		JsonArray allTeamGamesJson = SportsDataFacade$.MODULE$.getLiveInfoForActiveTeam(activeGame).getAsJsonObject().get("response")
-				.getAsJsonObject().get("docs").getAsJsonArray();
+		JsonArray allTeamGamesJson = SportsDataFacade$.MODULE$.getLiveInfoForActiveTeam(activeGame).getAsJsonObject().get("hits")
+				.getAsJsonObject().get("hits").getAsJsonArray();
 		int team1Wins = 0; // awayTeam
 		int team2Wins = 0; // homeTeam
 		String team1ExtId = activeAwayTeamId;
 		for (JsonElement it : allTeamGamesJson) {
-			int homeWins = it.getAsJsonObject().get("homeScoreRuns").getAsInt();
-			int awayWins = it.getAsJsonObject().get("awayScoreRuns").getAsInt();
-			String awayTeamId = it.getAsJsonObject().get("awayTeamExtId").getAsString();
+			JsonObject teamGamesJson = it.getAsJsonObject().get("_source").getAsJsonObject();
+			int homeWins = teamGamesJson.get("homeScoreRuns").getAsInt();
+			int awayWins = teamGamesJson.get("awayScoreRuns").getAsInt();
+			String awayTeamId = teamGamesJson.get("awayTeamExtId").getAsString();
 			int t1Score = 0;
 			int t2Score = 0;
 			if (awayTeamId.equals(team1ExtId)) {

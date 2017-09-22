@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import scala.util.{ Try, Success, Failure }
 
-import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
-
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, FloatType, ArrayType };
 import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
@@ -37,7 +35,7 @@ object MetaDataMuncher extends Serializable {
           :: StructField("wins", IntegerType, true)
           :: StructField("losses", IntegerType, true) :: Nil)
         //"meta_batch", "player_stats", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
       case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
           StructField("alias", StringType, true) ::
@@ -50,17 +48,17 @@ object MetaDataMuncher extends Serializable {
           StructField("losses", IntegerType, true) ::
           StructField("pct", FloatType, true) :: Nil)
         //"meta_batch", "team_standings", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
       case MetaBatchJobType.LIVEINFO =>
         //live_info, live_info, localhost:9983
-        new LiveDataMuncher().munch(args(1), args(2), args(3))
+        new LiveDataMuncher().munch(args(1), args(2))
     }
   }
 
 }
 
 class MetaDataMuncher extends Serializable with Muncher {
-  override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
+  override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -82,13 +80,7 @@ class MetaDataMuncher extends Serializable with Muncher {
       finalDataFrame = ds9
     }
 
-    val indexResult = indexToSolr(zkHost, outputCollName, "false", finalDataFrame)
-    indexResult match {
-      case Success(data) =>
-        LDMHolder.log.info(data.toString)
-      case Failure(e) =>
-        LDMHolder.log.error("Error occurred in indexing ", e)
-    }
+    indexResults( outputCollName,  finalDataFrame)
 
   }
 

@@ -22,7 +22,6 @@ import java.nio.file.{ Paths, Files }
 
 import org.slf4j.LoggerFactory;
 
-import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
 object CMHolder extends Serializable {
   val serialVersionUID = 1L;
@@ -33,13 +32,13 @@ object ContentMatcher extends Serializable {
   def main(args: Array[String]) {
     CMHolder.log.debug("Args is $args")
     //"content_match", "game_schedule", "localhost:9983"
-    new ContentMatcher().munch(args(0), args(1), args(2))
+    new ContentMatcher().munch(args(0), args(1))
   }
 }
 
 class ContentMatcher extends Serializable with Muncher {
 
-  override def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {
+  override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
 
     //fetch thuuz games
     fetchThuuzGames()
@@ -57,7 +56,7 @@ class ContentMatcher extends Serializable with Muncher {
     val programsJoin3 = contentMatch(mlbScheduleDF32)
 
     //Write delta back to mongo
-    writeData(outputCollName, zkHost, programsJoin3)
+    writeData(outputCollName, programsJoin3)
 
   }
 
@@ -411,7 +410,7 @@ class ContentMatcher extends Serializable with Muncher {
     mlbScheduleDF34
   }
 
-  val writeData: (String, String, DataFrame) => Unit = (outputCollName: String, zkHost: String, programsJoin3: DataFrame) => {
+  val writeData: (String, DataFrame) => Unit = (outputCollName: String, programsJoin3: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val batchTimeStamp = Instant.now().getEpochSecond
@@ -419,13 +418,7 @@ class ContentMatcher extends Serializable with Muncher {
     programsJoin4.createOrReplaceTempView("programsJoin4")
     val programsJoin5 = spark.sql("select concat(channel_guid,'_',program_id,'_',gameId) as id , * from programsJoin4")
     val programsJoin6 = programsJoin5.orderBy($"channel_guid",$"program_id",$"selfTimeEpoch").repartition($"gameId").coalesce(4)
-    val indexResult = indexToSolr(zkHost, outputCollName,"false", programsJoin6)
-    indexResult match {
-      case Success(data) =>
-        CMHolder.log.info(data.toString)
-      case Failure(e) =>
-        CMHolder.log.error("Error occurred in indexing ", e)
-    }
+    indexResults(outputCollName, programsJoin6)
 
   }
 

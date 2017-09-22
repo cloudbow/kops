@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-
 import com.slingmedia.sportscloud.facade.*;
 
 
@@ -28,7 +27,7 @@ public class ClearInvalidSolrDocuments {
 		builder.append("http://cqhlsdatacenter01.sling.com:8983/solr/game_schedule/select?q=batchTime:1504004153&start=0&rows=3000&wt=json");
 
 		JsonElement jsonElement = getJsonObject(builder);
-		jsonElement.getAsJsonObject().get("response").getAsJsonObject().get("docs").getAsJsonArray().forEach(it -> {
+		jsonElement.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray().forEach(it -> {
 			
 			String id = it.getAsJsonObject().get("id").getAsString();
 			if(id.split("_").length==3){

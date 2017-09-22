@@ -108,11 +108,9 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 				if (params.get("startDate") != null) {
 					startDate = dateTimeFormatter.parseDateTime(params.get("startDate").get(0)).getMillis() / 1000;
 				}
-				String endDate = "*";
+				long endDate = Long.MAX_VALUE;
 				if (params.get("endDate") != null) {
-					endDate = new StringBuilder()
-							.append(dateTimeFormatter.parseDateTime(params.get("endDate").get(0)).getMillis() / 1000)
-							.toString();
+					endDate = dateTimeFormatter.parseDateTime(params.get("endDate").get(0)).getMillis() / 1000 ;
 				}
 
 				Set<String> subpackIds = getSubPackIdsFromParam(params);
@@ -184,7 +182,6 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			try {
 				JsonArray currGameDocs = sportsCloudMCDelegate.getGameForGameId(gameScheduleId);
 				activeGame = sportsCloudMCDelegate.getActiveTeamGame(teamId, currGameDocs);
-
 			} catch (Exception e) {
 				LOGGER.error("Error occurred in parsing json", e);
 			}
@@ -193,7 +190,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 
 			if (teamId != null) {
 				JsonElement teamIdResponse = SportsDataFacade$.MODULE$.getNearestGameScheduleForActiveTeam(teamId);
-				JsonArray teamDocs = teamIdResponse.getAsJsonObject().get("response").getAsJsonObject().get("docs").getAsJsonArray();
+				JsonArray teamDocs = teamIdResponse.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
 				activeGame = sportsCloudMCDelegate.getActiveTeamGame(teamId, teamDocs);
 				gameScheduleId = activeGame.getGameId();
 			}
@@ -206,7 +203,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 		return finalResponse;
 	}
 
-	private String prepareGameScheduleDataForHomeScreen(String finalResponse, long startDate, String endDate,
+	private String prepareGameScheduleDataForHomeScreen(String finalResponse, long startDate, long endDate,
 			Set<String> subpackIds) {
 		
 	   JsonElement gameSchedulesJson = SportsDataFacade$.MODULE$.getGameScheduleDataForHomeScreen(startDate,endDate);

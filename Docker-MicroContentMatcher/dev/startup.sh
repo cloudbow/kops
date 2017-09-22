@@ -43,13 +43,14 @@ mkdir -p /var/log/sports-cloud-batch-jobs
 cd /project/micro-content-matcher
 $SBT_HOME/bin/sbt clean assembly 
 
-# Start solr 
-$SOLR_HOME/bin/solr start -cloud -p 8983 -s "/data/solr/cloud/node1/solr" -force
-$SOLR_HOME/bin/solr create -c game_schedule  -d data_driven_schema_configs -force
-$SOLR_HOME/bin/solr create -c live_info  -d data_driven_schema_configs -force
-$SOLR_HOME/bin/solr create -c team_standings  -d data_driven_schema_configs -force
-$SOLR_HOME/bin/solr create -c player_stats  -d data_driven_schema_configs -force
-$SOLR_HOME/bin/solr create -c scoring_events  -d data_driven_schema_configs -force
+chown -R elasticsearch:elasticsearch /var/log/elasticsearch
+chown -R elasticsearch:elasticsearch /data/elastic
+chown -R elasticsearch:elasticsearch /elastic
+
+# start rest layer also
+cd /project/sports-cloud-rest-server
+$MAVEN_HOME/bin/mvn package -DskipTests
+nohup java -Dtarget-host-to-proxy=http://93a256a7.cdn.cms.movetv.com -DindexingHost=localhost -DindexingPort=9200 -jar target/sports-cloud-rest-server.jar localhost 9080  &> /var/log/sports-cloud-rest.log &
 
 # Building sports cloud scheduler
 cd /project/sports-cloud-schedulers

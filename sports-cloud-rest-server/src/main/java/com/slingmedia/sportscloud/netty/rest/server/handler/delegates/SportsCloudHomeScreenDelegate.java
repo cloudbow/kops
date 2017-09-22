@@ -13,22 +13,23 @@ import com.google.gson.JsonPrimitive;
 
 public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelegate{
 	public static final Logger LOGGER = LoggerFactory.getLogger(SportsCloudHomeScreenDelegate.class);
-	public String prepareJsonResponseForHomeScreen(String finalResponse, long startDate, String endDate, Set<String> subpackIds, JsonElement gameSchedulesJson) {
+	public String prepareJsonResponseForHomeScreen(String finalResponse, long startDate, long endDate, Set<String> subpackIds, JsonElement gameSchedulesJson) {
 		// &fq=%7B!collapse%20field=gameId%7D&expand=true&fl=homeTeamScore,awayTeamScore&expand.rows=100&wt=json
-		Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(startDate, endDate);
+		Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(startDate, endDate,500);
 	
 		if (gameSchedulesJson != null) {
 			JsonArray allGames = new JsonArray();
 			try {
-				JsonArray groupedDocs = gameSchedulesJson.getAsJsonObject().get("grouped").getAsJsonObject()
-						.get("gameCode").getAsJsonObject().get("groups").getAsJsonArray();
-				for (JsonElement groupedDoc : groupedDocs) {
+				JsonArray groupedDocs = gameSchedulesJson.getAsJsonObject().get("aggregations").getAsJsonObject()
+						.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
+				for (JsonElement groupedDocSrc : groupedDocs) {
 					JsonObject mainObj = new JsonObject();
 					JsonObject solrDoc = null;
 					// get a list of subpackage ids
 	
+					JsonArray homeScreenGameScheduleGroup = groupedDocSrc.getAsJsonObject().get("top_game_home_hits").getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
 					solrDoc = getSubscribedOrFirstGameSchedule(subpackIds, mainObj,
-							groupedDoc.getAsJsonObject().get("doclist").getAsJsonObject().get("docs").getAsJsonArray());
+							homeScreenGameScheduleGroup);
 					JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
 					String gameId = solrDoc.get("gameId").getAsString();
 	
@@ -89,8 +90,8 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 	
 					homeTeam.add("teamRecord", homeTeamRecord);
 					awayTeam.add("teamRecord", awayTeamRecord);
-					JsonArray contentIds = createContentIds(groupedDoc.getAsJsonObject().get("doclist").getAsJsonObject().get("docs").getAsJsonArray());
-					JsonObject contentIdChannelGuidMap = createContentIdAssetInfoMap(groupedDoc.getAsJsonObject().get("doclist").getAsJsonObject().get("docs").getAsJsonArray());
+					JsonArray contentIds = createContentIds(homeScreenGameScheduleGroup);
+					JsonObject contentIdChannelGuidMap = createContentIdAssetInfoMap(homeScreenGameScheduleGroup);
 					mainObj.add("cIdToAsstInfo", contentIdChannelGuidMap);
 					mainObj.add("contentId", contentIds);
 	

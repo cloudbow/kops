@@ -54,19 +54,20 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 	}
 	
 	public void prepareMCDrives(String gameId, String teamId, JsonArray scoringEvents) {
-		JsonArray scoringEvtsResponse = SportsDataFacade$.MODULE$.getAllScoringEventsForGame(gameId).getAsJsonObject().get("response")
-				.getAsJsonObject().get("docs").getAsJsonArray();
-		for (JsonElement drive : scoringEvtsResponse) {
+		JsonArray scoringEvtsResponse = SportsDataFacade$.MODULE$.getAllScoringEventsForGame(gameId).getAsJsonObject().get("hits")
+				.getAsJsonObject().get("hits").getAsJsonArray();
+		for (JsonElement driveSrcDoc : scoringEvtsResponse) {
 			JsonObject scoringEventItem = new JsonObject();
-			if (drive.getAsJsonObject().has("lastPlay")) {
+			JsonObject driveDoc = driveSrcDoc.getAsJsonObject().get("_source").getAsJsonObject();
+			if (driveDoc.has("lastPlay")) {
 				scoringEventItem.add("comment",
-						new JsonPrimitive(drive.getAsJsonObject().get("lastPlay").getAsString()));
-				scoringEventItem.add("img", new JsonPrimitive(drive.getAsJsonObject().get("img").getAsString()));
+						new JsonPrimitive(driveDoc.get("lastPlay").getAsString()));
+				scoringEventItem.add("img", new JsonPrimitive(driveDoc.get("img").getAsString()));
 				scoringEventItem.add("title",
-						new JsonPrimitive(drive.getAsJsonObject().get("inningTitle").getAsString()));
+						new JsonPrimitive(driveDoc.get("inningTitle").getAsString()));
 				String teamIdDrive = "0";
-				if (drive.getAsJsonObject().has("teamId")) {
-					teamIdDrive = drive.getAsJsonObject().get("teamId").getAsString();
+				if (driveDoc.has("teamId")) {
+					teamIdDrive = driveDoc.get("teamId").getAsString();
 				}
 				scoringEventItem.add("teamId", new JsonPrimitive(teamIdDrive));
 				scoringEvents.add(scoringEventItem);
@@ -115,16 +116,12 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 	
 		
 		JsonElement tResponseJson = SportsDataFacade$.MODULE$.getMainLeaguesForActiveGame(activeGame);
-		JsonArray tDocs = tResponseJson.getAsJsonObject().get("facet_counts").getAsJsonObject()
-				.get("facet_fields").getAsJsonObject().get("subLeague").getAsJsonArray();			
+		JsonArray tDocs = tResponseJson.getAsJsonObject().get("aggregations").getAsJsonObject()
+				.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();			
 		Iterator<JsonElement> it = tDocs.iterator();
 		while(it.hasNext()){
 			JsonElement elem = it.next();
-			if(it.hasNext()){
-				if(it.next().getAsInt()>0){
-					leagueList.add(elem.getAsString());
-				}
-			}
+			leagueList.add(elem.getAsJsonObject().get("key").getAsString());
 		}				
 
 			
@@ -142,25 +139,25 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 				JsonElement groupedTSRespJson = SportsDataFacade$.MODULE$.getSubLeagues(subLeague);
 				if (groupedTSRespJson != null) {
 
-					JsonArray mainQueryDocs = groupedTSRespJson.getAsJsonObject().get("response").getAsJsonObject().get("docs").getAsJsonArray();
+					JsonArray mainQueryDocs = groupedTSRespJson.getAsJsonObject().get("aggregations").getAsJsonObject().get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
 					mainQueryDocs.forEach(mainGroup -> {
 						
 						JsonObject divisionObj = new JsonObject();
 						JsonObject mainGroupJsonObj = mainGroup.getAsJsonObject();
-						String currentDivision = mainGroupJsonObj.get("division").getAsString();
+						String currentDivision = mainGroupJsonObj.get("key").getAsString();
 						divisionObj.add("division", new JsonPrimitive(currentDivision));
 						JsonArray leagueStandings = new JsonArray();
 						//Add the first item to group
-						leagueStandings.add(prepareLeagueStandingObj(mainGroupJsonObj));
+						
 						divisionObj.add("league_standings", leagueStandings);
 						teamArray.add(divisionObj);
 						
-						JsonArray expandedDocs = groupedTSRespJson.getAsJsonObject().
-								get("expanded").
-								getAsJsonObject().get(currentDivision).getAsJsonObject().get("docs").getAsJsonArray();
+						JsonArray expandedDocs = mainGroup.getAsJsonObject().
+								get("top_division_hits").
+								getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
 						
-						expandedDocs.forEach(divisionDoc -> {
-								JsonObject divisionTeam = divisionDoc.getAsJsonObject();
+						expandedDocs.forEach(divisionSrcDoc -> {
+								JsonObject divisionTeam = divisionSrcDoc.getAsJsonObject().get("_source").getAsJsonObject();
 								JsonObject leagueStanding = prepareLeagueStandingObj(divisionTeam);
 
 								leagueStandings.add(leagueStanding);
@@ -204,22 +201,24 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 				homePitcherId = solrDoc.getAsJsonObject().get("homePlayerExtId").getAsString();
 			}
 			
-			JsonArray htPlayerStatsJson = SportsDataFacade$.MODULE$.getPlayerStatsById(homePitcherId).getAsJsonObject().get("response")
-					.getAsJsonObject().get("docs").getAsJsonArray();
-			JsonArray atPlayerStatsJson = SportsDataFacade$.MODULE$.getPlayerStatsById(awayPitcherId).getAsJsonObject().get("response")
-					.getAsJsonObject().get("docs").getAsJsonArray();
+			JsonArray htPlayerStatsJsonArr = SportsDataFacade$.MODULE$.getPlayerStatsById(homePitcherId).getAsJsonObject().get("hits")
+					.getAsJsonObject().get("hits").getAsJsonArray();
+			JsonArray atPlayerStatsJsonArr = SportsDataFacade$.MODULE$.getPlayerStatsById(awayPitcherId).getAsJsonObject().get("hits")
+					.getAsJsonObject().get("hits").getAsJsonArray();
 			int homePitcherWins = 0;
 			int homePitcherLosses = 0;
-			if (htPlayerStatsJson.size() > 0) {
-				homePitcherWins = htPlayerStatsJson.get(0).getAsJsonObject().get("wins").getAsInt();
-				homePitcherLosses = htPlayerStatsJson.get(0).getAsJsonObject().get("losses").getAsInt();
+			if (htPlayerStatsJsonArr.size() > 0) {
+				JsonObject htPLayerStatsJson = htPlayerStatsJsonArr.get(0).getAsJsonObject().get("_source").getAsJsonObject();
+				homePitcherWins = htPLayerStatsJson.get("wins").getAsInt();
+				homePitcherLosses = htPLayerStatsJson.get("losses").getAsInt();
 			}
 
 			int awayPitcherWins = 0;
 			int awayPitcherLosses = 0;
-			if (atPlayerStatsJson.size() > 0) {
-				awayPitcherWins = atPlayerStatsJson.get(0).getAsJsonObject().get("wins").getAsInt();
-				awayPitcherLosses = atPlayerStatsJson.get(0).getAsJsonObject().get("losses").getAsInt();
+			if (atPlayerStatsJsonArr.size() > 0) {
+				JsonObject atPlayerStatsJson = atPlayerStatsJsonArr.get(0).getAsJsonObject().get("_source").getAsJsonObject();
+				awayPitcherWins = atPlayerStatsJson.get("wins").getAsInt();
+				awayPitcherLosses = atPlayerStatsJson.get("losses").getAsInt();
 			}
 
 			getSportData(solrDoc, sportDataItem, true, homePitcherWins, homePitcherLosses, awayPitcherWins,
@@ -244,23 +243,23 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 		long prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
 
 		JsonElement gameScheduleResponseJson = SportsDataFacade$.MODULE$.getGameSchedulesForMediaCard(gameRole,teamId);
-		Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(prevSixMonth, "*");
+		Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(prevSixMonth, Long.MAX_VALUE,3000);
 
 		// create game schedule json part
 		if (gameScheduleResponseJson != null) {
 
 			try {
 
-				JsonArray docs = gameScheduleResponseJson.getAsJsonObject().get("grouped").getAsJsonObject()
-						.get("gameCode").getAsJsonObject().get("groups").getAsJsonArray();
-				for (JsonElement groupedDoc : docs) {
+				JsonArray docs = gameScheduleResponseJson.getAsJsonObject().get("aggregations").getAsJsonObject()
+						.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
+				for (JsonElement groupedDocSrc : docs) {
 					
-					JsonObject solrDoc = groupedDoc.getAsJsonObject().get("doclist").getAsJsonObject().get("docs")
-							.getAsJsonArray().get(0).getAsJsonObject();
+					JsonArray gameScheduleArr = groupedDocSrc.getAsJsonObject().get("top_game_mc_hits").getAsJsonObject().get("hits")
+							.getAsJsonObject().get("hits").getAsJsonArray();
+					JsonObject solrDoc = gameScheduleArr.get(0).getAsJsonObject().get("_source").getAsJsonObject();
 					JsonObject sportData = new JsonObject();
 					JsonObject sportDataItem = new JsonObject();
-					getSportData(solrDoc, sportDataItem, false, 0, 0, 0, 0,groupedDoc.getAsJsonObject().get("doclist").getAsJsonObject().get("docs")
-							.getAsJsonArray());
+					getSportData(solrDoc, sportDataItem, false, 0, 0, 0, 0,gameScheduleArr);
 					updateScoreStatusFromLive(liveResponseJson, sportDataItem, solrDoc.get("gameId").getAsString());
 					sportData.add("sport_data", sportDataItem);
 					gameSchedules.add(sportData);

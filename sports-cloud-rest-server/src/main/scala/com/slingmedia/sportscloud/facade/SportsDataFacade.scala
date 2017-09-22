@@ -1,13 +1,16 @@
 package com.slingmedia.sportscloud.facade
 
 import com.slingmedia.sportscloud.netty.rest.model.{ActiveTeamGame, Role}
-import com.google.gson.{JsonElement,JsonParser}
+import com.google.gson.{JsonElement,JsonParser,JsonObject,JsonArray}
 import java.net.URLEncoder
 import java.time.Instant
 import org.slf4j.LoggerFactory;
 
+import collection.mutable._
+
 
 object SportsDataFacade {
+    private val log = LoggerFactory.getLogger("SportsDataFacade") 
 
   	private val GAME_SCHEDULE_INDEX_ENTITY = "game_schedule"
   	private val LIVE_INFO_INDEX_ENTITY="live_info";
@@ -15,151 +18,330 @@ object SportsDataFacade {
 	private val PLAYER_STATS_INDEX_ENTITY="player_stats";
 	private val SCORING_EVENTS_INDEX_ENTITY="scoring_events";
 
-  	private val INDEX_HOST = if(System.getProperty("indexingHost") == null)  "cqaneat02.sling.com" else System.getProperty("indexingHost")
-	private val INDEX_PORT = if(System.getProperty("indexingPort")==null) "8983" else System.getProperty("indexingPort")
+	private val INDEX_CONTEXT="sports-cloud"
+	private val INDEX_VERB="_search"
+  	private val INDEX_HOST = if(System.getProperty("indexingHost") == null)  "localhost" else System.getProperty("indexingHost")
+	private val INDEX_PORT = if(System.getProperty("indexingPort")==null) "9200" else System.getProperty("indexingPort")
 	
-	private val GAME_SCHEDULE_FETCH_BASE_URL = "http://"+INDEX_HOST+":"+INDEX_PORT+"/solr/"+GAME_SCHEDULE_INDEX_ENTITY+"/select"
-  	private val PLAYER_STATS_FETCH_BASE_URL = "http://"+INDEX_HOST+":"+INDEX_PORT+"/solr/"+PLAYER_STATS_INDEX_ENTITY+"/select"
-	private val TEAM_STANDINGS_FETCH_BASE_URL = "http://"+INDEX_HOST+":"+INDEX_PORT+"/solr/"+TEAM_STANDINGS_INDEX_ENTITY+"/select"
-	private val LIVE_INFO_FETCH_BASE_URL = "http://"+INDEX_HOST+":"+INDEX_PORT+"/solr/"+LIVE_INFO_INDEX_ENTITY+"/select"
-	private val SCORING_EVENTS_FETCH_BASE_URL = "http://"+INDEX_HOST+":"+INDEX_PORT+"/solr/"+SCORING_EVENTS_INDEX_ENTITY+"/select"
+	private val INDEX_HOST_SECONDAY = if(System.getProperty("indexingHostSec") == null)  "localhost" else System.getProperty("indexingHostSec")
+	private val INDEX_PORT_SECONDARY = if(System.getProperty("indexingPortSec")==null) "9200" else System.getProperty("indexingPortSec")
 
-    private val externalHttpClientImpl = ExternalHttpClient
-    private val log = LoggerFactory.getLogger("ExternalHttpDao")    
 
-  	def getGameScheduleByGameCode(gameCode:String): JsonElement = {
-  		val gameRequestBuilder = getGameScheduleURLBase()
-  						.append("?q=gameCode:")
-  						.append(gameCode)
-						.append("&wt=json");
-		getJsonObject(gameRequestBuilder)			  	
-  	}
-  	
+	private val GAME_SCHEDULE_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+GAME_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
+  	private val PLAYER_STATS_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+PLAYER_STATS_INDEX_ENTITY+"/"+INDEX_VERB
+	private val TEAM_STANDINGS_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+TEAM_STANDINGS_INDEX_ENTITY+"/"+INDEX_VERB
+	private val LIVE_INFO_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+LIVE_INFO_INDEX_ENTITY+"/"+INDEX_VERB
+	private val SCORING_EVENTS_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+SCORING_EVENTS_INDEX_ENTITY+"/"+INDEX_VERB
+
+    private val elasticSearchClient  = ElasticSearchClient()
+     
+ 	
   	def getAllScoringEventsForGame(gameId:String): JsonElement = {
-  		val gameRequestBuilder = getScoringEventsURLBase()
-  					.append("?q=gameId:")
-					.append(gameId)
-					.append("&sort=srcTime%20desc")
-					.append("&start=0&rows=100")
-					.append("&wt=json");
-		getJsonObject(gameRequestBuilder)			  	
-  	}
-
+  		
+  		val searchTemplate =  s""" {
+  			"size"  : 100,
+    		"query" : {
+        		"term" : { "gameId" : "$gameId" }
+    		},
+    		"sort" : [
+        		{ "srcTime" : {"order" : "desc"}}
+    		]
+		} """.stripMargin.replaceAll("\n", " ")
   	
-  	def getLiveGameById(id:String): JsonElement = {
-  		val gameRequestBuilder = getLiveInfoURLBase()
-  						.append("?q=gameId:")
-  						.append(id)
-  						.append("&wt=json");
-		getJsonObject(gameRequestBuilder)			  	
-  	}
-  	
-  	def getAllLiveGamesInDateRange(startDate:Long, endDate:String): JsonElement = {
-  		val gameRequestBuilder = getLiveInfoURLBase()
-  						.append("?q=game_date_epoch:[")
-  						.append(startDate)
-  						.append("%20TO%20")
-  						.append(endDate)
-						.append("]").append("&fl=gameId,homeScoreRuns,awayScoreRuns,statusId")
-						.append("&start=0&rows=500&wt=json");
-		getJsonObject(gameRequestBuilder)			  	
-  	}
-  	
-  	def getLiveInfoForActiveTeam(activeGame: ActiveTeamGame ): JsonElement = {
-  		val gameRequestBuilder = getLiveInfoURLBase().
-  						append("?q=gameType:%22").append(URLEncoder.encode(activeGame.getGameType().getGameTypeStr(), "UTF-8")).append("%22").
-						append("+AND+(").
-						append("homeTeamExtId:").append(activeGame.getActiveTeamId()).
-						append("+OR+").
-						append("awayTeamExtId:").append(activeGame.getActiveTeamId()).append(")").
-						append("&wt=json");
-		getJsonObject(gameRequestBuilder)			  	
-  	}
-  	
-  	def getGameScheduleDataForHomeScreen(startDate:Long,endDate:String): JsonElement = {
-  		val gameRequestBuilder = getGameScheduleURLBase()
-  				.append("?q=game_date_epoch:[").append(startDate).append("%20TO%20")
-  				.append(endDate)
-				.append("]")
-				.append("&start=0&rows=500")
-				.append("&sort=game_date_epoch%20asc")
-				.append("&group=true&group.field=gameCode&group.limit=10&group.sort=batchTime%20desc").append("&wt=json")
-		getJsonObject(gameRequestBuilder)			  	
+		elasticSearchClient.search("POST",getScoringEventsURLBase(), Map[String, String](),searchTemplate)		  	
   	}
   	
   	def getMainLeaguesForActiveGame(activeGame:ActiveTeamGame): JsonElement = {
-  		val gameRequestBuilder = getTeamStandingsURLBase()
-  							.append("?q=id:(")
-  							.append(activeGame.getHomeTeamId()).append("+")
-							.append(activeGame.getAwayTeamId()).append(")")
-							.append("&facet=on&facet.field=subLeague&rows=1&wt=json");	
-		getJsonObject(gameRequestBuilder)	
+  		val searchTemplate =  s"""{
+		  "size": 0,
+		  "query": {
+		    "terms": {
+		      "id": [
+		        "${activeGame.getHomeTeamId()}",
+		        "${activeGame.getAwayTeamId()}"
+		      ]
+		    }
+		  },
+		  "aggs": {
+		        "top_tags": {
+		            "terms": {
+		                "field": "subLeague.keyword",
+        				"size" : 500
+		            }
+		        }
+		    }
+		}""".stripMargin.replaceAll("\n", " ")
+  	
+		elasticSearchClient.search("POST",getTeamStandingsURLBase(), Map[String, String](),searchTemplate)
   	
   	}
   	
-  	def getSubLeagues(subLeague:String):JsonElement = {
-  		val gameRequestBuilder = getTeamStandingsURLBase()
-  							.append("?q=subLeague:%22")
-  							.append(URLEncoder.encode(subLeague, "UTF-8"))
-							.append("%22")
-							.append("&fq=%7B!collapse%20field=division%7D&expand=true&expand.rows=100&wt=json");
-		getJsonObject(gameRequestBuilder)
+  	def getSubLeagues(subLeague: String):JsonElement = {
+  		val searchTemplate =  s"""{
+		  "size": 0,
+		  "query": {
+		    "term": {
+		      "subLeague.keyword": "$subLeague"
+		    }
+		  },
+		  "aggs": {
+		        "top_tags": {
+		            "terms": {
+		                "field": "division.keyword",
+        				"size" : 100
+		            },"aggs": {
+		                "top_division_hits": {
+		                    "top_hits": {
+		                        "sort": [
+		                            {
+		                                "date": {
+		                                    "order": "desc"
+		                                }
+		                            }
+		                        ],
+		                        "size" : 100
+		                    }
+		                }
+		            }
+		        }
+		    }
+		}""".stripMargin.replaceAll("\n", " ")  	
+		elasticSearchClient.search("POST",getTeamStandingsURLBase(), Map[String, String](),searchTemplate)
   	
   	}
   	
   	def getPlayerStatsById(playerId:String): JsonElement = {
-  		val gameRequestBuilder = getPlayerStatsURLBase()
-  							.append("?q=id:")
-  							.append(playerId)
-							.append("&fl=wins,losses&wt=json");		
-		getJsonObject(gameRequestBuilder)			 
+  		val searchTemplate =  s""" { 
+			  "size"  : 10,
+		  "_source":  [ "wins", "losses" ],
+		    "query" : {
+		        "term" : { "id" : "$playerId" }
+		    }
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getPlayerStatsURLBase(), Map[String, String](),searchTemplate)		  	
   	
   	}
+
+  	
+  	def getLiveGameById(gameId:String): JsonElement = {
+  		val searchTemplate =  s""" { 
+  		 		"size"  : 10,
+			    "query" : {
+			        "term" : { "gameId" : "$gameId" }
+			    }
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getLiveInfoURLBase(), Map[String, String](),searchTemplate)		  	
+  				  	
+  	}
+  	
+  	def getAllLiveGamesInDateRange(startDate:Long, endDate:Long, sizeToReturn: Int): JsonElement = {
+  		val searchTemplate =  s"""{ 
+		  "size": $sizeToReturn,
+		  "_source":  [ "gameId","homeScoreRuns","awayScoreRuns","statusId" ],
+		  "query" : {
+		        "constant_score": {
+		            "filter": {
+		             
+		                 "range": {
+		                    "game_date_epoch": {
+		                        "gte": $startDate,
+		                        "lte": $endDate
+		                    }
+		               }
+		            }
+		        }
+		    }
+		
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getLiveInfoURLBase(), Map[String, String](),searchTemplate)		  		  	
+  	}
+  	
+  	def getLiveInfoForActiveTeam(activeGame: ActiveTeamGame ): JsonElement = {
+  		val searchTemplate =  s"""{
+		  "size": 10,
+		  "query": {
+		    "constant_score": {
+		      "filter": {
+		        "bool": {
+		          "must": [
+		            {
+		              "term": {
+		                "gameType.keyword": "${activeGame.getGameType().getGameTypeStr()}"
+		              }
+		            }
+		          ],
+		          "should": [
+		            {
+		              "term": {
+		                "homeTeamExtId": "${activeGame.getActiveTeamId()}"
+		              }
+		            },
+		            {
+		              "term": {
+		                "awayTeamExtId": "${activeGame.getActiveTeamId()}"
+		              }
+		            }
+		          ]
+		        }
+		      }
+		    }
+		  }
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getLiveInfoURLBase(), Map[String, String](),searchTemplate)		  		  	 				  	
+  	}
+  	
+  	def getGameScheduleByGameCode(gameCode: String): JsonElement = {
+  		val searchTemplate =  s"""{ 
+		    "size" : 10,
+		    "query" : {
+		        "term" : { "gameCode" : "$gameCode" }
+		    }
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)	  	
+  	}
+  	
+  	def getGameScheduleDataForHomeScreen(startDate:Long,endDate:Long): JsonElement = {
+  		val searchTemplate =  s"""{
+		  "size": 0,
+		  "sort": [
+		    {
+		      "game_date_epoch": {
+		        "order": "asc"
+		      }
+		    }
+		  ],
+		  "query": {
+		    "constant_score": {
+		      "filter": {
+		        "range": {
+		          "game_date_epoch": {
+		            "gte": $startDate,
+		            "lte": $endDate
+		          }
+		        }
+		      }
+		    }
+		  },
+		  "aggs": {
+		    "top_tags": {
+		      "terms": {
+		        "field": "gameCode.keyword",
+        		"size" : 500,
+		        "order": {
+		          "order_agg": "asc"
+		        }
+		      },
+		      "aggs": {
+		        "order_agg": {
+		          "max": {
+		            "field": "game_date_epoch"
+		          }
+		        },
+		        "top_game_home_hits": {
+		          "top_hits": {
+		            "size": 10
+		          }
+		        }
+		      }
+		    }
+		  }
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)	  	
+  	}
+  	
+  	
   	
   	def getGameSchedulesForMediaCard(gameRole:ActiveTeamGame,teamId:String):JsonElement = {
-  		val gameScheduleReqBuilder = getGameScheduleURLBase()
-  		gameRole.getActiveTeamRole()  match  {
-			case Role.AWAY =>
-				gameScheduleReqBuilder.append("?q=awayTeamExternalId:").append(teamId);
-			case Role.HOME =>
-				gameScheduleReqBuilder.append("?q=homeTeamExternalId:").append(teamId);
-			case _ =>
-				//do nothing
-
-		}
-		val prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
-		gameScheduleReqBuilder
-			.append("+AND+").append("game_date_epoch:")
-			.append("[")
-			.append(prevSixMonth).append("%20TO%20*]")
-			.append("&start=0&rows=100")
-			.append("&group=true&group.field=gameCode")
-			.append("&sort=game_date_epoch%20asc&wt=json");
-  	    getJsonObject(gameScheduleReqBuilder)			  	
+  	  	val prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
+  		val searchTemplate =  s"""{
+		  "size": 0,
+		  "query": {
+		    "constant_score": {
+		      "filter": {
+		        "bool": {
+		          "must": [
+		            {
+		              "term": {
+		              		${      
+			                	if(gameRole.getActiveTeamRole()==Role.AWAY) 
+			                	 	"\"awayTeamExternalId\":"+ "\""+ teamId + "\""
+			                	else
+			                		"\"homeTeamExternalId\":"+ "\""+ teamId + "\""
+			                }
+		              	}
+		            },
+		            {
+		              "range": {
+		                "game_date_epoch": {
+		                  "gte": $prevSixMonth
+		                }
+		              }
+		            }
+		          ]
+		        }
+		      }
+		    }
+		  },
+		  "aggs": {
+		    "top_tags": {
+		      "terms": {
+		        "field": "gameCode.keyword",
+        		"size" : 3000,
+		        "order": {
+		          "order_agg": "asc"
+		        }	        
+		      },
+		      "aggs": {
+		        "order_agg": {
+		          "max": {
+		            "field": "game_date_epoch"
+		          }
+		        },
+		        "top_game_mc_hits": {
+		          "top_hits": {
+		            "size": 10
+		          }
+		        }
+		      }
+		    }
+		  }
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate) 			  	
   	}
   	
   	def getNearestGameScheduleForActiveTeam(teamId:String): JsonElement = {
-  		val gameRequestBuilder = getGameScheduleURLBase()
-  					.append("?q=awayTeamExternalId:")
-  					.append(teamId)
-  					.append("+OR+")
-					.append("homeTeamExternalId:").append(teamId)
-					.append("&sort=game_date_epoch%20desc&wt=json&rows=1");
-		getJsonObject(gameRequestBuilder)			  	
+  		val searchTemplate =  s"""{
+		  "size": 10,
+		  "query": {
+		    "constant_score": {
+		      "filter": {
+		        "bool": {
+		          "should": [
+		            {
+		              "term": {
+		                "homeTeamExternalId": "$teamId"
+		              }
+		            },
+		            {
+		              "term": {
+		                "awayTeamExternalId": "$teamId"
+		              }
+		            }
+		          ]
+		        }
+		      }
+		    }
+		  },
+		  "sort": [
+		    {
+		      "game_date_epoch": {
+		        "order": "desc"
+		      }
+		    }
+		  ]
+		}""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)			  	
   	}
-  	
-  	def getJsonObject(requestURLBuilder:StringBuilder): JsonElement = {
-  		val parser = new JsonParser();
-		val responseString = externalHttpClientImpl.getFromUrl(requestURLBuilder.toString());
-		var responseJson = parser.parse("{}");
-		try {
-			responseJson = parser.parse(responseString);
-		} catch {
-      		case e: Exception => log.error("Error ocurred in parsing",e)
-    	}
-		return responseJson;
-  	}
-  	
   	
   	def getGameScheduleURLBase():StringBuilder  = {
   		new StringBuilder(GAME_SCHEDULE_FETCH_BASE_URL)
@@ -180,5 +362,7 @@ object SportsDataFacade {
   	def getScoringEventsURLBase():StringBuilder  = {
   		new StringBuilder(SCORING_EVENTS_FETCH_BASE_URL)
   	}
+  	
+
   	
 }

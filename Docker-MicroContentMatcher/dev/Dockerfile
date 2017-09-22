@@ -1,6 +1,8 @@
-FROM anapsix/alpine-java
+FROM anapsix/alpine-java:8_jdk
 ADD startup.sh /root/startup.sh
-ADD solr-configurations /solr-configurations
+ADD elastic-base /elastic-base
+RUN addgroup elasticsearch
+RUN adduser -G elasticsearch -S  elasticsearch 
 ENV SCALA_VERSION=2.12.2 \
     SCALA_HOME=/usr/share/scala \
     KAFKA_HOME=/kafka \
@@ -9,8 +11,8 @@ ENV SCALA_VERSION=2.12.2 \
     SPARK_HOME=/spark-2.1.0-bin-hadoop2.7 \
     MAVEN_VERSION=3.3.9 \
     MAVEN_HOME=/usr/lib/maven \
-    SOLR_VERSION=6.6.0 \
-    SOLR_HOME=/solr \
+    ELASTIC_VERSION=5.6.0 \
+    ELASTIC_HOME=/elastic \
     KAFKA_HEAP_OPTS="-Xms512m -Xmx1g"
 RUN apk update && \
     apk add bash && \ 
@@ -34,6 +36,7 @@ RUN apk update && \
     mkdir /tmp/zookeeper && \
     mkdir /tmp/kafka-logs && \
     chmod +x /root/startup.sh && \
+    chmod +x /elastic-base/scripts/elastic-start.sh && \
     wget "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz" && \
     tar xzf "scala-${SCALA_VERSION}.tgz" && \
     mkdir "${SCALA_HOME}" && \
@@ -44,9 +47,10 @@ RUN apk update && \
     wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz && \
     tar -xvf spark-2.1.0-bin-hadoop2.7.tgz && \
     mv spark-2.1.0-bin-hadoop2.7 / && \
-    curl http://www-eu.apache.org/dist/lucene/solr/6.6.0/solr-6.6.0.tgz | tar -xzf - && \
-  	mv solr-6.6.0 $SOLR_HOME && \
-  	mkdir -p /var/log/solr && \
-  	cp -f /solr-configurations/solr.in.sh  $SOLR_HOME/bin/solr.in.sh
+    wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.0.tar.gz && \
+    tar -xvf elasticsearch-5.6.0.tar.gz && \
+    mv elasticsearch-5.6.0 /elastic && \
+    cp -f /elastic-base/config/elasticsearch.yml  $ELASTIC_HOME/config/elasticsearch.yml
 EXPOSE 8983
+EXPOSE 9080
 ENTRYPOINT /root/startup.sh
