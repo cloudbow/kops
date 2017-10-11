@@ -27,7 +27,6 @@ current_path := $(dir $(mkfile_path))
 # unique tag, that is provided as argument to build command.
 docker-build:
 	@docker build --tag=$(TAG) ./dev
-
 docker-network-create:
 	@docker network create --driver bridge $(NETWORK)
 
