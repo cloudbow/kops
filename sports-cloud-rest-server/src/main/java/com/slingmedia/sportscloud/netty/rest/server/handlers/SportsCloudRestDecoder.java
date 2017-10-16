@@ -101,7 +101,10 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
 			String uri = request.uri();
-			if (uri.startsWith("/dish/v1/sport")) {
+			if (uri.startsWith("/rest/v1/healthcheck")) {
+				finalResponse = "{}";
+				
+			} else if (uri.startsWith("/dish/v1/sport")) {
 				QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 				Map<String, List<String>> params = queryStringDecoder.parameters();
 				long startDate = Instant.now().getEpochSecond();

@@ -26,7 +26,7 @@ current_path := $(dir $(mkfile_path))
 # To distinguish java docker immage from other it need to have
 # unique tag, that is provided as argument to build command.
 docker-build:
-	@docker build --tag=$(TAG) - < ./dev/Dockerfilev2
+	@docker build --tag=$(TAG) ./dev
 
 docker-network-create:
 	@docker network create --driver bridge $(NETWORK)
@@ -49,7 +49,7 @@ sports-cloud-no-network:
 		--name=$@ \
             -p 9080:9080 \
 	    -p 8983:8983 \
-	    -p 4040:d4040 \
+	    -p 4040:4040 \
 		-v /root/.m2:/root/.m2 \
 	 	-v /root/.ivy2:/root/.ivy2 \
 	 	-v /data/apps/content-matcher/feeds:/data/feeds \

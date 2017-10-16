@@ -22,21 +22,24 @@ cp /project/sports-cloud-parsers/libs/kafka-connect-ftp-0.0.0-unspecified-jar-wi
 cp /project/sports-cloud-parsers/libs/scala-xml_2.11-1.0.2.jar $KAFKA_HOME/libs $PLUGINS_DIR
 
 
-
+DEFAULT_REPLICATION_FACTOR=1
+MINIMUM_NUM_PARTITIONS=1
 # config.storage.topic=connect-configs
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-cm-configs --replication-factor 3 --partitions 1 --config cleanup.policy=compact
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-live-info-configs --replication-factor 3 --partitions 1 --config cleanup.policy=compact
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-meta-batch-configs --replication-factor 3 --partitions 1 --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-cm-configs --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-live-info-configs --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-meta-batch-configs --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS --config cleanup.policy=compact
 
 # offset.storage.topic=connect-offsets
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-cm-offsets --replication-factor 3 --partitions 50 --config cleanup.policy=compact
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-live-info-offsets --replication-factor 3 --partitions 50 --config cleanup.policy=compact
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-meta-batch-offsets --replication-factor 3 --partitions 50 --config cleanup.policy=compact
+OFFSET_PARTITIONS=50
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-cm-offsets --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $OFFSET_PARTITIONS --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-live-info-offsets --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $OFFSET_PARTITIONS --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-meta-batch-offsets --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $OFFSET_PARTITIONS --config cleanup.policy=compact
 
 # status.storage.topic=connect-status
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-cm-status --replication-factor 3 --partitions 10 --config cleanup.policy=compact
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-live-info-status --replication-factor 3 --partitions 10 --config cleanup.policy=compact
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-meta-batch-status --replication-factor 3 --partitions 10 --config cleanup.policy=compact
+TOPIC_PARTITIONS=10
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-cm-status --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $TOPIC_PARTITIONS --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-live-info-status --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $TOPIC_PARTITIONS --config cleanup.policy=compact
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-meta-batch-status --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $TOPIC_PARTITIONS --config cleanup.policy=compact
 
 
 ## Start worker for content match
@@ -50,9 +53,9 @@ $CONFLUENT_HOME/bin/connect-distributed /project/sports-cloud-parsers/src/main/r
 
 
 # Create topic mlb_meta
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic content_match
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic live_info
-$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic meta_batch
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS --topic content_match
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS --topic live_info
+$CONFLUENT_HOME/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS --topic meta_batch
 
 # Add retention policy topic mlb meta
 # Setting up for 9hrs

@@ -1,21 +1,14 @@
-FROM anapsix/alpine-java:8_jdk
-ADD startupv2.sh /root/startupv2.sh
-ADD elastic-base /elastic-base
-RUN addgroup elasticsearch
-RUN adduser -G elasticsearch -S  elasticsearch 
+FROM openjdk:8u131-jdk-alpine
+ADD startup.sh /root/startup.sh
 ENV SCALA_VERSION=2.12.2 \
     SCALA_HOME=/usr/share/scala \
-    CONFLUENT_HOME=/confluent \
     SBT_VERSION=0.13.11 \
     SBT_HOME=/usr/local/sbt \
-    SPARK_HOME=/spark-2.1.0-bin-hadoop2.7 \
     MAVEN_VERSION=3.3.9 \
-    MAVEN_HOME=/usr/lib/maven \
-    ELASTIC_VERSION=5.6.0 \
-    ELASTIC_HOME=/elastic \
-    KAFKA_HEAP_OPTS="-Xms512m -Xmx1g"
+    MAVEN_HOME=/usr/lib/maven
 RUN apk update && \
     apk add bash && \ 
+    apk add git && \
     apk add wget && \
     apk add curl && \
     apk add strace && \
@@ -31,26 +24,14 @@ RUN apk update && \
     mkdir -p /var/log/sports-cloud-batch-job && \
     curl -sL "http://dl.bintray.com/sbt/native-packages/sbt/$SBT_VERSION/sbt-$SBT_VERSION.tgz" | gunzip | tar -x -C /usr/local && \
     echo -ne "- with sbt $SBT_VERSION\n" >> /root/.built && \
-    curl http://packages.confluent.io/archive/3.3/confluent-oss-3.3.0-2.11.tar.gz | tar -xzf - && \
-    mv confluent-3.3.0 $CONFLUENT_HOME && \
-    mkdir /tmp/zookeeper && \
-    mkdir /tmp/kafka-logs && \
-    chmod +x /root/startupv2.sh && \
-    chmod +x /elastic-base/scripts/elastic-start.sh && \
+    chmod +x /root/startup.sh && \
     wget "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz" && \
     tar xzf "scala-${SCALA_VERSION}.tgz" && \
     mkdir "${SCALA_HOME}" && \
     rm "/tmp/scala-${SCALA_VERSION}/bin/"*.bat && \
     mv "/tmp/scala-${SCALA_VERSION}/bin" "/tmp/scala-${SCALA_VERSION}/lib" "${SCALA_HOME}" && \
     ln -s "${SCALA_HOME}/bin/"* "/usr/bin/" && \
-    apk del .build-dependencies && \   
-    wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz && \
-    tar -xvf spark-2.1.0-bin-hadoop2.7.tgz && \
-    mv spark-2.1.0-bin-hadoop2.7 / && \
-    wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.0.tar.gz && \
-    tar -xvf elasticsearch-5.6.0.tar.gz && \
-    mv elasticsearch-5.6.0 /elastic && \
-    cp -f /elastic-base/config/elasticsearch.yml  $ELASTIC_HOME/config/elasticsearch.yml
+    apk del .build-dependencies
 EXPOSE 8983
 EXPOSE 9080
-ENTRYPOINT /root/startupv2.sh
+ENTRYPOINT /root/startup.sh

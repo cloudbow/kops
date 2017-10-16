@@ -1,0 +1,33 @@
+{
+  "id": "artifact-server",
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+	"image": "arungeorge09/artifact-server",
+	 "forcePullImage": true
+    },
+    "portMappings": [
+	{ "hostPort": 9082, "containerPort": 9082, "protocol": "tcp","name": "artifact-server-endpoint" }
+    ]
+  },
+  "networks": [
+    {
+      "mode": "container/bridge"
+    }
+  ],
+  "instances": 1,
+  "cpus": 0.1,
+  "mem": 1024,
+  "disk": 1000,
+  "healthChecks": [
+      {
+         "portIndex": 0,
+         "gracePeriodSeconds": 300,
+         "intervalSeconds": 60,
+         "timeoutSeconds": 20,
+         "maxConsecutiveFailures": 3,
+         "protocol": "MESOS_HTTP",
+         "path": "/healthcheck.json"
+      }
+  ]
+}
