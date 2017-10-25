@@ -1,0 +1,35 @@
+{
+  "id": "sports-cloud-rest",
+  "args": ["/root/startup.sh"],
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+	"image": "arungeorge09/sports-cloud-dcos-rest",
+	 "forcePullImage": true
+    },
+    "portMappings": [
+	{ "hostPort": 9080, "containerPort": 9080, "protocol": "tcp","name": "sports-cloud-rest-endpoint" }
+    ]
+  },
+  "networks": [
+    {
+      "mode": "container/bridge"
+    }
+  ],
+  "instances": 1,
+  "cpus": 0.3,
+  "mem": 1024,
+  "disk": 1000,
+  "acceptedResourceRoles": ["slave_public"],
+  "healthChecks": [
+      {
+         "portIndex": 0,
+         "gracePeriodSeconds": 300,
+         "intervalSeconds": 60,
+         "timeoutSeconds": 20,
+         "maxConsecutiveFailures": 3,
+         "protocol": "MESOS_HTTP",
+         "path": "/rest/v1/healthcheck"
+      }
+  ]
+}

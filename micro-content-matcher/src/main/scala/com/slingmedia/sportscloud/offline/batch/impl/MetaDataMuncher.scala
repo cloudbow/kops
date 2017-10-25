@@ -13,6 +13,7 @@ import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, co
 import java.time.Instant
 import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
 
+
 object LDMHolder extends Serializable {
   val serialVersionUID = 1L;
   @transient lazy val log = LoggerFactory.getLogger("LiveDataMuncher")
@@ -62,7 +63,7 @@ class MetaDataMuncher extends Serializable with Muncher {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
     val ds3 = ds2.where(filterCond)
     val ds4 = ds3.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
@@ -79,7 +80,7 @@ class MetaDataMuncher extends Serializable with Muncher {
     } else {
       finalDataFrame = ds9
     }
-
+    finalDataFrame.toJSON.toDF.show(120,false)
     indexResults( outputCollName,  finalDataFrame)
 
   }

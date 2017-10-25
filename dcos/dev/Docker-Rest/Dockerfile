@@ -34,4 +34,3 @@ RUN apk update && \
     apk del .build-dependencies
 EXPOSE 8983
 EXPOSE 9080
-ENTRYPOINT /root/startup.sh

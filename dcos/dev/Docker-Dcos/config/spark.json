@@ -1,7 +1,7 @@
 {
   "service": {
     "name": "spark",
-    "cpus": 0.3,
+    "cpus": 1,
     "mem": 1024,
     "role": "*",
     "user": "root",

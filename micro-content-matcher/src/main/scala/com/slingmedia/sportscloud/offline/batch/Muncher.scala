@@ -73,7 +73,8 @@ trait Muncher {
   
   
   val indexResults: (String,DataFrame) => Unit = ( outputCollName: String, input: DataFrame) => {
-    EsSpark.saveToEs(input.rdd,s"sports-cloud/$outputCollName", Map("es.mapping.id" -> "id"))
+    val inputConverted = input.toJSON
+    EsSpark.saveJsonToEs(inputConverted.rdd,s"sports-cloud/$outputCollName", Map("es.mapping.id" -> "id"))
   }
 
 }

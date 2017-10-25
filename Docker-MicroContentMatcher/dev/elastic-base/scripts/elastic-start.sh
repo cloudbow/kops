@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Starting kafka zookeeper
 /elastic/bin/elasticsearch -d
-sleep 20s
+sleep 20s;
 
 # Create Elastic search
 curl -XPUT 'localhost:9200/sports-cloud?pretty' -H 'Content-Type: application/json' -d'

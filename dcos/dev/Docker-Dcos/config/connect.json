@@ -8,22 +8,6 @@
     "role": "*",
     "kafka-service": "confluent-kafka",
     "zookeeper-connect": "master.mesos:2181/dcos-service-confluent-kafka",
-    "schema-registry-service": "schema-registry",
-    "connect_config_storage_replication_factor": 1,
-    "connect_offset_storage_replication_factor": 1,
-    "connect_status_storage_replication_factor": 1,
-    "env": {
-      "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR": 1,
-      "CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR": 1,
-      "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR": 1
-    }
-  },
-    "marathon" : {
-	"env": {
-	    "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR": 1,
-	    "CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR": 1,
-	    "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR": 1
-	}
-	
-    }
+    "schema-registry-service": "schema-registry"
+  }
 }

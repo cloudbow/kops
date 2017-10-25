@@ -1,4 +1,5 @@
 FROM nginx
-RUN mkdir /artifacts && chown -R nginx: /artifacts
+ADD startup.sh /root/startup.sh
 COPY artifact-server.conf /etc/nginx/conf.d/default.conf
 COPY healthcheck.json /usr/share/nginx/html
+ENTRYPOINT /root/startup.sh

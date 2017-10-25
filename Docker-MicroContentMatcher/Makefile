@@ -40,15 +40,14 @@ docker-network-inspect:
 
 elastic:
 	@docker exec -u elasticsearch:elasticsearch \
-                     -d \
                      -t sports-cloud-no-network \
-                     /elastic-base/scripts/elastic-start.sh
+                     /elastic/bin/elasticsearch
 		
 sports-cloud-no-network:
 	@docker run --rm \
 		--name=$@ \
             -p 9080:9080 \
-	    -p 8983:8983 \
+	    -p 9200:9200 \
 	    -p 4040:4040 \
 		-v /root/.m2:/root/.m2 \
 	 	-v /root/.ivy2:/root/.ivy2 \

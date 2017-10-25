@@ -17,6 +17,9 @@ import java.time.temporal.ChronoUnit;
 
 import com.databricks.spark.csv
 
+import org.apache.spark.SparkFiles
+
+
 import java.io.File
 import java.nio.file.{ Paths, Files }
 
@@ -221,7 +224,8 @@ class ContentMatcher extends Serializable with Muncher {
     //Fetch from thuuz and update 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val thuuzGamesDF = spark.read.json("/data/feeds/thuuz.json")
+    spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/thuuz.json")
+    val thuuzGamesDF = spark.read.json(SparkFiles.get("thuuz.json"))
     val thuuzGamesDF1 = thuuzGamesDF.withColumn("gamesExp", explode(thuuzGamesDF.col("ratings"))).drop("ratings")
     val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameId");
     val thuuzGamesDF20 = thuuzGamesDF11.withColumn("gameIdTmp", thuuzGamesDF11("statsGameId").cast(LongType)).drop("statsGameId").withColumnRenamed("gameIdTmp", "statsGameId")
@@ -233,7 +237,8 @@ class ContentMatcher extends Serializable with Muncher {
     //fetch summary json
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val summaryJson = spark.read.json("/data/feeds/summary.json")
+    spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/summary.json")
+    val summaryJson = spark.read.json(SparkFiles.get("summary.json"))
     val subPackIds = summaryJson.select($"subscriptionpacks")
     val subPackIds2 = subPackIds.withColumn("subpacksExploded", explode($"subscriptionpacks")).drop("spIdsExploded");
     val subPackIds21 = subPackIds2.select(children("subpacksExploded", subPackIds2): _*).withColumnRenamed("title", "subpack_title").withColumnRenamed("subpack_id", "subpackage_guid");
@@ -264,7 +269,8 @@ class ContentMatcher extends Serializable with Muncher {
   val fetchProgramSchedules: (DataFrame) => Unit = (summaryJson6: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val linearFeedDF = spark.read.json("/data/feeds/schedules_plus_3")
+    spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/schedules_plus_3")
+    val linearFeedDF = spark.read.json(SparkFiles.get("schedules_plus_3"))
     val programsDF1 = linearFeedDF.select($"_self", $"programs")
     val programsDF2 = programsDF1.withColumn("programsExploded", explode(programsDF1.col("programs"))).drop("programs");
     //Dont enable this . will eat up cpu in prod
@@ -311,7 +317,7 @@ class ContentMatcher extends Serializable with Muncher {
   val fetchMLBSchedule: () => DataFrame = () => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", "content_match").load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", "content_match").load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
 
     val scoreSchema = StructType(StructField("score", StringType, true) :: Nil)
