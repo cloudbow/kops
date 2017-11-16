@@ -1,8 +1,8 @@
 FROM anapsix/alpine-java:8_jdk
-ADD startupv2.sh /root/startupv2.sh
+ADD startup.sh /root/startup.sh
 ADD elastic-base /elastic-base
 RUN addgroup elasticsearch
-RUN adduser -G elasticsearch -S  elasticsearch 
+RUN adduser -G elasticsearch -S  elasticsearch
 ENV SCALA_VERSION=2.12.2 \
     SCALA_HOME=/usr/share/scala \
     CONFLUENT_HOME=/confluent \
@@ -19,6 +19,7 @@ RUN apk update && \
     apk add wget && \
     apk add curl && \
     apk add strace && \
+    apk add jq && \
     apk add screen && \
     apk add --update coreutils && rm -rf /var/cache/apk/* && \
     apk add --update netcat-openbsd && rm -rf /var/cache/apk/* && \
@@ -35,7 +36,7 @@ RUN apk update && \
     mv confluent-3.3.0 $CONFLUENT_HOME && \
     mkdir /tmp/zookeeper && \
     mkdir /tmp/kafka-logs && \
-    chmod +x /root/startupv2.sh && \
+    chmod +x /root/startup.sh && \
     chmod +x /elastic-base/scripts/elastic-start.sh && \
     wget "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz" && \
     tar xzf "scala-${SCALA_VERSION}.tgz" && \
@@ -50,12 +51,7 @@ RUN apk update && \
     wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.0.tar.gz && \
     tar -xvf elasticsearch-5.6.0.tar.gz && \
     mv elasticsearch-5.6.0 /elastic && \
-    cp -f /elastic-base/config/elasticsearch.yml  $ELASTIC_HOME/config/elasticsearch.yml && \
-    mkdir -p /var/log/elasticsearch && \
-    mkdir -p /data/elastic && \
-    chown -R elasticsearch:elasticsearch /var/log/elasticsearch && \
-    chown -R elasticsearch:elasticsearch /data/elastic && \
-    chown -R elasticsearch:elasticsearch /elastic
+    cp -f /elastic-base/config/elasticsearch.yml  $ELASTIC_HOME/config/elasticsearch.yml
 EXPOSE 8983
 EXPOSE 9080
-ENTRYPOINT /root/startupv2.sh
+ENTRYPOINT /root/startup.sh

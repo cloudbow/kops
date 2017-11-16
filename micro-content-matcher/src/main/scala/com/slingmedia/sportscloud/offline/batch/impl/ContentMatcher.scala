@@ -4,7 +4,7 @@ import com.slingmedia.sportscloud.offline.batch.Muncher
 
 import org.apache.spark.sql.{ SQLContext, SparkSession, DataFrame, Row, Column }
 import org.apache.spark.sql.functions.{ concat_ws, concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
-import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, ArrayType };
+import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, ArrayType }
 
 import sys.process._
 import scala.language.postfixOps
@@ -13,7 +13,7 @@ import scala.util.{ Try, Success, Failure }
 
 import java.time.{ ZonedDateTime,LocalDateTime, OffsetDateTime, ZoneOffset, Instant, ZoneId }
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit;
+import java.time.temporal.ChronoUnit
 
 import com.databricks.spark.csv
 
@@ -23,11 +23,11 @@ import org.apache.spark.SparkFiles
 import java.io.File
 import java.nio.file.{ Paths, Files }
 
-import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactory
 
 
 object CMHolder extends Serializable {
-  val serialVersionUID = 1L;
+  val serialVersionUID = 1L
   @transient lazy val log = LoggerFactory.getLogger("ContentMatcher")
 }
 
@@ -36,10 +36,12 @@ object ContentMatcher extends Serializable {
     CMHolder.log.debug("Args is $args")
     //"content_match", "game_schedule", "localhost:9983"
     new ContentMatcher().munch(args(0), args(1))
+
   }
 }
 
 class ContentMatcher extends Serializable with Muncher {
+
 
   override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
 
@@ -59,6 +61,7 @@ class ContentMatcher extends Serializable with Muncher {
     val programsJoin3 = contentMatch(mlbScheduleDF32)
 
     //Write delta back to mongo
+
     writeData(outputCollName, programsJoin3)
 
   }
@@ -134,6 +137,10 @@ class ContentMatcher extends Serializable with Muncher {
         regexp = ("^" + startExpr + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + "$")
       case 3 =>
         regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamName + "$")
+      case 4 =>
+        regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + ".*$")
+      case 5 =>
+        regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + ".*$")
       case _ =>
         regexp = "!"
     }
@@ -143,7 +150,10 @@ class ContentMatcher extends Serializable with Muncher {
   val fullMatch = udf(regexpCreator(_: String, _: String, _: String, _: String, 0))
   val partialWithAnHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 1))
   val partialWithAtHcHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 2))
-  val partialWithAcAnHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 2))
+  val partialWithAcAnHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 3))
+  
+  val partialWithAcAnHc = udf(regexpCreator(_: String, _: String, _: String, _: String, 4))
+  val partialWithHcAnAc = udf(regexpCreator(_: String, _: String, _: String, _: String, 5))
 
   //UDF definitions ends here
 
@@ -155,7 +165,12 @@ class ContentMatcher extends Serializable with Muncher {
     val mlbScheduleDF42 = mlbScheduleDF41.withColumn("regexp2", partialWithAnHn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
     val mlbScheduleDF43 = mlbScheduleDF42.withColumn("regexp3", partialWithAtHcHn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
     val mlbScheduleDF44 = mlbScheduleDF43.withColumn("regexp4", partialWithAcAnHn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-    val mlbScheduleDF5 = mlbScheduleDF44.coalesce(4)
+
+    
+    val mlbScheduleDF45 = mlbScheduleDF44.withColumn("regexp5", partialWithAcAnHc($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
+    val mlbScheduleDF46 = mlbScheduleDF45.withColumn("regexp6", partialWithHcAnAc($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
+    
+    val mlbScheduleDF5 = mlbScheduleDF46.coalesce(4)
 
     //val gameScheduleDF=mlbScheduleDF5
     //val targetProgramsToMatch = programScheduleChannelJoin
@@ -164,9 +179,11 @@ class ContentMatcher extends Serializable with Muncher {
     val programScheduleChannelJoin2 = spark.sql("select * from programSchedules").toDF
     CMHolder.log.trace("Joining with target programs using a cross join")
     val statsTargetProgramsJoin = mlbScheduleDF5.crossJoin(programScheduleChannelJoin2)
-    val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where("( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 ) AND ((program_title rlike regexp1) OR (program_title rlike regexp2) OR (program_title rlike regexp3) OR (program_title rlike regexp4))")
+
+    val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where("( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 ) AND ((program_title rlike regexp1) OR (program_title rlike regexp2) OR (program_title rlike regexp3) OR (program_title rlike regexp4) OR (program_title rlike regexp5) OR (program_title rlike regexp6))")
     CMHolder.log.trace("Matched with stats data");
-    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4", "subpack_int_id", "date")
+    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4","regexp5","regexp6", "subpack_int_id", "date")
+
     val gameScheduleOrig = fetchMLBSchedule().coalesce(4)
     val allStatsNullFills = Map(
       "program_guid" -> "0",
@@ -227,7 +244,7 @@ class ContentMatcher extends Serializable with Muncher {
     spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/thuuz.json")
     val thuuzGamesDF = spark.read.json(SparkFiles.get("thuuz.json"))
     val thuuzGamesDF1 = thuuzGamesDF.withColumn("gamesExp", explode(thuuzGamesDF.col("ratings"))).drop("ratings")
-    val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameId");
+    val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameId")
     val thuuzGamesDF20 = thuuzGamesDF11.withColumn("gameIdTmp", thuuzGamesDF11("statsGameId").cast(LongType)).drop("statsGameId").withColumnRenamed("gameIdTmp", "statsGameId")
     thuuzGamesDF20.createOrReplaceTempView("thuuzGames")
 
@@ -241,7 +258,8 @@ class ContentMatcher extends Serializable with Muncher {
     val summaryJson = spark.read.json(SparkFiles.get("summary.json"))
     val subPackIds = summaryJson.select($"subscriptionpacks")
     val subPackIds2 = subPackIds.withColumn("subpacksExploded", explode($"subscriptionpacks")).drop("spIdsExploded");
-    val subPackIds21 = subPackIds2.select(children("subpacksExploded", subPackIds2): _*).withColumnRenamed("title", "subpack_title").withColumnRenamed("subpack_id", "subpackage_guid");
+
+    val subPackIds21 = subPackIds2.select(children("subpacksExploded", subPackIds2): _*).withColumnRenamed("title", "subpack_title").withColumnRenamed("subpack_id", "subpackage_guid")
 
     val channelsSummaryJsonDF = summaryJson.select($"channels");
     val channelsSummaryJsonDF1 = channelsSummaryJsonDF.withColumn("channels", explode(channelsSummaryJsonDF.col("channels")));
@@ -362,7 +380,8 @@ class ContentMatcher extends Serializable with Muncher {
       :: Nil)
     val gameShceduleSchema = StructType(StructField("game-schedule", gameScheduleItemSchema, true) :: Nil)
     //only pickup MLB games for now
-    val ds3 = ds2.where("key like '%MLB_SCHEDULE.XML%'")
+    val ds3 = ds2.where("key like '%_SCHEDULE.XML%'")
+
     val ds4 = ds3.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
     val ds5 = ds4.select($"fileName", from_json($"payloadStruct.payload", gameShceduleSchema) as "gameScheduleStruct")
 
@@ -424,6 +443,7 @@ class ContentMatcher extends Serializable with Muncher {
     programsJoin4.createOrReplaceTempView("programsJoin4")
     val programsJoin5 = spark.sql("select concat(channel_guid,'_',program_id,'_',gameId) as id , * from programsJoin4")
     val programsJoin6 = programsJoin5.orderBy($"channel_guid",$"program_id",$"selfTimeEpoch").repartition($"gameId").coalesce(4)
+
     indexResults(outputCollName, programsJoin6)
 
   }

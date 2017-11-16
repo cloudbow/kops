@@ -6,7 +6,7 @@
     "disk": 0,
     "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","connect-jobs","com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"],
     "docker": {
-      "image": "arungeorge09/sc-job-scheduler:latest"
+      "image": "registry.marathon.l4lb.thisdcos.directory:5000/sc-job-scheduler:latest"
     },
     "maxLaunchDelay": 3600,
     "restart": {

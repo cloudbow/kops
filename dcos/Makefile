@@ -229,7 +229,7 @@ install-elastic-dev:
 
 
 install-registry:
-	@$(current_path)/dev/scripts/dcos/submit-marathon-job.sh  registry $(current_path)/dev/Docker-Dcos/config/registry.json
+	@$(current_path)/dev/scripts/application/install-registry.sh $(current_path)/dev registry $(current_path)/dev/Docker-Dcos/config/registry.json
 	
 	
 install-marathon-lb:
@@ -262,4 +262,7 @@ schedule-player-stats-batch-job:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh player-stats-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/player-stats.json
 	
 schedule-team-standings-batch-job:
-	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh player-stats-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/team-standings.json
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh team-standings-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/team-standings.json
+	
+schedule-content-match-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh content-match-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/content-match.json

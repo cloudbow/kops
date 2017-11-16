@@ -23,6 +23,7 @@ object ElasticSearchClient {
 
     private val log = LoggerFactory.getLogger("ElasticSearchClient") 
     private val credentialsProvider = new BasicCredentialsProvider();
+    
 
     class RestClientConfigCallback extends RestClientBuilder.HttpClientConfigCallback {
 

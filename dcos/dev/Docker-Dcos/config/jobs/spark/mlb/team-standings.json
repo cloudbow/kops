@@ -22,7 +22,7 @@
         "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "TEAMSTANDINGS", "meta_batch" , "team_standings"
         ],
     "docker": {
-      "image": "mesosphere/spark:2.0.1-2.2.0-1-hadoop-2.6"
+      "image": "registry.marathon.l4lb.thisdcos.directory:5000/spark:2.0.1-2.2.0-1-hadoop-2.6"
     },
     "maxLaunchDelay": 3600,
     "restart": {

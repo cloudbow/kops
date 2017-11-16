@@ -74,7 +74,7 @@ public class AbstractSportsCloudRestDelegate {
 			awayTeamId = currGamesDoc.get("awayTeamExternalId").getAsString();
 			awayTeamName = currGamesDoc.get("awayTeamName").getAsString();
 			homeTeamName = currGamesDoc.get("homeTeamName").getAsString();
-			gameId = currGamesDoc.get("gameCode").getAsString();
+			gameId = currGamesDoc.get("gameId").getAsString();
 			gameType = GameType.getValue(currGamesDoc.get("gameType").getAsString());
 		}
 		if (teamId.equals(homeTeamId)) {
@@ -165,9 +165,17 @@ public class AbstractSportsCloudRestDelegate {
 
 	public void updateScoreStatusFromLive(Map<String, JsonObject> liveResponseJson, JsonObject mainObj, String gameId) {
 		if (liveResponseJson.get(gameId) != null) {
-			String awayTeamScore = liveResponseJson.get(gameId).get("awayScoreRuns").getAsString();
-			String homeTeamScore = liveResponseJson.get(gameId).get("homeScoreRuns").getAsString();
-			mainObj.add("homeScore", new JsonPrimitive(homeTeamScore));
+			String awayTeamScore = "0";
+			String homeTeamScore = "0";
+			if(liveResponseJson.get(gameId).has("awayScoreRuns")) {
+				awayTeamScore = liveResponseJson.get(gameId).get("awayScoreRuns").getAsString();
+				homeTeamScore = liveResponseJson.get(gameId).get("homeScoreRuns").getAsString();
+			}
+			if(liveResponseJson.get(gameId).has("awayScore")) {
+				awayTeamScore = liveResponseJson.get(gameId).get("awayScore").getAsString();
+				homeTeamScore = liveResponseJson.get(gameId).get("homeScore").getAsString();
+			}
+ 			mainObj.add("homeScore", new JsonPrimitive(homeTeamScore));
 			mainObj.add("awayScore", new JsonPrimitive(awayTeamScore));
 			mainObj.add("gameStatus", new JsonPrimitive(GameStatus
 					.getValue(liveResponseJson.get(gameId).get("statusId").getAsInt()).toString()));
@@ -179,7 +187,7 @@ public class AbstractSportsCloudRestDelegate {
 	protected void getSportData(JsonElement solrDoc, JsonObject sportDataItem, boolean addPitcherDetails, int homePitcherWins, int homePitcherLosses, int awayPitcherWins,
 			int awayPitcherLosses, JsonArray gameResponse) {
 				JsonObject gameScheduleJsonObj = solrDoc.getAsJsonObject();
-				sportDataItem.add("gameId", new JsonPrimitive(gameScheduleJsonObj.get("gameCode").getAsString()));
+				sportDataItem.add("gameId", new JsonPrimitive(gameScheduleJsonObj.get("gameId").getAsString()));
 				sportDataItem.add("gameCode", new JsonPrimitive(gameScheduleJsonObj.get("gameCode").getAsString()));
 			
 				// todo
@@ -350,15 +358,30 @@ public class AbstractSportsCloudRestDelegate {
 		if (liveGameInfoRespJsonArr.size() > 0) {
 			// pick the first item
 			JsonObject liveGameJsonObj = liveGameInfoRespJsonArr.get(0).getAsJsonObject().get("_source").getAsJsonObject();
-	
+
+			int awayTeamScore = 0;
+			int homeTeamScore = 0;
+			if(liveGameJsonObj.has("awayScoreRuns")) {
+				awayTeamScore = liveGameJsonObj.get("awayScoreRuns").getAsInt();
+				homeTeamScore = liveGameJsonObj.get("homeScoreRuns").getAsInt();
+			}
+			if(liveGameJsonObj.has("awayScore")) {
+				awayTeamScore = liveGameJsonObj.get("awayScore").getAsInt();
+				homeTeamScore = liveGameJsonObj.get("homeScore").getAsInt();
+			}
 			// update home&away scores to media card
-			mcSportData.add("homeScore", new JsonPrimitive(liveGameJsonObj.get("homeScoreRuns").getAsInt()));
-			mcSportData.add("awayScore", new JsonPrimitive(liveGameJsonObj.get("awayScoreRuns").getAsInt()));
+			mcSportData.add("homeScore", new JsonPrimitive(homeTeamScore));
+			mcSportData.add("awayScore", new JsonPrimitive(awayTeamScore));
 			addFieldsCount(mcSportData, liveGameJsonObj);
-	
+
 			// update score data into media card
-			addScoreData(activeGame, mc, solrDoc, liveGameJsonObj);
-			addCurrentPlayerDetails(mcSportData, liveGameJsonObj);
+			if(solrDoc.get("league").getAsString().toLowerCase().equals("ncaaf")) {
+				addScoreDataNonMlb(activeGame, mc, solrDoc, liveGameJsonObj);
+			} else {
+				addScoreData(activeGame, mc, solrDoc, liveGameJsonObj);
+				addCurrentPlayerDetails(mcSportData, liveGameJsonObj);
+			}
+
 			updateGameStatusAndType(mcSportData, liveGameJsonObj);
 		}
 	
@@ -471,6 +494,32 @@ public class AbstractSportsCloudRestDelegate {
 				new JsonPrimitive(getScoreBoardTitle(activeGame)));
 		scoreData.add("sport", new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
 	}
+
+	void addScoreDataNonMlb(ActiveTeamGame activeGame, JsonObject mc, JsonObject solrDoc, JsonObject liveGameJsonObj) {
+		JsonObject scoreData = new JsonObject();
+		mc.add("score_data", scoreData);
+		JsonObject scHomeTeam = new JsonObject();
+		JsonObject scAwayTeam = new JsonObject();
+		scoreData.add("homeTeam", scHomeTeam);
+		scoreData.add("awayTeam", scAwayTeam);
+
+
+		JsonArray htScoreDetails = new JsonArray();
+		if (liveGameJsonObj.has("homeTeamlineScore")) {
+			htScoreDetails = liveGameJsonObj.get("homeTeamlineScore").getAsJsonArray();
+		}
+
+		JsonArray atScoreDetails = new JsonArray();
+		if (liveGameJsonObj.has("awayTeamlineScore")) {
+			atScoreDetails = liveGameJsonObj.get("awayTeamlineScore").getAsJsonArray();
+		}
+		scHomeTeam.add("scoreDetails", htScoreDetails);
+		scAwayTeam.add("scoreDetails", atScoreDetails);
+		//scoreData.add("scoreboard_title",
+		//		new JsonPrimitive(getScoreBoardTitle(activeGame)));
+		scoreData.add("sport", new JsonPrimitive(solrDoc.getAsJsonObject().get("sport").getAsString()));
+	}
+
 
 	String getScoreBoardTitle(ActiveTeamGame activeGame) {
 		//

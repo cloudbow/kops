@@ -2,9 +2,8 @@ package com.slingmedia.sportscloud.offline.batch.impl
 
 import com.slingmedia.sportscloud.offline.batch.Muncher
 
-import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactory
 
-import scala.util.{ Try, Success, Failure }
 
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, FloatType, ArrayType };
 import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
@@ -15,7 +14,6 @@ import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
 
 
 object LDMHolder extends Serializable {
-  val serialVersionUID = 1L;
   @transient lazy val log = LoggerFactory.getLogger("LiveDataMuncher")
 }
 
@@ -36,6 +34,7 @@ object MetaDataMuncher extends Serializable {
           :: StructField("wins", IntegerType, true)
           :: StructField("losses", IntegerType, true) :: Nil)
         //"meta_batch", "player_stats", "localhost:9983"
+
         new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
       case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
@@ -59,6 +58,7 @@ object MetaDataMuncher extends Serializable {
 }
 
 class MetaDataMuncher extends Serializable with Muncher {
+
   override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
@@ -82,6 +82,7 @@ class MetaDataMuncher extends Serializable with Muncher {
     }
     finalDataFrame.toJSON.toDF.show(120,false)
     indexResults( outputCollName,  finalDataFrame)
+
 
   }
 

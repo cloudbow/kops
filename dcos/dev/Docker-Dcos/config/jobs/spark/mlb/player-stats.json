@@ -6,7 +6,6 @@
     "disk": 20000,
     "args": ["/opt/spark/dist/bin/spark-submit",
         "--name","PlayerStats","--class", "com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher" ,
-        "--master","mesos://zk://master.mesos:2181/mesos", 
         "--driver-memory", "4G", 
         "--executor-memory", "4G", 
         "--total-executor-cores", "1", 
@@ -23,7 +22,7 @@
         "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "PLAYERSTATS", "meta_batch" , "player_stats"
         ],
     "docker": {
-      "image": "mesosphere/spark:2.0.1-2.2.0-1-hadoop-2.6"
+      "image": "registry.marathon.l4lb.thisdcos.directory:5000/spark:2.0.1-2.2.0-1-hadoop-2.6"
     },
     "maxLaunchDelay": 3600,
     "restart": {

@@ -37,7 +37,7 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 					mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
 					mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
 					mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
-					mainObj.add("id", new JsonPrimitive(gameScheduleJson.get("gameCode").getAsString()));
+					mainObj.add("id", new JsonPrimitive(gameScheduleJson.get("gameId").getAsString()));
 					mainObj.add("sport", new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
 					mainObj.add("league",
 							new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));

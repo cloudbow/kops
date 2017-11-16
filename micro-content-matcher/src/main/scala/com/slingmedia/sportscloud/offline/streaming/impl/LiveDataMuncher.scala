@@ -14,6 +14,7 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.streaming.kafka010.{ HasOffsetRanges, CanCommitOffsets, KafkaUtils, LocationStrategies, ConsumerStrategies }
 
 
+
 import scala.util.{ Try, Success, Failure }
 
 import java.time.Instant
@@ -99,6 +100,7 @@ class LiveDataMuncher extends Serializable with Muncher {
   val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
   //All udfs ends here
 
+
   val mergeLiveInfo: (DataFrame) => Unit = ( kafkaLiveInfoT1DF1: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -168,6 +170,7 @@ class LiveDataMuncher extends Serializable with Muncher {
     val kafkaLiveInfoT5DF2 = kafkaLiveInfoT5DF1.withColumn("rStatusId", getReorderedStatusIdUDF($"statusId"))
     //order by new statusId 
     //Repartition by gameId as we can update elastic paralley for each game
+
     //Order it so that the order is updated
     val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.coalesce(4)
     val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameId").
@@ -184,6 +187,7 @@ class LiveDataMuncher extends Serializable with Muncher {
     val kafkaLiveInfoT9DF3 = kafkaLiveInfoT9DF2.select(allCols.toSeq: _*).drop("playerData").orderBy($"gameId", $"rStatusId", $"srcTimeEpoch").repartition($"gameId").coalesce(4)
 
     kafkaLiveInfoT9DF3.select($"gameId", $"gameCode", $"statusId", $"isHomePitching", $"hTCurrPlayer", $"aTCurrPlayer", $"srcTimeEpoch", $"awayTeamInnings", $"homeTeamInnings", $"inningTitle").show(false)
+
     //only if the above indexing succeeds the below will succeed
     //avoid obvious failures
     val indexResult = Try(indexResults("live_info",  kafkaLiveInfoT9DF3))
@@ -201,11 +205,13 @@ class LiveDataMuncher extends Serializable with Muncher {
           drop("homeTeamExtId", "awayTeamExtId")
         val kafkaLiveInfoT11DF3 = kafkaLiveInfoT10DF2.filter("lastPlay != ''")
         indexResults( "scoring_events", kafkaLiveInfoT11DF3)
+
       case Failure(e) =>
         Holder.log.error("Error occurred in live_info indexing ", e)
     }
 
   }
+
 
   override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
 

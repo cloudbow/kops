@@ -54,7 +54,7 @@ sports-cloud-no-network:
 	 	-v /data/apps/content-matcher/feeds:/data/feeds \
 	 	-v /data/platforms/elastic:/data/elastic \
 		-v /var/log:/var/log \
+		-v /var/log/elasticsearch:/var/log/elasticsearch \
 		-v $(current_path)/sports-cloud-schedulers/src/main/resources:/spark-log4j-config \
 		-v $(current_path):/project \
 		-it --cap-add=SYS_PTRACE --security-opt=apparmor:unconfined $(TAG)
-

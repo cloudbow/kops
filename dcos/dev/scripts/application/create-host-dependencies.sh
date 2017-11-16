@@ -12,33 +12,13 @@ sudo mkdir -p /data/apps/sports-cloud/spark/log4j-config
 sudo mkdir -p /data/apps/sports-cloud/artifacts
 sudo mkdir -p /data/apps/sports-cloud/kafka/connect/libs
 sudo mkdir -p /data/apps/sports-cloud/elastic/data
-sudo mkdir -p /data/apps/sports-cloud/docker-client/security
-sudo mkdir -p /data/apps/sports-cloud/docker/security
-sudo mkdir -p /data/apps/sports-cloud/docker/registry
-sudo mkdir -p /data/apps/sports-cloud/docker/security/registry.marathon.l4lb.thisdcos.directory:5000
-
-
-## cd to mount dir
-
-cd /data/apps/sports-cloud/docker-client/security
-
-## Create open ssl keys for docker 
-openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 3650 -out domain.crt -subj "/C=US/ST=NY/L=NYC/O=SlingMedia/OU=Backend/CN=registry.marathon.l4lb.thisdcos.directory"
-
-# CHANGE THIS BELOW TO THE /etc/docker/certs.d/registry.marathon.l4lb.thisdcos.directory:5000
-cp /data/apps/sports-cloud/docker-client/security/domain.crt /data/apps/sports-cloud/docker/security/registry.marathon.l4lb.thisdcos.directory:5000/ca.crt    
-
-
-## Copy to local docker 
-mkdir -p  /etc/docker/certs.d/registry.marathon.l4lb.thisdcos.directory:5000
-cp /data/apps/sports-cloud/docker-client/security/domain.crt /etc/docker/certs.d/registry.marathon.l4lb.thisdcos.directory:5000/ca.crt
-
 ## 
     
 # Create and copy executable jar to libs folder
-cd sports-cloud-dcos-schedulers
+cd $BASE_PATH/sports-cloud-dcos-schedulers
 sbt clean assembly
-cp target/scala-*/sports-cloud-dcos-schedulers-assembly-*.jar ../dev/deploy-scheduled-jobs/libs/sports-cloud-dcos-schedulers-assembly.jar
+mkdir $BASE_PATH/dev/deploy-scheduled-jobs/libs
+cp target/scala-*/sports-cloud-dcos-schedulers-assembly-*.jar $BASE_PATH/dev/deploy-scheduled-jobs/libs/sports-cloud-dcos-schedulers-assembly.jar
 
 echo "uploading jar file"
 $BASE_PATH/dev/scripts/libs/zip-and-upload-artifacts.sh /tmp/scheduled-job-scripts.tar.gz slingtv/sports-cloud/scheduled-job-scripts.tar.gz $BASE_PATH/dev/deploy-scheduled-jobs

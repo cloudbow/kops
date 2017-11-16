@@ -31,7 +31,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.slingmedia.sportscloud.netty.rest.model.League;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -72,6 +75,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 	private SportsCloudHomeScreenDelegate sportsCloudHomeScreenDelegate = new SportsCloudHomeScreenDelegate();
 	private SportsCloudMCDelegate sportsCloudMCDelegate = new SportsCloudMCDelegate();
 
+
 	private DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("YYYY-MM-dd Z").withLocale(Locale.US);
 	
 	SportsCloudRestDecoder() {
@@ -96,15 +100,19 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			String finalResponse = "{}";
 
 			HttpResponse response = null;
+
 			response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
 			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
 			String uri = request.uri();
-			if (uri.startsWith("/rest/v1/healthcheck")) {
-				finalResponse = "{}";
-				
-			} else if (uri.startsWith("/dish/v1/sport")) {
+
+			String pattern = "/dish/v1/mc/(.*)\\?+";
+			Pattern r = Pattern.compile(pattern);
+			// Now create matcher object.
+			Matcher m = r.matcher(uri);
+
+			if (uri.startsWith("/dish/v1/sport")) {
 				QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 				Map<String, List<String>> params = queryStringDecoder.parameters();
 				long startDate = Instant.now().getEpochSecond();
@@ -119,8 +127,9 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 				Set<String> subpackIds = getSubPackIdsFromParam(params);
 
 				finalResponse = prepareGameScheduleDataForHomeScreen(finalResponse, startDate, endDate, subpackIds);
-			} else if (uri.startsWith("/dish/v1/mc/mlb")) {
+			} else if (m.find( )) {
 				try {
+					String league = m.group(1);
 					QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 					Map<String, List<String>> params = queryStringDecoder.parameters();
 					String gameScheduleId = null;
@@ -130,7 +139,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 					String teamId = params.get("teamId").get(0);
 					Set<String> subpackIds = getSubPackIdsFromParam(params);
 
-					finalResponse = prepareMCData(gameScheduleId, teamId, subpackIds);
+					finalResponse = prepareMCData(gameScheduleId, teamId, subpackIds, league);
 				} catch (Exception e) {
 					LOGGER.error("Error occurred in parsing json", e);
 				}
@@ -176,7 +185,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 		return finalSubpackIds;
 	}
 
-	private String prepareMCData(String gameScheduleId, String teamId, Set<String> subpackIds) {
+	private String prepareMCData(String gameScheduleId, String teamId, Set<String> subpackIds, String league) {
 		String finalResponse;
 		JsonObject gameFinderDrillDownJson = new JsonObject();
 		ActiveTeamGame activeGame = new ActiveTeamGame( "0",null, "0", null, null, null, null, Role.NONE);
@@ -200,7 +209,13 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 
 		}
 
-		sportsCloudMCDelegate.prepareMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson, activeGame);
+		if(league.toUpperCase().equals(League.MLB.toString())) {
+			sportsCloudMCDelegate.prepareMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson, activeGame);
+		} else {
+			sportsCloudMCDelegate.prepareNonMlbMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson, activeGame, league);
+		}
+
+
 
 		finalResponse = gameFinderDrillDownJson.toString();
 		return finalResponse;

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.slingmedia.sportscloud.netty.rest.model.GameStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,36 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 	
 		}
 	}
+
+	public void prepareNonMlbMCJson( String gameScheduleId, String teamId, Set<String> subpackIds, JsonObject gameFinderDrillDownJson, ActiveTeamGame activeGame, String league) {
+		if (activeGame.getActiveTeamRole() != Role.NONE) {
+
+			JsonArray gameSchedules = new JsonArray();
+			JsonObject mc = new JsonObject();
+			JsonArray scoringEvents = new JsonArray();
+			JsonArray drives = new JsonArray();
+			JsonObject standings = new JsonObject();
+			// todo
+			gameFinderDrillDownJson.add("active_team", new JsonPrimitive(teamId));
+			gameFinderDrillDownJson.add("gamesSchedule", gameSchedules);
+			gameFinderDrillDownJson.add("mc", mc);
+			gameFinderDrillDownJson.add("drives", drives);
+			gameFinderDrillDownJson.add("scoring_events", scoringEvents);
+			gameFinderDrillDownJson.add("standings", standings);
+
+			prepareNonMlbMCGameSchedule(teamId, activeGame, gameSchedules, drives);
+
+			String gameId =prepareMCMainGameData(activeGame, gameScheduleId, mc, subpackIds);
+
+			// http://localhost:"+solrPort+"/solr/techproducts/select?wt=json&indent=true&fl=id,name&q=solr+memory&group=true&group.field=manu_exact
+			prepareMCTeamStandings(activeGame, standings, "cfb");
+
+			prepareNcaafMCDrives(gameId, teamId, scoringEvents);
+			//prepareMCFootBallDrives();
+
+		}
+	}
+
 	
 	public void prepareMCDrives(String gameId, String teamId, JsonArray scoringEvents) {
 		JsonArray scoringEvtsResponse = SportsDataFacade$.MODULE$.getAllScoringEventsForGame(gameId).getAsJsonObject().get("hits")
@@ -70,6 +101,37 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 					teamIdDrive = driveDoc.get("teamId").getAsString();
 				}
 				scoringEventItem.add("teamId", new JsonPrimitive(teamIdDrive));
+				scoringEvents.add(scoringEventItem);
+			}
+
+		}
+	}
+
+	public void prepareNcaafMCDrives(String gameId, String teamId, JsonArray scoringEvents) {
+		JsonArray scoringEvtsResponse = SportsDataFacade$.MODULE$.getAllScoringEventsForGame(gameId).getAsJsonObject().get("hits")
+				.getAsJsonObject().get("hits").getAsJsonArray();
+		for (JsonElement driveSrcDoc : scoringEvtsResponse) {
+			JsonObject scoringEventItem = new JsonObject();
+			JsonObject driveDoc = driveSrcDoc.getAsJsonObject().get("_source").getAsJsonObject();
+			if (driveDoc.has("lastPlay")) {
+				scoringEventItem.add("description",
+						new JsonPrimitive(driveDoc.get("lastPlay").getAsString()));
+				scoringEventItem.add("img", new JsonPrimitive(driveDoc.get("img").getAsString()));
+				scoringEventItem.add("period",
+						new JsonPrimitive(driveDoc.get("period").getAsString()));
+				scoringEventItem.add("timer",
+						new JsonPrimitive(driveDoc.get("timer").getAsString()));
+				scoringEventItem.add("type",
+						new JsonPrimitive(driveDoc.get("playType").getAsString()));
+				scoringEventItem.add("position",
+						new JsonPrimitive(driveDoc.get("position").getAsBigDecimal()));
+				if (driveDoc.has("seconds")) {
+					scoringEventItem.add("seconds",
+							new JsonPrimitive(driveDoc.get("seconds").getAsInt()));
+				} else {
+					scoringEventItem.add("seconds",
+							new JsonPrimitive(driveDoc.get("gameTimeSeconds").getAsInt()));
+				}
 				scoringEvents.add(scoringEventItem);
 			}
 
@@ -231,6 +293,7 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 			mc.add("anons", new JsonPrimitive(teaser));
 			mc.add("anons_title", new JsonPrimitive(solrDoc.getAsJsonObject().get("anonsTitle").getAsString()));
 
+
 			mergeLiveInfoToMediaCard(activeGame, mc, solrDoc, sportDataItem);
 
 		}
@@ -271,7 +334,62 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 
 		}
 	}
-	
+
+	public void prepareNonMlbMCGameSchedule(String teamId, ActiveTeamGame gameRole, JsonArray gameSchedules, JsonArray drives) {
+
+		long prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
+
+		JsonElement gameScheduleResponseJson = SportsDataFacade$.MODULE$.getGameSchedulesForMediaCard(gameRole,teamId);
+		Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(prevSixMonth, Long.MAX_VALUE,3000);
+
+		// create game schedule json part
+		if (gameScheduleResponseJson != null) {
+
+			try {
+
+				JsonArray docs = gameScheduleResponseJson.getAsJsonObject().get("aggregations").getAsJsonObject()
+						.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
+				for (JsonElement groupedDocSrc : docs) {
+
+					JsonArray gameScheduleArr = groupedDocSrc.getAsJsonObject().get("top_game_mc_hits").getAsJsonObject().get("hits")
+							.getAsJsonObject().get("hits").getAsJsonArray();
+					JsonObject solrDoc = gameScheduleArr.get(0).getAsJsonObject().get("_source").getAsJsonObject();
+					JsonObject sportData = new JsonObject();
+					JsonObject sportDataItem = new JsonObject();
+					getSportData(solrDoc, sportDataItem, false, 0, 0, 0, 0,gameScheduleArr);
+					updateScoreStatusFromLive(liveResponseJson, sportDataItem, solrDoc.get("gameId").getAsString());
+					updateDrivesFroLive( liveResponseJson, drives, solrDoc.get("gameId").getAsString());
+					sportData.add("sport_data", sportDataItem);
+					gameSchedules.add(sportData);
+
+				}
+			} catch (Exception e) {
+				LOGGER.error("Error occurred in parsing json", e);
+			}
+
+		}
+	}
+
+	public void updateDrivesFroLive(Map<String, JsonObject> liveResponseJson, JsonArray drives, String gameId) {
+        if (liveResponseJson.get(gameId) != null) {
+            try {
+                if (liveResponseJson.get(gameId).has("drives")) {
+                    JsonArray flatDrives = liveResponseJson.get(gameId).get("drives").getAsJsonArray();
+                    for (JsonElement driveSum : flatDrives
+                            ) {
+                        String driveStr = driveSum.getAsString();
+                        JsonParser parser = new JsonParser();
+                        JsonObject drive = parser.parse(driveStr).getAsJsonObject();
+                        drives.add(drive);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.error("Error occured in parsing json", e);
+            }
+
+        }
+
+    }
 
 
 	public JsonElement getJsonObject(StringBuilder requestURLBuilder) {

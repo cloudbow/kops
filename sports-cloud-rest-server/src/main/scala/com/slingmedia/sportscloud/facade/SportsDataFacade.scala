@@ -137,7 +137,7 @@ object SportsDataFacade {
   	def getAllLiveGamesInDateRange(startDate:Long, endDate:Long, sizeToReturn: Int): JsonElement = {
   		val searchTemplate =  s"""{ 
 		  "size": $sizeToReturn,
-		  "_source":  [ "gameId","homeScoreRuns","awayScoreRuns","statusId" ],
+		  "_source":  [ "gameId","homeScoreRuns","awayScoreRuns","statusId","homeScore","awayScore", "drives" ],
 		  "query" : {
 		        "constant_score": {
 		            "filter": {
@@ -190,11 +190,11 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getLiveInfoURLBase(), Map[String, String](),searchTemplate)		  		  	 				  	
   	}
   	
-  	def getGameScheduleByGameCode(gameCode: String): JsonElement = {
+  	def getGameScheduleByGameCode(gameId: String): JsonElement = {
   		val searchTemplate =  s"""{ 
 		    "size" : 10,
 		    "query" : {
-		        "term" : { "gameCode" : "$gameCode" }
+		        "term" : { "gameId" : "$gameId" }
 		    }
 		}""".stripMargin.replaceAll("\n", " ")
 		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)	  	
@@ -225,7 +225,7 @@ object SportsDataFacade {
 		  "aggs": {
 		    "top_tags": {
 		      "terms": {
-		        "field": "gameCode.keyword",
+		        "field": "gameId.keyword",
         		"size" : 500,
 		        "order": {
 		          "order_agg": "asc"
@@ -248,8 +248,18 @@ object SportsDataFacade {
 		}""".stripMargin.replaceAll("\n", " ")
 		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)	  	
   	}
-  	
-  	
+
+  	/*def getGameDrivesByGameCode(gameCode: String) : JsonElement = {
+			val searchTemplate =  s""" {
+			  "size"  : 10,
+		  	"_source":  [ "wins", "losses" ],
+					"query" : {
+							"term" : { "id" : "$gameCode" }
+					}
+				}""".stripMargin.replaceAll("\n", " ")
+			elasticSearchClient.search("POST",getLiveGameById(), Map[String, String](),searchTemplate)
+		}*/
+
   	
   	def getGameSchedulesForMediaCard(gameRole:ActiveTeamGame,teamId:String):JsonElement = {
   	  	val prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
@@ -285,7 +295,7 @@ object SportsDataFacade {
 		  "aggs": {
 		    "top_tags": {
 		      "terms": {
-		        "field": "gameCode.keyword",
+		        "field": "gameId.keyword",
         		"size" : 3000,
 		        "order": {
 		          "order_agg": "asc"
