@@ -3,6 +3,7 @@ package com.slingmedia.sportscloud.offline.batch
 import org.apache.spark.sql.{ DataFrame, Column }
 import org.apache.spark.sql.types.{ StructField, StructType };
 import org.apache.spark.sql.functions.{ col, udf }
+import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 
 import org.slf4j.LoggerFactory;
 
@@ -11,9 +12,8 @@ import scala.util.{ Try, Success, Failure }
 import java.time.{ ZonedDateTime, OffsetDateTime, ZoneOffset, Instant, ZoneId }
 import java.time.format.DateTimeFormatter
 
-import org.apache.solr.client.solrj.response.UpdateResponse
+import org.elasticsearch.spark.rdd.EsSpark                        
 
-import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
 object MLogHolder extends Serializable {
   val serialVersionUID = 1L;
@@ -21,10 +21,10 @@ object MLogHolder extends Serializable {
 }
 
 trait Muncher {
-  def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {}
-  def stream(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {}
-  def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, filterCond: String): Unit = {}
-  def munch(batchTime: Long, inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
+  def munch(inputKafkaTopic: String, outputCollName: String): Unit = {}
+  def stream(inputKafkaTopic: String, outputCollName: String): Unit = {}
+  def munch(inputKafkaTopic: String, outputCollName: String, schema: StructType, filterCond: String): Unit = {}
+  def munch(batchTime: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
   val children: (String, DataFrame) => Array[Column] = (colname: String, df: DataFrame) => {
     val parent = df.schema.fields.filter(_.name == colname).head
     val fields = parent.dataType match {
@@ -71,18 +71,10 @@ trait Muncher {
   }
   val timeEpochtoStrUDF = udf(timeEpochToStr(_: Long))
   
-  val indexToSolr: (String, String, String, DataFrame) => Try[UpdateResponse] = (zkHost: String, outputCollName: String, generateKey: String, input: DataFrame) => {
-    val solrOpts = Map("zkhost" -> zkHost, "collection" -> outputCollName, ConfigurationConstants.GENERATE_UNIQUE_KEY -> generateKey)
-    val solrCloudClient = SolrSupport.getCachedCloudClient(zkHost)
-    val saveResult = Try(input.write.format("solr").options(solrOpts).mode(org.apache.spark.sql.SaveMode.Overwrite).save())
-    saveResult match {
-      case Success(data) =>
-        MLogHolder.log.info("Dataframe write succes.Writing to solr")
-        Try(solrCloudClient.commit(outputCollName, true, true))
-      case Failure(e) =>
-        MLogHolder.log.error("Error occurred in saving dataframe in right format. Is DF empty? ", e)
-        Try(new UpdateResponse())
-    }
+  
+  val indexResults: (String,DataFrame) => Unit = ( outputCollName: String, input: DataFrame) => {
+    val inputConverted = input.toJSON
+    EsSpark.saveJsonToEs(inputConverted.rdd,s"sports-cloud/$outputCollName", Map("es.mapping.id" -> "id"))
   }
 
 }

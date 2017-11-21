@@ -36,7 +36,7 @@ class MetaBatchSourceConverter extends SourceRecordConverter  with ConverterBase
           case finalBoxScores(_*) =>
             Parsers(ParserType.BoxScoreParser).generateRows(data, in)
           case _ =>
-            Parsers(ParserType.Default).generateRows(data, in)
+            Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
         log.error("Error occurred in parsing xml ",e)

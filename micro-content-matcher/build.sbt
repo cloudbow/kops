@@ -21,7 +21,7 @@ lazy val root = (project in file(".")).
   		kafkaSparkStreaming,
   		kafkaSparkSql,
   		databricksCSV,
-  		solrj
+  		elastic
 	),
 	assemblyMergeStrategy in assembly := {
 		case PathList("META-INF", xs @ _*) => MergeStrategy.discard

@@ -13,6 +13,8 @@ import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.streaming.kafka010.{ HasOffsetRanges, CanCommitOffsets, KafkaUtils, LocationStrategies, ConsumerStrategies }
 
+
+
 import scala.util.{ Try, Success, Failure }
 
 import java.time.Instant
@@ -28,7 +30,7 @@ case class Pitcher(isHomePitching: Boolean, hTCurrPlayer: String, aTCurrPlayer: 
 object LiveDataMuncher extends Serializable {
   def main(args: Array[String]) {
     Holder.log.debug("Args is $args")
-    new LiveDataMuncher().stream(args(0), args(1), args(2))
+    new LiveDataMuncher().stream(args(0), args(1))
   }
 
 }
@@ -98,7 +100,8 @@ class LiveDataMuncher extends Serializable with Muncher {
   val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
   //All udfs ends here
 
-  val mergeLiveInfo: (String, DataFrame) => Unit = (zkHost: String, kafkaLiveInfoT1DF1: DataFrame) => {
+
+  val mergeLiveInfo: (DataFrame) => Unit = ( kafkaLiveInfoT1DF1: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val batchTimeStamp = Instant.now().getEpochSecond
@@ -166,9 +169,10 @@ class LiveDataMuncher extends Serializable with Muncher {
     //reorder statusId so that the ordering is right
     val kafkaLiveInfoT5DF2 = kafkaLiveInfoT5DF1.withColumn("rStatusId", getReorderedStatusIdUDF($"statusId"))
     //order by new statusId 
-    //Repartition by gameId as we can update solr paralley for each game
+    //Repartition by gameId as we can update elastic paralley for each game
+
     //Order it so that the order is updated
-    val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.repartition($"gameId").coalesce(3).orderBy($"gameId", $"rStatusId", $"srcTimeEpoch")
+    val kafkaLiveInfoT6DF2 = kafkaLiveInfoT5DF2.coalesce(4)
     val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameId").
       withColumn("fieldCountsTxt", getFieldsCountUDF($"balls", $"strikes", $"outs")).
       withColumn("fieldState", getFieldStateUDF($"firstGameBase", $"secondGameBase", $"thirdGameBase")).
@@ -180,13 +184,15 @@ class LiveDataMuncher extends Serializable with Muncher {
       withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
     val kafkaLiveInfoT9DF2 = kafkaLiveInfoT8DF2.withColumn("playerData", getPitchingDetailsUDF($"segmentDiv", $"currBtrName", $"hTCurrPitcherName", $"aTCurrPitcherName"))
     val allCols = kafkaLiveInfoT8DF2.columns.map { it => col(it) } ++ children("playerData", kafkaLiveInfoT9DF2)
-    val kafkaLiveInfoT9DF3 = kafkaLiveInfoT9DF2.select(allCols.toSeq: _*).drop("playerData")
+    val kafkaLiveInfoT9DF3 = kafkaLiveInfoT9DF2.select(allCols.toSeq: _*).drop("playerData").orderBy($"gameId", $"rStatusId", $"srcTimeEpoch").repartition($"gameId").coalesce(4)
+
     kafkaLiveInfoT9DF3.select($"gameId", $"gameCode", $"statusId", $"isHomePitching", $"hTCurrPlayer", $"aTCurrPlayer", $"srcTimeEpoch", $"awayTeamInnings", $"homeTeamInnings", $"inningTitle").show(false)
 
-    val indexResult = indexToSolr(zkHost, "live_info", "false", kafkaLiveInfoT9DF3)
+    //only if the above indexing succeeds the below will succeed
+    //avoid obvious failures
+    val indexResult = Try(indexResults("live_info",  kafkaLiveInfoT9DF3))
     indexResult match {
       case Success(data) =>
-        Holder.log.info(data.toString)
         val kafkaLiveInfoT10DF2 = kafkaLiveInfoT9DF3.select($"lastPlay",
           $"batchTime",
           $"srcTimeEpoch".alias("srcTime"),
@@ -198,39 +204,35 @@ class LiveDataMuncher extends Serializable with Muncher {
           withColumn("teamId", getTeamIdUDF($"inningTitle", $"homeTeamExtId", $"awayTeamExtId")).
           drop("homeTeamExtId", "awayTeamExtId")
         val kafkaLiveInfoT11DF3 = kafkaLiveInfoT10DF2.filter("lastPlay != ''")
-        val indexResult2 = indexToSolr(zkHost, "scoring_events", "false", kafkaLiveInfoT11DF3)
-        indexResult2 match {
-          case Success(data) =>
-            Holder.log.info(data.toString)
-          case Failure(e) =>
-            Holder.log.error("Error occurred in scoring_events indexing ", e)
-        }
+        indexResults( "scoring_events", kafkaLiveInfoT11DF3)
+
       case Failure(e) =>
         Holder.log.error("Error occurred in live_info indexing ", e)
     }
 
   }
 
-  override def munch(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {
+
+  override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
     val kafkaLiveInfoT1DF1 = ds2.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
-    mergeLiveInfo(zkHost, kafkaLiveInfoT1DF1)
+    mergeLiveInfo( kafkaLiveInfoT1DF1)
 
   }
 
-  override def stream(inputKafkaTopic: String, outputCollName: String, zkHost: String): Unit = {
+  override def stream(inputKafkaTopic: String, outputCollName: String): Unit = {
     Holder.log.debug("Args is $args")
 
     val sc = SparkContext.getOrCreate()
     val spark = SparkSession.builder().getOrCreate()
-    val ssc = new StreamingContext(sc, Seconds(1))
+    val ssc = new StreamingContext(sc, Seconds(5))
 
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "localhost:9092",
+      "bootstrap.servers" -> "broker.confluent-kafka.l4lb.thisdcos.directory:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> "liveDataMatcherStream",
@@ -249,7 +251,7 @@ class LiveDataMuncher extends Serializable with Muncher {
       import spark.implicits._
       val kafkaLiveInfoDF1 = kafkaRDD.toDF
       val kafkaLiveInfoT1DF1 = kafkaLiveInfoDF1.select(from_json($"_1", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"_2", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
-      mergeLiveInfo(zkHost, kafkaLiveInfoT1DF1)
+      mergeLiveInfo(kafkaLiveInfoT1DF1)
       //dstream0.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
     })
 

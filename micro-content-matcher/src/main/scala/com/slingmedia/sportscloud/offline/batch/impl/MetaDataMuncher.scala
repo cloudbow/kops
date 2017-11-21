@@ -2,11 +2,8 @@ package com.slingmedia.sportscloud.offline.batch.impl
 
 import com.slingmedia.sportscloud.offline.batch.Muncher
 
-import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactory
 
-import scala.util.{ Try, Success, Failure }
-
-import com.lucidworks.spark.util.{ SolrSupport, SolrQuerySupport, ConfigurationConstants }
 
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, FloatType, ArrayType };
 import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
@@ -15,8 +12,8 @@ import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, co
 import java.time.Instant
 import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
 
+
 object LDMHolder extends Serializable {
-  val serialVersionUID = 1L;
   @transient lazy val log = LoggerFactory.getLogger("LiveDataMuncher")
 }
 
@@ -37,7 +34,8 @@ object MetaDataMuncher extends Serializable {
           :: StructField("wins", IntegerType, true)
           :: StructField("losses", IntegerType, true) :: Nil)
         //"meta_batch", "player_stats", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
       case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
           StructField("alias", StringType, true) ::
@@ -50,21 +48,22 @@ object MetaDataMuncher extends Serializable {
           StructField("losses", IntegerType, true) ::
           StructField("pct", FloatType, true) :: Nil)
         //"meta_batch", "team_standings", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), args(3), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
       case MetaBatchJobType.LIVEINFO =>
         //live_info, live_info, localhost:9983
-        new LiveDataMuncher().munch(args(1), args(2), args(3))
+        new LiveDataMuncher().munch(args(1), args(2))
     }
   }
 
 }
 
 class MetaDataMuncher extends Serializable with Muncher {
-  override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, zkHost: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
+
+  override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
     val ds3 = ds2.where(filterCond)
     val ds4 = ds3.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
@@ -81,14 +80,9 @@ class MetaDataMuncher extends Serializable with Muncher {
     } else {
       finalDataFrame = ds9
     }
+    finalDataFrame.toJSON.toDF.show(120,false)
+    indexResults( outputCollName,  finalDataFrame)
 
-    val indexResult = indexToSolr(zkHost, outputCollName, "false", finalDataFrame)
-    indexResult match {
-      case Success(data) =>
-        LDMHolder.log.info(data.toString)
-      case Failure(e) =>
-        LDMHolder.log.error("Error occurred in indexing ", e)
-    }
 
   }
 
