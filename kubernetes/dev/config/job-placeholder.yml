@@ -1,0 +1,32 @@
+# ------------------- MLB Team standings job ------------------- #
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    metadata:
+      name: pi
+    spec:
+      containers:
+      - name: pi
+        image: registry.sports-cloud.com:5000/spark-job
+        command: ["/opt/spark/bin/spark-submit",
+        "--master", "spark://master-0.spark:6066,spark://master-1.spark:6066,spark://master-2.spark:6066",
+        "--deploy-mode","cluster",
+        "--name","TeamStandingsMetaDataMuncher","--class", "com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher" ,
+        "--driver-memory", "2G", 
+        "--executor-memory", "2G", 
+        "--total-executor-cores", "2", 
+        "--conf", "spark.es.index.auto.create=true",
+        "--conf", "spark.es.resource=sports-cloud/game_schedule",
+        "--conf", "spark.es.nodes=elasticsearch.default.svc.cluster.local",
+        "--conf", "spark.es.net.http.auth.user=elastic",
+        "--conf", "spark.es.net.http.auth.pass=changeme",
+        "--conf", "spark.es.write.operation=upsert",
+        "--conf", "spark.default.parallelism=4",
+        "--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30  -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000 -XX:+UseCompressedOops",
+        "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
+        "http://artifact-server.sports-cloud.com:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "TEAMSTANDINGS", "meta_batch" , "team_standings"]
+      restartPolicy: Never
+  backoffLimit: 4

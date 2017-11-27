@@ -1,0 +1,367 @@
+---
+# ------------------- Deploy healthz backend ------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: default-http-backend
+  labels:
+    k8s-app: default-http-backend
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: default-http-backend
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: default-http-backend
+        # Any image is permissable as long as:
+        # 1. It serves a 404 page at /
+        # 2. It serves 200 on a /healthz endpoint
+        image: gcr.io/google_containers/defaultbackend:1.0
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: 10m
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+---
+# ------------------- Service healthz backend ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: default-http-backend
+  namespace: kube-system
+  labels:
+    k8s-app: default-http-backend
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    k8s-app: default-http-backend
+---
+# Application Load Balancer (ALB) Ingress Controller Deployment Manifest.
+# This manifest details sensible defaults for deploying an ALB Ingress Controller.
+# GitHub: https://github.com/coreos/alb-ingress-controller
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: alb-ingress-controller
+  name: alb-ingress-controller
+  # Namespace the ALB Ingress Controller should run in. Does not impact which
+  # namespaces it's able to resolve ingress resource for. For limiting ingress
+  # namespace scope, see --watch-namespace.
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alb-ingress-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: alb-ingress-controller
+    spec:
+      containers:
+      - args:
+        - /server
+        # Ingress controllers must have a default backend deployment where
+        # all unknown locations can be routed to. Often this is a 404 page. The
+        # default backend is not particularly helpful to the ALB Ingress Controller
+        # but is still required. The default backend and its respective service 
+        # must be running Kubernetes for this controller to start.
+        - --default-backend-service=kube-system/default-http-backend
+        # Limit the namespace where this ALB Ingress Controller deployment will
+        # resolve ingress resources. If left commented, all namespaces are used.
+        #- --watch-namespace=your-k8s-namespace
+        # Setting the ingress-class flag below will ensure that only ingress resources with the
+        # annotation kubernetes.io/ingress.class: "alb" are respected by the controller. You may
+        # choose any class you'd like for this controller to respect.
+        #- --ingress-class=alb
+        env:
+          # AWS region this ingress controller will operate in.
+          # List of regions:
+          # http://docs.aws.amazon.com/general/latest/gr/rande.html#vpc_region 
+        - name: AWS_REGION
+          value: us-east-2
+          # Name of your cluster. Used when naming resources created
+          # by the ALB Ingress Controller, providing distinction between
+          # clusters.
+        - name: CLUSTER_NAME
+          value: sports-cloud.k8s.local
+          # AWS key id for authenticating with the AWS API.
+          # This is only here for examples. It's recommended you instead use
+          # a project like kube2iam for granting access.
+        - name: AWS_ACCESS_KEY_ID
+          value: AKIAI2L3MWG32WAGY5HQ
+          # AWS key secret for authenticating with the AWS API.
+          # This is only here for examples. It's recommended you instead use
+          # a project like kube2iam for granting access.
+        - name: AWS_SECRET_ACCESS_KEY
+          value: mdM+g7nBL0al4S+HfN+ArDjsyBep+XNO6PB98x65
+          # Enables logging on all outbound requests sent to the AWS API.
+          # If logging is desired, set to true.
+        - name: AWS_DEBUG
+          value: "false"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        # Repository location of the ALB Ingress Controller.
+        image: quay.io/coreos/alb-ingress-controller:1.0-alpha.7
+        imagePullPolicy: Always
+        name: server
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+---
+
+# ------------------- Dashboard Service Account ------------------- #
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+
+---
+# ------------------- Dashboard Role & Role Binding ------------------- #
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: kubernetes-dashboard-minimal
+  namespace: kube-system
+rules:
+  # Allow Dashboard to create and watch for changes of 'kubernetes-dashboard-key-holder' secret.
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "watch"]
+  # Allow Dashboard to get, update and delete Dashboard exclusive secrets.
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["kubernetes-dashboard-key-holder"]
+  verbs: ["get", "update", "delete"]
+  # Allow Dashboard to get and update 'kubernetes-dashboard-settings' config map.
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["kubernetes-dashboard-settings"]
+  verbs: ["get", "update"]
+  # Allow Dashboard to get metrics from heapster.
+- apiGroups: [""]
+  resources: ["services"]
+  resourceNames: ["heapster"]
+  verbs: ["proxy"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: kubernetes-dashboard-minimal
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubernetes-dashboard-minimal
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+
+---
+# ------------------- Dashboard Deployment ------------------- #
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      containers:
+      - name: kubernetes-dashboard
+        image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.7.1
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        args:
+          # Uncomment the following line to manually specify Kubernetes API server Host
+          # If not specified, Dashboard will attempt to auto discover the API server and connect
+          # to it. Uncomment only if the default does not work.
+          # - --apiserver-host=http://my-address:port
+        volumeMounts:
+          # Create on-disk volume to store exec logs
+        - mountPath: /tmp
+          name: tmp-volume
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9090
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      serviceAccountName: kubernetes-dashboard
+      # Comment the following tolerations if Dashboard must not be deployed on master
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+
+---
+# ------------------- Dashboard Service ------------------- #
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+spec:
+  ports:
+  - port: 80
+    targetPort: 9090
+  selector:
+    k8s-app: kubernetes-dashboard
+  type: NodePort
+---
+# --------------------- Storage class for aws ------------- #
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: slow
+  namespace: kube-system
+provisioner: kubernetes.io/aws-ebs
+reclaimPolicy: Retain
+parameters:
+  type: gp2
+  zone: us-east-2a
+---
+# --------------------- Persistent Volume claim for 20Gi for registry ------------- #
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: image-claim
+  namespace: kube-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: slow
+---
+# --------------------- Kube Registry Deployment ------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: kube-registry-v0
+  namespace: kube-system
+  labels:
+    k8s-app: kube-registry
+    version: v0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: kube-registry
+  template:
+    metadata:
+      labels:
+        k8s-app: kube-registry
+        version: v0
+    spec:
+      containers:
+        - name: registry
+          image: registry:2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          env:
+          - name: REGISTRY_HTTP_ADDR
+            value: :5000
+          - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+            value: /var/lib/registry
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /certs/domain.crt
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: /certs/domain.key
+          volumeMounts:
+          - name: image-store
+            mountPath: /var/lib/registry
+          - name: cert-dir
+            mountPath: /certs
+          ports:
+          - containerPort: 5000
+            name: registry
+            protocol: TCP
+      volumes:
+      - name: image-store
+        persistentVolumeClaim:
+          claimName: image-claim
+      - name: cert-dir
+        secret:
+          secretName: registry-tls-secret
+---
+# --------------------- Kube Registry service ------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-registry
+  namespace: kube-system
+  labels:
+    k8s-app: kube-registry
+#    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "KubeRegistry"
+spec:
+  selector:
+    k8s-app: kube-registry
+  clusterIP: 100.69.212.32
+  type: NodePort
+  ports:
+  - name: registry
+    port: 5000
+    protocol: TCP

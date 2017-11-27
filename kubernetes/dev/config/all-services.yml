@@ -1,0 +1,1104 @@
+# ------------------- Artifact Server Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: artifact-server-layer-deployment
+  labels:
+    app: artifact-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artifact-server
+  template:
+    metadata:
+      labels:
+        app: artifact-server
+    spec:
+      containers:
+      - name: artifact-server
+        image: registry.sports-cloud.com:5000/artifact-server
+        ports:
+        - containerPort: 9080
+---
+# ------------------- Artifact Server Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: artifact-server
+  labels:
+    app: artifact-server
+spec:
+  clusterIP: 100.68.16.196
+  selector:
+    app: artifact-server
+  type: NodePort
+  ports:
+  - name: http
+    port: 9082
+    protocol: TCP
+---
+# ------------------- Zookeeper ------------------- #
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zk-hs
+  labels:
+    app: zk
+spec:
+  ports:
+  - port: 2888
+    name: server
+  - port: 3888
+    name: leader-election
+  clusterIP: None
+  selector:
+    app: zk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zk-cs
+  labels:
+    app: zk
+spec:
+  ports:
+  - port: 2181
+    name: client
+  selector:
+    app: zk
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: zk-pdb
+spec:
+  selector:
+    matchLabels:
+      app: zk
+  maxUnavailable: 1
+---
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: zk
+spec:
+  selector:
+    matchLabels:
+      app: zk
+  serviceName: zk-hs
+  replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: zk
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - zk
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: kubernetes-zookeeper
+        imagePullPolicy: Always
+        image: "gcr.io/google_containers/kubernetes-zookeeper:1.0-3.4.10"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: server
+        - containerPort: 3888
+          name: leader-election
+        command:
+        - sh
+        - -c
+        - "start-zookeeper \
+          --servers=3 \
+          --data_dir=/var/lib/zookeeper/data \
+          --data_log_dir=/var/lib/zookeeper/data/log \
+          --conf_dir=/opt/zookeeper/conf \
+          --client_port=2181 \
+          --election_port=3888 \
+          --server_port=2888 \
+          --tick_time=2000 \
+          --init_limit=10 \
+          --sync_limit=5 \
+          --heap=512M \
+          --max_client_cnxns=60 \
+          --snap_retain_count=3 \
+          --purge_interval=12 \
+          --max_session_timeout=40000 \
+          --min_session_timeout=4000 \
+          --log_level=INFO"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "zookeeper-ready 2181"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "zookeeper-ready 2181"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/zookeeper
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+---
+# ------------------- Elastic Search Discovery--------------------------------------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-discovery
+  labels:
+    component: elasticsearch
+    role: master
+spec:
+  selector:
+    component: elasticsearch
+    role: master
+  ports:
+  - name: transport
+    port: 9300
+    protocol: TCP
+---
+# ------------------- Elastic Search Service --------------------------------------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  labels:
+    component: elasticsearch
+    role: client
+spec:
+  selector:
+    component: elasticsearch
+    role: client
+  ports:
+  - name: http
+    port: 9200
+    protocol: TCP
+---
+# ------------------- Elastic Search Master Deployment  --------------------------------------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: es-master
+  labels:
+    component: elasticsearch
+    role: master
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: master
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: es-master
+        securityContext:
+          privileged: false
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: quay.io/pires/docker-elasticsearch-kubernetes:5.6.0
+        imagePullPolicy: Always
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: "NETWORK_HOST"
+          value: "_eth0_"
+        - name: "CLUSTER_NAME"
+          value: "myesdb"
+        - name: "NUMBER_OF_MASTERS"
+          value: "2"
+        - name: NODE_MASTER
+          value: "true"
+        - name: NODE_INGEST
+          value: "false"
+        - name: NODE_DATA
+          value: "false"
+        - name: HTTP_ENABLE
+          value: "false"
+        - name: "ES_JAVA_OPTS"
+          value: "-Xms256m -Xmx256m"
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      volumes:
+          - emptyDir:
+              medium: ""
+            name: "storage"
+---
+# ------------------- Elastic Search Client Deployment  --------------------------------------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: es-client
+  labels:
+    component: elasticsearch
+    role: client
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: client
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: es-client
+        securityContext:
+          privileged: false
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: quay.io/pires/docker-elasticsearch-kubernetes:5.6.0
+        imagePullPolicy: Always
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: "NETWORK_HOST"
+          value: "_eth0_"
+        - name: "CLUSTER_NAME"
+          value: "myesdb"
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_DATA
+          value: "false"
+        - name: HTTP_ENABLE
+          value: "true"
+        - name: "ES_JAVA_OPTS"
+          value: "-Xms256m -Xmx256m"
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      volumes:
+          - emptyDir:
+              medium: ""
+            name: "storage"
+---
+# ------------------- Elastic Search Data Deployment  --------------------------------------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: es-data
+  labels:
+    component: elasticsearch
+    role: data
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: data
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: es-data
+        securityContext:
+          privileged: false
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: quay.io/pires/docker-elasticsearch-kubernetes:5.6.0
+        imagePullPolicy: Always
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: "NETWORK_HOST"
+          value: "_eth0_" 
+        - name: "CLUSTER_NAME"
+          value: "myesdb"
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "false"
+        - name: HTTP_ENABLE
+          value: "false"
+        - name: "ES_JAVA_OPTS"
+          value: "-Xms256m -Xmx256m"
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      volumes:
+          - emptyDir:
+              medium: ""
+            name: "storage"
+---
+# ------------------- Elastic Search Prod Disrubtion Budget for Master   --------------------------------------------------- #
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: elasticsearch-master-pdb
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: master
+---
+# ------------------- Elastic Search Prod Disrubtion Budget for Data   --------------------------------------------------- #
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: elasticsearch-data-pdb
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: data
+---
+# ------------------- Elastic Search Prod Cleanup config  --------------------------------------------------- #
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elastic-curator-config
+data:
+  action_file.yml: |-
+    ---
+    # Remember, leave a key empty if there is no value.  None will be a string,
+    # not a Python "NoneType"
+    #
+    # Also remember that all examples have 'disable_action' set to True.  If you
+    # want to use this action as a template, be sure to set this to False after
+    # copying it.
+    actions:
+      1:
+        action: delete_indices
+        description: "Clean up ES by deleting old indices"
+        options:
+          timeout_override:
+          continue_if_exception: False
+          disable_action: False
+        filters:
+        - filtertype: age
+          source: name
+          direction: older
+          timestring: '%Y.%m.%d'
+          unit: days
+          unit_count: 3
+          field:
+          stats_result:
+          epoch:
+          exclude: False
+  config.yml: |-
+    ---
+    # Remember, leave a key empty if there is no value.  None will be a string,
+    # not a Python "NoneType"
+    client:
+      hosts:
+        - elasticsearch
+      port: 9200
+      url_prefix:
+      use_ssl: False
+      certificate:
+      client_cert:
+      client_key:
+      ssl_no_validate: False
+      http_auth:
+      timeout: 30
+      master_only: False
+    logging:
+      loglevel: INFO
+      logfile:
+      logformat: default
+      blacklist: ['elasticsearch', 'urllib3']
+---
+# ------------------- Elastic Search Prod Cleanup job  --------------------------------------------------- #
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: elastic-curator
+spec:
+  schedule: 1 0 * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: elastic-curator
+            image: bobrik/curator
+            args: ["--config", "/etc/config/config.yml", "/etc/config/action_file.yml"]
+            volumeMounts:
+              - name: config-volume
+                mountPath: /etc/config
+          volumes:
+            - name: config-volume
+              configMap:
+                name: elastic-curator-config
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: default
+  labels:
+    component: kibana
+spec:
+  type: NodePort
+  selector:
+    component: kibana
+  ports:
+  - port: 80
+    targetPort: 5601
+    protocol: TCP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana-deployment
+  namespace: default
+  labels:
+    component: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+     component: kibana
+  template:
+    metadata:
+      labels:
+        component: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: cfontes/kibana-xpack-less:5.5.0
+        env:
+        - name: "CLUSTER_NAME"
+          value: "myesdb"
+        - name: XPACK_SECURITY_ENABLED
+          value: 'false'
+        - name: XPACK_GRAPH_ENABLED
+          value: 'false'
+        - name: XPACK_ML_ENABLED
+          value: 'false'
+        - name: XPACK_REPORTING_ENABLED
+          value: 'false'
+        resources:
+          limits:
+            cpu: 1000m
+          requests:
+            cpu: 100m
+        ports:
+        - containerPort: 5601
+          name: kibana
+          protocol: TCP
+---
+# ------------------- Rest layer Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: sc-rest-layer-deployment
+  labels:
+    app: sports-cloud-rest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sports-cloud-rest
+  template:
+    metadata:
+      labels:
+        app: sports-cloud-rest
+    spec:
+      containers:
+      - name: sports-cloud-rest
+        image: registry.sports-cloud.com:5000/sports-cloud-rest
+        ports:
+        - containerPort: 9080
+---
+# ------------------- Rest layer Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: sports-cloud-rest
+  labels:
+    app: sports-cloud-rest
+spec:
+  selector:
+    app: sports-cloud-rest
+  type: NodePort
+  ports:
+  - name: http
+    port: 9080
+    targetPort: 9080
+    protocol: TCP
+---
+# ------------------- Kafka Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-hs
+  labels:
+    app: kafka
+spec:
+  ports:
+  - port: 9092
+    name: server
+  clusterIP: None
+  selector:
+    app: kafka
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+spec:
+  selector:
+    matchLabels:
+      app: kafka
+  maxUnavailable: 1
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: kafka-hs
+  replicas: 3
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - kafka
+              topologyKey: "kubernetes.io/hostname"
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+             - weight: 1
+               podAffinityTerm:
+                 labelSelector:
+                    matchExpressions:
+                      - key: "app"
+                        operator: In
+                        values:
+                        - zk
+                 topologyKey: "kubernetes.io/hostname"
+      terminationGracePeriodSeconds: 300
+      containers:
+      - name: k8skafka
+        imagePullPolicy: Always
+        image: gcr.io/google_containers/kubernetes-kafka:1.0-10.2.1
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
+        ports:
+        - containerPort: 9092
+          name: server
+        command:
+        - sh
+        - -c
+        - "exec kafka-server-start.sh /opt/kafka/config/server.properties --override broker.id=${HOSTNAME##*-} \
+          --override listeners=PLAINTEXT://:9092 \
+          --override zookeeper.connect=zk-cs.default.svc.cluster.local:2181 \
+          --override log.dir=/var/lib/kafka \
+          --override auto.create.topics.enable=true \
+          --override auto.leader.rebalance.enable=true \
+          --override background.threads=10 \
+          --override compression.type=producer \
+          --override delete.topic.enable=false \
+          --override leader.imbalance.check.interval.seconds=300 \
+          --override leader.imbalance.per.broker.percentage=10 \
+          --override log.flush.interval.messages=9223372036854775807 \
+          --override log.flush.offset.checkpoint.interval.ms=60000 \
+          --override log.flush.scheduler.interval.ms=9223372036854775807 \
+          --override log.retention.bytes=5000 \
+          --override log.retention.hours=60 \
+          --override log.roll.hours=60 \
+          --override log.roll.jitter.hours=0 \
+          --override log.segment.bytes=1073741824 \
+          --override log.segment.delete.delay.ms=60000 \
+          --override message.max.bytes=1000012 \
+          --override min.insync.replicas=1 \
+          --override num.io.threads=8 \
+          --override num.network.threads=3 \
+          --override num.recovery.threads.per.data.dir=1 \
+          --override num.replica.fetchers=1 \
+          --override offset.metadata.max.bytes=4096 \
+          --override offsets.commit.required.acks=-1 \
+          --override offsets.commit.timeout.ms=5000 \
+          --override offsets.load.buffer.size=5242880 \
+          --override offsets.retention.check.interval.ms=600000 \
+          --override offsets.retention.minutes=1440 \
+          --override offsets.topic.compression.codec=0 \
+          --override offsets.topic.num.partitions=50 \
+          --override offsets.topic.replication.factor=3 \
+          --override offsets.topic.segment.bytes=104857600 \
+          --override queued.max.requests=500 \
+          --override quota.consumer.default=9223372036854775807 \
+          --override quota.producer.default=9223372036854775807 \
+          --override replica.fetch.min.bytes=1 \
+          --override replica.fetch.wait.max.ms=500 \
+          --override replica.high.watermark.checkpoint.interval.ms=5000 \
+          --override replica.lag.time.max.ms=10000 \
+          --override replica.socket.receive.buffer.bytes=65536 \
+          --override replica.socket.timeout.ms=30000 \
+          --override request.timeout.ms=30000 \
+          --override socket.receive.buffer.bytes=102400 \
+          --override socket.request.max.bytes=104857600 \
+          --override socket.send.buffer.bytes=102400 \
+          --override unclean.leader.election.enable=true \
+          --override zookeeper.session.timeout.ms=6000 \
+          --override zookeeper.set.acl=false \
+          --override broker.id.generation.enable=true \
+          --override connections.max.idle.ms=600000 \
+          --override controlled.shutdown.enable=true \
+          --override controlled.shutdown.max.retries=3 \
+          --override controlled.shutdown.retry.backoff.ms=5000 \
+          --override controller.socket.timeout.ms=30000 \
+          --override default.replication.factor=1 \
+          --override fetch.purgatory.purge.interval.requests=1000 \
+          --override group.max.session.timeout.ms=300000 \
+          --override group.min.session.timeout.ms=6000 \
+          --override inter.broker.protocol.version=0.10.2-IV0 \
+          --override log.cleaner.backoff.ms=15000 \
+          --override log.cleaner.dedupe.buffer.size=134217728 \
+          --override log.cleaner.delete.retention.ms=86400000 \
+          --override log.cleaner.enable=true \
+          --override log.cleaner.io.buffer.load.factor=0.9 \
+          --override log.cleaner.io.buffer.size=524288 \
+          --override log.cleaner.io.max.bytes.per.second=1.7976931348623157E308 \
+          --override log.cleaner.min.cleanable.ratio=0.5 \
+          --override log.cleaner.min.compaction.lag.ms=0 \
+          --override log.cleaner.threads=1 \
+          --override log.cleanup.policy=delete \
+          --override log.index.interval.bytes=4096 \
+          --override log.index.size.max.bytes=10485760 \
+          --override log.message.timestamp.difference.max.ms=9223372036854775807 \
+          --override log.message.timestamp.type=CreateTime \
+          --override log.preallocate=false \
+          --override log.retention.check.interval.ms=300000 \
+          --override max.connections.per.ip=2147483647 \
+          --override num.partitions=1 \
+          --override producer.purgatory.purge.interval.requests=1000 \
+          --override replica.fetch.backoff.ms=1000 \
+          --override replica.fetch.max.bytes=1048576 \
+          --override replica.fetch.response.max.bytes=10485760 \
+          --override reserved.broker.max.id=1000 "
+        env:
+        - name: KAFKA_HEAP_OPTS
+          value : "-Xmx512M -Xms512M"
+        - name: KAFKA_OPTS
+          value: "-Dlogging.level=INFO"
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/kafka
+        readinessProbe:
+          exec:
+           command:
+            - sh
+            - -c
+            - "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server=localhost:9092"
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+      - name: datadir
+        hostPath:
+          path: /data/apps/sports-cloud/kafka/data
+          type: DirectoryOrCreate
+---
+# ------------------- Kafka Connect Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: sc-cp-connect-deployment
+  labels:
+    app: sc-cp-connect
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sc-cp-connect
+  template:
+    metadata:
+      labels:
+        app: sc-cp-connect
+    spec:
+      containers:
+      - name: sc-cp-connect
+        image: registry.sports-cloud.com:5000/sc-cp-connect
+        env:
+        - name: CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+          value : "true"
+        - name: CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE
+          value : "true"
+        - name: CONNECT_CONSUMER_INTERCEPTOR_CLASSES
+          value : "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+        - name: CONNECT_PRODUCER_INTERCEPTOR_CLASSES
+          value : "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+        - name: CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL
+          value : "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
+        - name: CONNECT_KEY_CONVERTER
+          value : "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+          value : "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
+        - name: CONNECT_PLUGIN_PATH
+          value : "/data/kafka/connect/libs"
+        - name: CONNECT_REST_PORT
+          value : "8083"
+        - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+          value : "3"
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value : "kafka-0.kafka-hs.default.svc.cluster.local:9092,kafka-1.kafka-hs.default.svc.cluster.local:9092,kafka-2.kafka-hs.default.svc.cluster.local:9092"
+        - name: CONNECT_GROUP_ID
+          value : "sc-connect-group"
+        - name: CONNECT_INTERNAL_KEY_CONVERTER
+          value : "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value : "connect-sc-status"
+        - name: CONNECT_VALUE_CONVERTER
+          value : "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+          value : "3"
+        - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+          value : "3"
+        - name: CONNECT_ZOOKEEPER_CONNECT
+          value : "zk-cs.default.svc.cluster.local:2181"
+        - name: KAFKA_HEAP_OPTS
+          value : "-Xmx512M"
+        - name: CONNECT_INTERNAL_VALUE_CONVERTER
+          value : "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value : "connect-sc-offsets"
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value : "connect-sc-configs"
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP          
+        ports:
+        - containerPort: 8083  
+---
+# ------------------- Artifact Server Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: sc-cp-connect
+  labels:
+    app: sc-cp-connect
+spec:
+  selector:
+    app: sc-cp-connect
+  type: NodePort
+  ports:
+  - name: http
+    port: 8083
+    protocol: TCP
+---
+# ------------------- Namespace of spark cluster ------------------- #
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "spark-cluster"
+  labels:
+    name: "spark-cluster"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark
+  labels:
+    app: spark
+spec:
+  ports:
+  - port: 7077
+    name: master
+  clusterIP: None
+  selector:
+    app: spark
+---
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: master
+spec:
+  selector:
+    matchLabels:
+      app: spark # has to match .spec.template.metadata.labels
+  serviceName: "spark"
+  replicas: 1 # by default is 1
+  template:
+    metadata:
+      labels:
+        app: spark # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: spark
+        image: registry.sports-cloud.com:5000/spark:latest
+        command: ["/start-master"]
+        ports:
+          - containerPort: 7077
+          - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+        volumeMounts:
+        - name: workdir
+          mountPath: /spark/work
+      volumes:
+      - name: workdir
+        hostPath:
+          path: /data/apps/sports-cloud/spark/work
+          type: DirectoryOrCreate
+---
+# ------------------- Spark Worker Deployemnt ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: spark-worker-deployment
+  labels:
+    app: spark-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spark-worker
+  template:
+    metadata:
+      labels:
+        app: spark-worker
+    spec:
+      containers:
+      - name: spark-worker
+        image: registry.sports-cloud.com:5000/spark:latest
+        command: ["/start-worker"]
+        ports:
+          - containerPort: 8081
+        resources:
+          requests:
+            cpu: 100m
+        volumeMounts:
+        - name: workdir
+          mountPath: /spark/work
+      volumes:
+      - name: workdir
+        hostPath:
+          path: /data/apps/sports-cloud/spark/work
+          type: DirectoryOrCreate
+---
+# ------------------- Spark UI Deployment  ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: spark-ui-proxy-deployment
+  labels:
+    app: spark-ui-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-ui-proxy
+  template:
+    metadata:
+      labels:
+        app: spark-ui-proxy
+    spec:
+      containers:
+      - name: spark-ui-proxy
+        image: elsonrodriguez/spark-ui-proxy:1.0
+        args: ["master-0.spark:8080", "80"]
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 120
+          timeoutSeconds: 5
+        ports:
+          - containerPort: 80
+        resources:
+          requests:
+            cpu: 100m
+---
+# ------------------- Spark UI Proxy Service ------------------- #
+kind: Service
+apiVersion: v1
+metadata:
+  name: spark-ui-proxy
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: spark-ui-proxy
+  type: NodePort
+---
+# ------------------- Zeppelin  Deployemnt ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: zeppelin-deployment
+  labels:
+    app: zeppelin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zeppelin
+  template:
+    metadata:
+      labels:
+        app: zeppelin
+    spec:
+      containers:
+        - name: zeppelin
+          image: registry.sports-cloud.com:5000/zeppelin:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+---
+# ------------------- Zeppelin  Service ------------------- #
+kind: Service
+apiVersion: v1
+metadata:
+  name: zeppelin
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: zeppelin
+  type: NodePort
+---
+# -------------------- Ingress controller --------------------- #
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sports-cloud-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    #alb.ingress.kubernetes.io/subnets: subnet-1234
+    #alb.ingress.kubernetes.io/security-groups: sg-1234
+    alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+spec:
+  rules:
+  - host: intsportscloud.slingbox.com
+    http:
+      paths:
+      - path: /kibana
+        backend:
+          serviceName: kubernetes-dashboard
+          servicePort: 9090
+      - path: /rest
+        backend:
+          serviceName: sports-cloud-rest
+          servicePort: 9080
+      - path: /kibana
+        backend:
+          serviceName: kibana
+          servicePort: 80
+      - path: /zeppelin
+        backend:
+          serviceName: zeppelin
+          servicePort: 80
+      - path: /spark-ui
+        backend:
+          serviceName: spark-ui-proxy
+          servicePort: 80
+      
+---
