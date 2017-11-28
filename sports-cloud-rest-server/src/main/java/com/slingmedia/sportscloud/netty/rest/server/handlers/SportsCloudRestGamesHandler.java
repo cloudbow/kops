@@ -227,11 +227,11 @@ public class SportsCloudRestGamesHandler {
 
 			try {
 				JsonArray currGameDocs = getGameForGameId(gameScheduleId);
-				System.out.println("game_info:" + currGameDocs.toString());
+				//System.out.println("game_info:" + currGameDocs.toString());
 				mc.add("game_info", currGameDocs);
 
 				JsonArray liveGameInfoRespJsonArr = getLiveGamesById(gameScheduleId);
-				System.out.println("live_info:" + currGameDocs.toString());
+				//System.out.println("live_info:" + currGameDocs.toString());
 				mc.add("live_info", liveGameInfoRespJsonArr);
 
 				gameFinderDrillDownJson.add("mc", mc);
@@ -245,7 +245,7 @@ public class SportsCloudRestGamesHandler {
 		} else if (gameScheduleId == null) {
 
 			finalResponse = "{}";
-			System.out.println("game_info:" + finalResponse);
+			//System.out.println("game_info:" + finalResponse);
 
 		}
 
@@ -273,7 +273,7 @@ public class SportsCloudRestGamesHandler {
 			currGameDocs = new JsonArray();
 		}
 
-		System.out.println(currGameDocs.toString());
+		//System.out.println(currGameDocs.toString());
 
 		return currGameDocs;
 
@@ -299,7 +299,7 @@ public class SportsCloudRestGamesHandler {
 			currGameDocs = new JsonArray();
 		}
 
-		System.out.println(currGameDocs.toString());
+		//System.out.println(currGameDocs.toString());
 
 		return currGameDocs;
 	}
