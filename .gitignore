@@ -19,3 +19,6 @@ sports-cloud-rest-server/bin
 .classpath
 sports-cloud-common/.settings
 sports-cloud-rest-server/.settings
+micro-content-matcher/.idea
+sports-cloud-dcos-schedulers/.idea
+sports-cloud-rest-server/.idea

@@ -11,7 +11,7 @@
         "--total-executor-cores", "1", 
         "--conf", "spark.es.index.auto.create=true",
         "--conf", "spark.es.resource=sports-cloud/game_schedule",
-        "--conf", "spark.es.nodes=data.elastic.l4lb.thisdcos.directory",
+        "--conf", "spark.es.nodes=data.marathon.l4lb.thisdcos.directory",
         "--conf", "spark.es.net.http.auth.user=elastic",
         "--conf", "spark.es.net.http.auth.pass=changeme",
         "--conf", "spark.es.write.operation=upsert",

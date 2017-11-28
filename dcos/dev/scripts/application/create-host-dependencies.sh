@@ -13,7 +13,9 @@ sudo mkdir -p /data/apps/sports-cloud/artifacts
 sudo mkdir -p /data/apps/sports-cloud/kafka/connect/libs
 sudo mkdir -p /data/apps/sports-cloud/elastic/data
 ## 
-    
+### Create Kafka topics
+$BASE_PATH/dev/deploy-scheduled-jobs/scripts/kafka/create-kafka-topics.sh    
+
 # Create and copy executable jar to libs folder
 cd $BASE_PATH/sports-cloud-dcos-schedulers
 sbt clean assembly

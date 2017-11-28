@@ -1,16 +1,13 @@
 package com.slingmedia.sportscloud.offline.batch.impl
 
 import com.slingmedia.sportscloud.offline.batch.Muncher
-
 import org.slf4j.LoggerFactory
-
-
-import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, FloatType, ArrayType };
-import org.apache.spark.sql.{ SparkSession, DataFrame, Row, Column }
-import org.apache.spark.sql.functions.{ concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
-
+import org.apache.spark.sql.types.{ArrayType, FloatType, IntegerType, LongType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
+import org.apache.spark.sql.functions.{coalesce, col, collect_list, concat, explode, from_json, lit, max, min, udf}
 import java.time.Instant
-import com.slingmedia.sportscloud.offline.streaming.impl.LiveDataMuncher
+
+import com.slingmedia.sportscloud.offline.streaming.impl.{LiveDataMuncher, NcaafLiveDataMuncher}
 
 
 object LDMHolder extends Serializable {
@@ -19,7 +16,7 @@ object LDMHolder extends Serializable {
 
 object MetaBatchJobType extends Enumeration {
   type MetaBatchJobType = Value
-  val TEAMSTANDINGS, PLAYERSTATS, LIVEINFO = Value
+  val TEAMSTANDINGS, PLAYERSTATS, LIVEINFO, NCAAFLIVEINFO = Value
 }
 
 object MetaDataMuncher extends Serializable {
@@ -52,6 +49,10 @@ object MetaDataMuncher extends Serializable {
       case MetaBatchJobType.LIVEINFO =>
         //live_info, live_info, localhost:9983
         new LiveDataMuncher().munch(args(1), args(2))
+      case MetaBatchJobType.NCAAFLIVEINFO =>
+        //live_info, live_info, localhost:9983
+        new NcaafLiveDataMuncher().munch(args(1), args(2))
+
     }
   }
 

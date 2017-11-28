@@ -239,7 +239,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
     val kafkaLiveInfoT1DF1 = ds2.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
     mergeLiveInfo(kafkaLiveInfoT1DF1)
@@ -255,7 +255,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
 
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "localhost:9092",
+      "bootstrap.servers" -> "broker.confluent-kafka.l4lb.thisdcos.directory:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> "NcaafliveDataMatcherStream",

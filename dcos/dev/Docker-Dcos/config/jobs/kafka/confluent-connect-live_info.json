@@ -4,7 +4,7 @@
     "cpus": 0.1,
     "mem": 64,
     "disk": 0,
-    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","connect-jobs","com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"],
+    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","connect-jobs","com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob", "mlb"],
     "docker": {
       "image": "registry.marathon.l4lb.thisdcos.directory:5000/sc-job-scheduler:latest"
     },

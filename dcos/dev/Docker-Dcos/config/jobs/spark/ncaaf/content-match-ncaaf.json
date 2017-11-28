@@ -1,11 +1,11 @@
 {
-  "id": "player-stats-mlb",
+  "id": "content-match-ncaaf",
   "run": {
     "cpus": 1,
     "mem": 5000,
     "disk": 20000,
     "args": ["/opt/spark/dist/bin/spark-submit",
-        "--name","PlayerStats","--class", "com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher" ,
+        "--name","SportsCloudContentMatchNcaaf","--class", "com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher" ,
         "--driver-memory", "4G", 
         "--executor-memory", "4G", 
         "--total-executor-cores", "1", 
@@ -19,7 +19,7 @@
         "--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30  -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000 -XX:+UseCompressedOops",
         "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
         "--packages","org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1",
-        "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "PLAYERSTATS", "meta_batch" , "player_stats"
+        "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "content_match_ncaaf", "game_schedule"
         ],
     "docker": {
       "image": "registry.marathon.l4lb.thisdcos.directory:5000/spark:2.0.1-2.2.0-1-hadoop-2.6"
@@ -35,11 +35,11 @@
     {
       "id": "default",
       "enabled": true,
-      "cron": "0 10 * * *",
+      "cron": "30 7 * * *",
       "timezone": "UTC",
       "concurrencyPolicy": "ALLOW",
       "startingDeadlineSeconds": 60
     }
   ],
-  "description": "Upload player stats to kafka"
+  "description": "Content Match NCAAF job for game_schedule"
 }

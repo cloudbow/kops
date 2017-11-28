@@ -1,0 +1,62 @@
+{
+  "id": "/tools",
+  "apps": [
+    {
+      "id": "/tools/artifact-server",
+      "container": {
+        "type": "DOCKER",
+        "docker": {
+          "image": "registry.marathon.l4lb.thisdcos.directory:5000/artifact-server",
+          "forcePullImage": true
+        },
+        "portMappings": [
+          {
+            "containerPort": 9082,
+            "hostPort": 9082,
+            "labels": {
+              "VIP_0": "/artifact-server:9082"
+            },
+            "protocol": "tcp",
+            "servicePort": 0,
+            "name": "artifact-server-endpoint"
+          }
+        ],
+        "volumes": [
+          {
+            "containerPath": "/artifacts",
+            "hostPath": "/data/apps/sports-cloud/artifacts",
+            "mode": "RW"
+          }
+        ]
+      },
+      "networks": [
+        {
+          "mode": "container/bridge"
+        }
+      ],
+      "instances": 1,
+      "cpus": 0.1,
+      "mem": 1024,
+      "disk": 1000,
+      "ports": [
+        9082
+      ],
+      "acceptedResourceRoles": [
+        "slave_public"
+      ],
+      "healthChecks": [
+        {
+          "portIndex": 0,
+          "gracePeriodSeconds": 300,
+          "intervalSeconds": 60,
+          "timeoutSeconds": 20,
+          "maxConsecutiveFailures": 3,
+          "protocol": "MESOS_HTTP",
+          "path": "/healthcheck.json"
+        }
+      ]
+    }
+  ],
+  "groups": [],
+  "dependencies": []
+}

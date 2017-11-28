@@ -1,10 +1,10 @@
 {
-  "id": "confluent-connect-content-match",
+  "id": "confluent-connect-content-match-ncaaf",
   "run": {
     "cpus": 0.1,
     "mem": 64,
     "disk": 0,
-    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","connect-jobs","com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob", "mlb"],
+    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","connect-jobs","com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob", "ncaaf"],
     "docker": {
       "image": "registry.marathon.l4lb.thisdcos.directory:5000/sc-job-scheduler:latest"
     },

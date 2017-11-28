@@ -55,10 +55,10 @@ class ContentMatcher extends Serializable with Muncher {
     fetchProgramSchedules(summaryJson6)
 
     //Fetch MLB schedule
-    val mlbScheduleDF32 = fetchMLBSchedule()
+    val mlbScheduleDF32 = fetchMLBSchedule(inputKafkaTopic)
 
     //get the matched data
-    val programsJoin3 = contentMatch(mlbScheduleDF32)
+    val programsJoin3 = contentMatch(mlbScheduleDF32, inputKafkaTopic)
 
     //Write delta back to mongo
 
@@ -157,7 +157,7 @@ class ContentMatcher extends Serializable with Muncher {
 
   //UDF definitions ends here
 
-  def contentMatch(gameScheduleDF: DataFrame, domain: String = "slingtv"): DataFrame = {
+  def contentMatch(gameScheduleDF: DataFrame, inputKafkaTopic: String, domain: String = "slingtv"): DataFrame = {
     //Fetch from thuuz and update 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -184,7 +184,7 @@ class ContentMatcher extends Serializable with Muncher {
     CMHolder.log.trace("Matched with stats data");
     val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4","regexp5","regexp6", "subpack_int_id", "date")
 
-    val gameScheduleOrig = fetchMLBSchedule().coalesce(4)
+    val gameScheduleOrig = fetchMLBSchedule(inputKafkaTopic).coalesce(4)
     val allStatsNullFills = Map(
       "program_guid" -> "0",
       "channel_guid" -> "0",
@@ -332,10 +332,10 @@ class ContentMatcher extends Serializable with Muncher {
     programScheduleChannelJoin0.createOrReplaceTempView("programSchedules")
   }
 
-  val fetchMLBSchedule: () => DataFrame = () => {
+  val fetchMLBSchedule: (String => DataFrame) = (inputKafkaTopic: String) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", "content_match").load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
 
     val scoreSchema = StructType(StructField("score", StringType, true) :: Nil)
