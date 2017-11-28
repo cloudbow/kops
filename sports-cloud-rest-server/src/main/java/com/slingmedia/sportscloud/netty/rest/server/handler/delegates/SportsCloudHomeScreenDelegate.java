@@ -125,5 +125,35 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 		}
 		return finalResponse;
 	}
+	
+	
+	public String prepareJsonResponseForCategories(String finalResponse, long startDate, long endDate, Set<String> subpackIds, JsonElement gamesCategoriesJson) {
+		// &fq=%7B!collapse%20field=gameId%7D&expand=true&fl=homeTeamScore,awayTeamScore&expand.rows=100&wt=json
+		//Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(startDate, endDate,500);
+	
+		if (gamesCategoriesJson != null) {
+			JsonArray allCategories = new JsonArray();
+			JsonObject jsonCategories=new JsonObject();
+			try {
+				JsonArray groupedDocs = gamesCategoriesJson.getAsJsonObject().get("aggregations").getAsJsonObject()
+						.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
+				for (JsonElement groupedDocSrc : groupedDocs) {
+					// get game categories
+	
+					String gameCategory=groupedDocSrc.getAsJsonObject().get("key").getAsString();
+					System.out.println(gameCategory);
+					
+					allCategories.add(gameCategory);
+				}
+				
+				jsonCategories.add("games_categories", allCategories);
+			} catch (Exception e) {
+				LOGGER.error("Error occurred in parsing json", e);
+			} finally {
+				finalResponse = jsonCategories.toString();
+			}
+		}
+		return finalResponse;
+	}
 
 }

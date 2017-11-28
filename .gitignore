@@ -14,3 +14,8 @@ sports-cloud-schedulers/metastore_db
 micro-content-matcher/non-transitive/metastore_db
 proxy-server/bin
 sports-cloud-rest-server/bin
+.DS_Store
+.project
+.classpath
+sports-cloud-common/.settings
+sports-cloud-rest-server/.settings
