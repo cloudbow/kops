@@ -112,6 +112,10 @@ public class SportsCloudRestGamesHandler {
 			break;
 
 		case "NCAAF":
+			newCategory = "College Football";
+			break;
+			
+		case "NFL":
 			newCategory = "Football";
 			break;
 
