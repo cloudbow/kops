@@ -102,6 +102,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
 			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+			
 
 			String uri = request.uri();
 
@@ -131,7 +132,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 				QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 				Map<String, List<String>> params = queryStringDecoder.parameters();
 				
-				finalResponse=sportsCloudRestGamesHandler.handle(uri,params);
+				finalResponse=sportsCloudRestGamesHandler.handle(request.headers().getAsString("Host"),uri,params);
 
 			} else if (m.find()) {
 				try {

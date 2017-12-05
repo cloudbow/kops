@@ -78,7 +78,7 @@ object SportsDataGamesFacade {
 			          "must": [
 			            {
 			              "term": {
-			                "league.keyword": "MLB"
+			                "league.keyword": "$gameCategory"
 			              }
 			            },
 			            {
