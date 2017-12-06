@@ -278,6 +278,7 @@ public class SportsCloudRestGamesHandler {
 
 		JsonElement gameSchedulesJson = SportsDataGamesFacade$.MODULE$
 				.getGameScheduleDataForCategoryForHomeScreen(startDate, endDate, gameCategory.toUpperCase());
+		
 		finalResponse = sportsCloudHomeScreenDelegate.prepareJsonResponseForHomeScreen(finalResponse, startDate,
 				endDate, new HashSet<String>(), gameSchedulesJson);
 		return finalResponse;
@@ -439,7 +440,11 @@ public class SportsCloudRestGamesHandler {
 				.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
 
 		// get game live info
-		JsonObject liveInfo = groupedDocs.get(0).getAsJsonObject();
+		JsonObject liveInfo=null;
+		if(groupedDocs!=null&&groupedDocs.size()>0)
+		{
+			liveInfo= groupedDocs.get(0).getAsJsonObject();
+		}
 
 		if (liveInfo != null&&liveInfo.size()>0) {
 			currGameDocs = liveInfo.get("live_info").getAsJsonObject().get("hits").getAsJsonObject().get("hits")
@@ -569,7 +574,7 @@ public class SportsCloudRestGamesHandler {
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
 					} else {
-						categoryNameForLogo = getNewCategoryName(category).toLowerCase();
+						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 					thumbnail.setmUrl(
 							"http://qahsports.slingbox.com/gf2client-1.7-e/img/bg/" + categoryNameForLogo + ".png");
@@ -699,7 +704,7 @@ public class SportsCloudRestGamesHandler {
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
 					} else {
-						categoryNameForLogo = getNewCategoryName(category).toLowerCase();
+						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 
 					tile.setSport(sport);
