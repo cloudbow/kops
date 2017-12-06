@@ -84,8 +84,8 @@ object SportsDataGamesFacade {
 			            {
 			              "range": {
 			                "game_date_epoch": {
-			                  "gte": 1504767600,
-			                  "lte": 1511420400
+			                 "gte": $startDate,
+		                     "lte": $endDate
 			                }
 			              }
 			            }

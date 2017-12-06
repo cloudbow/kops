@@ -8,7 +8,7 @@ public class SportTeam {
 
 	String homeCity;
 
-	Thumbnail logo;
+	Thumbnail img;
 
 	String id;
 
@@ -36,12 +36,12 @@ public class SportTeam {
 		this.homeCity = homeCity;
 	}
 
-	public Thumbnail getLogo() {
-		return logo;
+	public Thumbnail getImg() {
+		return img;
 	}
 
-	public void setLogo(Thumbnail logo) {
-		this.logo = logo;
+	public void setImg(Thumbnail img) {
+		this.img = img;
 	}
 
 	public String getId() {

@@ -114,7 +114,7 @@ public class SportsCloudRestGamesHandler {
 		case "NCAAF":
 			newCategory = "College Football";
 			break;
-			
+
 		case "NFL":
 			newCategory = "Football";
 			break;
@@ -565,7 +565,14 @@ public class SportsCloudRestGamesHandler {
 
 					Thumbnail thumbnail = new Thumbnail();
 					String sport = (String) map.get("sport");
-					thumbnail.setmUrl("http://qahsports.slingbox.com/gf2client-1.7-e/img/bg/" + sport + ".png");
+					String categoryNameForLogo = "";
+					if (category.equalsIgnoreCase("NCAAF")) {
+						categoryNameForLogo = "football";
+					} else {
+						categoryNameForLogo = getNewCategoryName(category).toLowerCase();
+					}
+					thumbnail.setmUrl(
+							"http://qahsports.slingbox.com/gf2client-1.7-e/img/bg/" + categoryNameForLogo + ".png");
 					thumbnail.setmWidth(288);
 					thumbnail.setmHeight(258);
 					tile.setThumbnail(thumbnail);
@@ -601,10 +608,15 @@ public class SportsCloudRestGamesHandler {
 					homeTeam.setId((String) homeJson.get("id"));
 					homeTeam.setName((String) homeJson.get("name"));
 					Thumbnail homeLogo = new Thumbnail();
-					homeLogo.setmUrl((String) homeJson.get("img"));
+
+					String homeImage = (String) homeJson.get("img");
+					homeImage = homeImage.replace("baseball", categoryNameForLogo);
+					homeImage.replace("mlb", category.toLowerCase());
+
+					homeLogo.setmUrl(homeImage);
 					homeLogo.setmWidth(64);
 					homeLogo.setmHeight(48);
-					homeTeam.setLogo(homeLogo);
+					homeTeam.setImg(homeLogo);
 					tile.setHomeTeam(homeTeam);
 
 					SportTeam awayTeam = new SportTeam();
@@ -614,10 +626,14 @@ public class SportsCloudRestGamesHandler {
 					awayTeam.setId((String) awayJson.get("id"));
 					awayTeam.setName((String) awayJson.get("name"));
 					Thumbnail awayLogo = new Thumbnail();
-					awayLogo.setmUrl((String) awayJson.get("img"));
+					String awayImage = (String) awayJson.get("img");
+					awayImage = awayImage.replace("baseball", categoryNameForLogo);
+					awayImage.replace("mlb", category.toLowerCase());
+
+					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);
 					awayLogo.setmHeight(48);
-					awayTeam.setLogo(awayLogo);
+					awayTeam.setImg(awayLogo);
 					tile.setAwayTeam(awayTeam);
 
 					GameStats gamestats = new GameStats();
@@ -678,6 +694,13 @@ public class SportsCloudRestGamesHandler {
 						tile.setId(contentId);
 					}
 					String sport = (String) map.get("sport");
+					
+					String categoryNameForLogo = "";
+					if (category.equalsIgnoreCase("NCAAF")) {
+						categoryNameForLogo = "football";
+					} else {
+						categoryNameForLogo = getNewCategoryName(category).toLowerCase();
+					}
 
 					tile.setSport(sport);
 					tile.setLeague((String) map.get("league"));
@@ -708,10 +731,15 @@ public class SportsCloudRestGamesHandler {
 					homeTeam.setId((String) homeJson.get("id"));
 					homeTeam.setName((String) homeJson.get("name"));
 					Thumbnail homeLogo = new Thumbnail();
-					homeLogo.setmUrl((String) homeJson.get("img"));
+
+					String homeImage = (String) homeJson.get("img");
+					homeImage = homeImage.replace("baseball", categoryNameForLogo);
+					homeImage.replace("mlb", category.toLowerCase());
+
+					homeLogo.setmUrl(homeImage);
 					homeLogo.setmWidth(64);
 					homeLogo.setmHeight(48);
-					homeTeam.setLogo(homeLogo);
+					homeTeam.setImg(homeLogo);
 					tile.setHomeTeam(homeTeam);
 
 					SportTeam awayTeam = new SportTeam();
@@ -721,10 +749,14 @@ public class SportsCloudRestGamesHandler {
 					awayTeam.setId((String) awayJson.get("id"));
 					awayTeam.setName((String) awayJson.get("name"));
 					Thumbnail awayLogo = new Thumbnail();
-					awayLogo.setmUrl((String) awayJson.get("img"));
+					String awayImage = (String) awayJson.get("img");
+					awayImage = awayImage.replace("baseball", categoryNameForLogo);
+					awayImage.replace("mlb", category.toLowerCase());
+
+					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);
 					awayLogo.setmHeight(48);
-					awayTeam.setLogo(awayLogo);
+					awayTeam.setImg(awayLogo);
 					tile.setAwayTeam(awayTeam);
 
 					GameStats gamestats = new GameStats();
