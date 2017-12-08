@@ -663,7 +663,7 @@ public class SportsCloudRestGamesHandler {
 					Map<String, Object> cIdToAsstInfo = (Map<String, Object>) map.get("cIdToAsstInfo");
 					if (contentIds != null && contentIds.size() > 0) {
 						ListIterator<String> litrContentIds = contentIds.listIterator();
-						while (litr.hasNext()) {
+						while (litrContentIds.hasNext()) {
 							TileAsset newTile = tile;
 							String contentId = litrContentIds.next();
 							try {
