@@ -1,12 +1,12 @@
 package com.slingmedia.sportscloud.netty.client.model;
 
+import java.util.List;
+
 public class SportsMediaCard extends MediaCard {
 
 	String sport;
 
 	String league;
-	
-	String gameId;
 
 	String gameStatus;
 
@@ -21,6 +21,16 @@ public class SportsMediaCard extends MediaCard {
 	SportTeam awayTeam;
 
 	GameStats gamestats;
+	
+	List<String> contentId;
+
+	public List<String> getContentId() {
+		return contentId;
+	}
+
+	public void setContentId(List<String> contentId) {
+		this.contentId = contentId;
+	}
 
 	public String getAnons() {
 		return anons;
@@ -60,14 +70,6 @@ public class SportsMediaCard extends MediaCard {
 
 	public void setLeague(String league) {
 		this.league = league;
-	}
-
-	public String getGameId() {
-		return gameId;
-	}
-
-	public void setGameId(String gameId) {
-		this.gameId = gameId;
 	}
 
 	public String getGameStatus() {

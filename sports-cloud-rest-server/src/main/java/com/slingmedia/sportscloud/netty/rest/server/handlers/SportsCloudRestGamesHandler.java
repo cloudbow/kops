@@ -722,13 +722,11 @@ public class SportsCloudRestGamesHandler {
 				while (litr.hasNext()) {
 					Map<String, Object> map = litr.next();
 
-					SportsMediaCard tile = new SportsMediaCard();
+					SportsMediaCard mc = new SportsMediaCard();
 
-					List<Object> contentIds = (List<Object>) map.get("contentId");
-					if (contentIds != null && contentIds.size() > 0) {
-						String contentId = (String) contentIds.get(0);
-						tile.setId(contentId);
-					}
+					String gameId = (String) map.get("id");
+					mc.setId(gameId);
+					
 					String sport = (String) map.get("sport");
 
 					String categoryNameForLogo = "";
@@ -738,28 +736,27 @@ public class SportsCloudRestGamesHandler {
 						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 
-					tile.setSport(sport);
-					tile.setLeague((String) map.get("league"));
+					mc.setSport(sport);
+					mc.setLeague((String) map.get("league"));
 
 					Integer startTimeEpoch = (Integer) map.get("startTimeEpoch");
 					Integer stopTimeEpoch = (Integer) map.get("stopTimeEpoch");
-					tile.setDuration((stopTimeEpoch - startTimeEpoch));
+					mc.setDuration((stopTimeEpoch - startTimeEpoch));
 
 					String startTimeText = new DateTime(Long.valueOf(startTimeEpoch)).toDateTime(DateTimeZone.UTC)
 							.toString();
 					String stopTimeText = new DateTime(Long.valueOf(stopTimeEpoch)).toDateTime(DateTimeZone.UTC)
 							.toString();
 
-					tile.setStartTime(startTimeText);
-					tile.setStopTime(stopTimeText);
+					mc.setStartTime(startTimeText);
+					mc.setStopTime(stopTimeText);
 
-					tile.setGameStatus((String) map.get("gameStatus"));
-					tile.setAnons((String) map.get("anons"));
-					tile.setAnons_title((String) map.get("anons_title"));
-					tile.setLocation((String) map.get("location"));
-					String gameId = (String) map.get("id");
-					tile.setGameId(gameId);
-
+					mc.setGameStatus((String) map.get("gameStatus"));
+					mc.setAnons((String) map.get("anons"));
+					mc.setAnons_title((String) map.get("anons_title"));
+					mc.setLocation((String) map.get("location"));
+					
+					
 					SportTeam homeTeam = new SportTeam();
 					Map<String, Object> homeJson = (Map<String, Object>) map.get("homeTeam");
 					homeTeam.setAlias((String) homeJson.get("alias"));
@@ -776,7 +773,7 @@ public class SportsCloudRestGamesHandler {
 					homeLogo.setmWidth(64);
 					homeLogo.setmHeight(48);
 					homeTeam.setImg(homeLogo);
-					tile.setHomeTeam(homeTeam);
+					mc.setHomeTeam(homeTeam);
 
 					SportTeam awayTeam = new SportTeam();
 					Map<String, Object> awayJson = (Map<String, Object>) map.get("awayTeam");
@@ -793,7 +790,7 @@ public class SportsCloudRestGamesHandler {
 					awayLogo.setmWidth(64);
 					awayLogo.setmHeight(48);
 					awayTeam.setImg(awayLogo);
-					tile.setAwayTeam(awayTeam);
+					mc.setAwayTeam(awayTeam);
 
 					GameStats gamestats = new GameStats();
 					ThuuzStats thuuz = new ThuuzStats();
@@ -810,8 +807,11 @@ public class SportsCloudRestGamesHandler {
 						nstats.setAwayScore(Integer.parseInt(awayScore));
 					}
 					gamestats.setNstats(nstats);
-					tile.setGamestats(gamestats);
-					mediaCard = tile;
+					mc.setGamestats(gamestats);
+					List<String> contentIds = (List<String>) map.get("contentId");
+					mc.setContentId(contentIds);
+					
+					mediaCard = mc;
 				}
 
 			}
