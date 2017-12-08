@@ -660,28 +660,30 @@ public class SportsCloudRestGamesHandler {
 					tile.setGamestats(gamestats);
 
 					List<String> contentIds = (List<String>) map.get("contentId");
+					Map<String, Object> cIdToAsstInfo = (Map<String, Object>) map.get("cIdToAsstInfo");
 					if (contentIds != null && contentIds.size() > 0) {
 						ListIterator<String> litrContentIds = contentIds.listIterator();
 						while (litr.hasNext()) {
-						TileAsset newTile = tile;
-						String contentId = litrContentIds.next();
-						try {
-							newTile = (TileAsset) tile.clone();
-							newTile.setId(contentId);
-							Map<String, Object> channelInfo=(Map<String, Object>)map.get(contentId);
-							
-							Channel channel = new Channel();
-							channel.setGuid((String) channelInfo.get("channelGuid"));
-							channel.setTitle((String) channelInfo.get("callsign"));
-							channel.setType("channel");
-							
-							newTile.setChannel(channel);
+							TileAsset newTile = tile;
+							String contentId = litrContentIds.next();
+							try {
+								newTile = (TileAsset) tile.clone();
+								newTile.setId(contentId);
+								Map<String, Object> channelInfo = (Map<String, Object>) cIdToAsstInfo.get(contentId);
+								if (channelInfo != null) {
+									Channel channel = new Channel();
+									channel.setGuid((String) channelInfo.get("channelGuid"));
+									channel.setTitle((String) channelInfo.get("callsign"));
+									channel.setType("channel");
 
-						} catch (CloneNotSupportedException e) {
-							LOGGER.error(e.getMessage(), e);
-						} finally {
-							tiles.add(newTile);
-						}
+									newTile.setChannel(channel);
+								}
+
+							} catch (CloneNotSupportedException e) {
+								LOGGER.error(e.getMessage(), e);
+							} finally {
+								tiles.add(newTile);
+							}
 						}
 
 					} else {
