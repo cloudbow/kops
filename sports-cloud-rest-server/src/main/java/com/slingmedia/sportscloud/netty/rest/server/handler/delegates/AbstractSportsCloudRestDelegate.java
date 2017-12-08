@@ -48,6 +48,7 @@ public class AbstractSportsCloudRestDelegate {
 				contentIdChGuid.add(gameJsonObj.get("schedule_guid").getAsString(),assetInfoJson);
 				assetInfoJson.add("channelGuid",new JsonPrimitive(gameJsonObj.get("channel_guid").getAsString()));
 				assetInfoJson.add("assetGuid",new JsonPrimitive(gameJsonObj.get("asset_guid").getAsString()));
+				assetInfoJson.add("callsign",new JsonPrimitive(gameJsonObj.get("callsign").getAsString()));
 			}
 		});
 		return contentIdChGuid;

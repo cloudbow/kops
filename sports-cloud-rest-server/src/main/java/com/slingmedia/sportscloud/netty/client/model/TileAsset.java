@@ -4,10 +4,10 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 
-public class TileAsset {
+public class TileAsset implements Cloneable {
 
 	String id; // content id
-	
+
 	String type; // always “show”
 
 	String title; // game name
@@ -25,6 +25,10 @@ public class TileAsset {
 	String stop_time; // Game end timestamp
 
 	Channel channel; // Channel information
+
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
 
 	public String getId() {
 		return id;

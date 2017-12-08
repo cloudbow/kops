@@ -278,7 +278,7 @@ public class SportsCloudRestGamesHandler {
 
 		JsonElement gameSchedulesJson = SportsDataGamesFacade$.MODULE$
 				.getGameScheduleDataForCategoryForHomeScreen(startDate, endDate, gameCategory.toUpperCase());
-		
+
 		finalResponse = sportsCloudHomeScreenDelegate.prepareJsonResponseForHomeScreen(finalResponse, startDate,
 				endDate, new HashSet<String>(), gameSchedulesJson);
 		return finalResponse;
@@ -332,6 +332,14 @@ public class SportsCloudRestGamesHandler {
 				homeTeamAlias = solrDoc.get("homeTeamAlias").getAsString();
 				homeTeam.add("alias", new JsonPrimitive(homeTeamAlias));
 			}
+
+			// Added for city
+			String homeTeamCity = "-";
+			if (solrDoc.has("homeTeamCity")) {
+				homeTeamCity = solrDoc.get("homeTeamCity").getAsString();
+				homeTeam.add("city", new JsonPrimitive(homeTeamCity));
+			}
+
 			homeTeam.add("img", new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
 			homeTeam.add("id", new JsonPrimitive(gameScheduleJson.get("homeTeamExternalId").getAsString()));
 			mainObj.add("awayTeam", awayTeam);
@@ -341,6 +349,13 @@ public class SportsCloudRestGamesHandler {
 				awayTeamAlias = solrDoc.get("awayTeamAlias").getAsString();
 				awayTeam.add("alias", new JsonPrimitive(awayTeamAlias));
 			}
+			// Added for city
+			String awayTeamCity = "-";
+			if (solrDoc.has("awayTeamCity")) {
+				awayTeamCity = solrDoc.get("awayTeamCity").getAsString();
+				awayTeam.add("city", new JsonPrimitive(awayTeamCity));
+			}
+
 			awayTeam.add("img", new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
 			awayTeam.add("id", new JsonPrimitive(gameScheduleJson.get("awayTeamExternalId").getAsString()));
 
@@ -440,13 +455,12 @@ public class SportsCloudRestGamesHandler {
 				.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
 
 		// get game live info
-		JsonObject liveInfo=null;
-		if(groupedDocs!=null&&groupedDocs.size()>0)
-		{
-			liveInfo= groupedDocs.get(0).getAsJsonObject();
+		JsonObject liveInfo = null;
+		if (groupedDocs != null && groupedDocs.size() > 0) {
+			liveInfo = groupedDocs.get(0).getAsJsonObject();
 		}
 
-		if (liveInfo != null&&liveInfo.size()>0) {
+		if (liveInfo != null && liveInfo.size() > 0) {
 			currGameDocs = liveInfo.get("live_info").getAsJsonObject().get("hits").getAsJsonObject().get("hits")
 					.getAsJsonArray();
 		} else {
@@ -549,16 +563,9 @@ public class SportsCloudRestGamesHandler {
 
 					SportsTileAsset tile = new SportsTileAsset();
 
-					List<Object> contentIds = (List<Object>) map.get("contentId");
-					if (contentIds != null && contentIds.size() > 0) {
-						String contentId = (String) contentIds.get(0);
-						tile.setId(contentId);
-					}
-					tile.setType("show");
+					tile.setType("sport");
 
-					String title = ((Map<String, Object>) map.get("awayTeam")).get("name") + " at "
-							+ ((Map<String, Object>) map.get("homeTeam")).get("name");
-
+					String title = (String) map.get("anons_title");
 					tile.setTitle(title);
 
 					tile.setRatings(new ArrayList<String>());
@@ -594,12 +601,6 @@ public class SportsCloudRestGamesHandler {
 					tile.setStartTime(startTimeText);
 					tile.setStopTime(stopTimeText);
 
-					Channel channel = new Channel();
-					channel.setGuid((String) map.get("channelGuid"));
-					channel.setTitle((String) map.get("callsign"));
-					channel.setType("channel");
-					tile.setChannel(channel);
-
 					tile.setSport(sport);
 					tile.setLeague((String) map.get("league"));
 					tile.setTeaser((String) map.get("teaser"));
@@ -616,7 +617,7 @@ public class SportsCloudRestGamesHandler {
 
 					String homeImage = (String) homeJson.get("img");
 					homeImage = homeImage.replace("baseball", categoryNameForLogo);
-					homeImage=homeImage.replace("mlb", category.toLowerCase());
+					homeImage = homeImage.replace("mlb", category.toLowerCase());
 
 					homeLogo.setmUrl(homeImage);
 					homeLogo.setmWidth(64);
@@ -633,7 +634,7 @@ public class SportsCloudRestGamesHandler {
 					Thumbnail awayLogo = new Thumbnail();
 					String awayImage = (String) awayJson.get("img");
 					awayImage = awayImage.replace("baseball", categoryNameForLogo);
-					awayImage=awayImage.replace("mlb", category.toLowerCase());
+					awayImage = awayImage.replace("mlb", category.toLowerCase());
 
 					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);
@@ -658,7 +659,35 @@ public class SportsCloudRestGamesHandler {
 					gamestats.setNstats(nstats);
 					tile.setGamestats(gamestats);
 
-					tiles.add(tile);
+					List<String> contentIds = (List<String>) map.get("contentId");
+					if (contentIds != null && contentIds.size() > 0) {
+						ListIterator<String> litrContentIds = contentIds.listIterator();
+						while (litr.hasNext()) {
+						TileAsset newTile = tile;
+						String contentId = litrContentIds.next();
+						try {
+							newTile = (TileAsset) tile.clone();
+							newTile.setId(contentId);
+							Map<String, Object> channelInfo=(Map<String, Object>)map.get(contentId);
+							
+							Channel channel = new Channel();
+							channel.setGuid((String) channelInfo.get("channelGuid"));
+							channel.setTitle((String) channelInfo.get("callsign"));
+							channel.setType("channel");
+							
+							newTile.setChannel(channel);
+
+						} catch (CloneNotSupportedException e) {
+							LOGGER.error(e.getMessage(), e);
+						} finally {
+							tiles.add(newTile);
+						}
+						}
+
+					} else {
+						tiles.add(tile);
+					}
+
 				}
 
 				ribbon.setTitle("Games");
@@ -699,7 +728,7 @@ public class SportsCloudRestGamesHandler {
 						tile.setId(contentId);
 					}
 					String sport = (String) map.get("sport");
-					
+
 					String categoryNameForLogo = "";
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
@@ -739,7 +768,7 @@ public class SportsCloudRestGamesHandler {
 
 					String homeImage = (String) homeJson.get("img");
 					homeImage = homeImage.replace("baseball", categoryNameForLogo);
-					homeImage=homeImage.replace("mlb", category.toLowerCase());
+					homeImage = homeImage.replace("mlb", category.toLowerCase());
 
 					homeLogo.setmUrl(homeImage);
 					homeLogo.setmWidth(64);
@@ -756,7 +785,7 @@ public class SportsCloudRestGamesHandler {
 					Thumbnail awayLogo = new Thumbnail();
 					String awayImage = (String) awayJson.get("img");
 					awayImage = awayImage.replace("baseball", categoryNameForLogo);
-					awayImage=awayImage.replace("mlb", category.toLowerCase());
+					awayImage = awayImage.replace("mlb", category.toLowerCase());
 
 					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);

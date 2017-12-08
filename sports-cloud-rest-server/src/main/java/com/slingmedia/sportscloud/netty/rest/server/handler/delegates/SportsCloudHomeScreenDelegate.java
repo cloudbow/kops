@@ -43,6 +43,9 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 							new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
 					addGameScheduleDates(mainObj, gameScheduleJson);
 	
+					//title
+					mainObj.add("anons_title", new JsonPrimitive(solrDoc.getAsJsonObject().get("anonsTitle").getAsString()));
+
 					// collection
 					mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
 					String teaser = "-";
@@ -50,6 +53,10 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 						teaser = gameScheduleJson.get("preGameTeaser").getAsString();
 					}
 					mainObj.add("teaser", new JsonPrimitive(teaser));
+					
+					//anons
+					mainObj.add("anons", new JsonPrimitive(teaser));
+					
 					JsonObject homeTeam = new JsonObject();
 					JsonObject awayTeam = new JsonObject();
 					JsonObject homeTeamRecord = new JsonObject();
@@ -62,6 +69,13 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 						homeTeamAlias = solrDoc.get("homeTeamAlias").getAsString();
 						homeTeam.add("alias", new JsonPrimitive(homeTeamAlias));
 					}
+					//Added for city
+					String homeTeamCity = "-";
+					if (solrDoc.has("homeTeamCity")) {
+						homeTeamCity = solrDoc.get("homeTeamCity").getAsString();
+						homeTeam.add("city", new JsonPrimitive(homeTeamCity));
+					}
+					
 					homeTeam.add("img", new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
 					homeTeam.add("id", new JsonPrimitive(gameScheduleJson.get("homeTeamExternalId").getAsString()));
 					mainObj.add("awayTeam", awayTeam);
@@ -71,6 +85,13 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 						awayTeamAlias = solrDoc.get("awayTeamAlias").getAsString();
 						awayTeam.add("alias", new JsonPrimitive(awayTeamAlias));
 					}
+					//Added for city
+					String awayTeamCity = "-";
+					if (solrDoc.has("awayTeamCity")) {
+						awayTeamCity = solrDoc.get("awayTeamCity").getAsString();
+						awayTeam.add("city", new JsonPrimitive(awayTeamCity));
+					}
+					
 					awayTeam.add("img", new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
 					awayTeam.add("id", new JsonPrimitive(gameScheduleJson.get("awayTeamExternalId").getAsString()));
 	

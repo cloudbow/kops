@@ -36,27 +36,32 @@ object SportsDataGamesFacade {
  	
   	def getGamesCategoriesDataForHomeScreen(startDate:Long,endDate:Long): JsonElement = {
   		val searchTemplate =  s"""{
-		  "size": 0,
-		  "query": {
-		    "constant_score": {
-		      "filter": {
-		        "range": {
-		          "game_date_epoch": {
-		            "gte": $startDate,
-		            "lte": $endDate
-		          }
-		        }
-		      }
-		    }
-		  },
-		  "aggs": {
-		        "top_tags": {
-		            "terms": {
-		                "field": "league.keyword",
-        				"size" : 100
-		            }
-		                }
-		            }
+			  "size": 0,
+			  "query": {
+			    "bool": {
+			      "must_not": {
+			        "term": {
+			          "startTimeEpoch": 0
+			        }
+			      },
+			      "filter": {
+			        "range": {
+			          "game_date_epoch": {
+			            "gte": $startDate,
+                  		"lte": $endDate
+			          }
+			        }
+			      }
+			    }
+			  },
+			  "aggs": {
+			    "top_tags": {
+			      "terms": {
+			        "field": "league.keyword",
+			        "size": 100
+			      }
+			    }
+			  }
 			}""".stripMargin.replaceAll("\n", " ")
 		elasticSearchClient.search("POST",getGamesCategoriesURLBase(), Map[String, String](),searchTemplate)	  	
   	}
@@ -72,7 +77,12 @@ object SportsDataGamesFacade {
 			    }
 			  ],
 			  "query": {
-			    "constant_score": {
+			    "bool": {
+			      "must_not": {
+			        "term": {
+			          "startTimeEpoch": 0
+			        }
+			      },
 			      "filter": {
 			        "bool": {
 			          "must": [
@@ -84,8 +94,8 @@ object SportsDataGamesFacade {
 			            {
 			              "range": {
 			                "game_date_epoch": {
-			                 "gte": $startDate,
-		                     "lte": $endDate
+			                   "gte": $startDate,
+                  				"lte": $endDate
 			                }
 			              }
 			            }
@@ -121,7 +131,7 @@ object SportsDataGamesFacade {
 		elasticSearchClient.search("POST",getGamesScheduleForCategoryURLBase(), Map[String, String](),searchTemplate)	  	
   	}
   	
-
+  	
   def getGameScheduleByGameCode(gameId: String): JsonElement = {
   		val searchTemplate =  s"""{
  
