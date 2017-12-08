@@ -743,9 +743,9 @@ public class SportsCloudRestGamesHandler {
 					Integer stopTimeEpoch = (Integer) map.get("stopTimeEpoch");
 					mc.setDuration((stopTimeEpoch - startTimeEpoch));
 
-					String startTimeText = new DateTime(Long.valueOf(startTimeEpoch)).toDateTime(DateTimeZone.UTC)
+					String startTimeText = new DateTime(startTimeEpoch*1000L).toDateTime(DateTimeZone.UTC)
 							.toString();
-					String stopTimeText = new DateTime(Long.valueOf(stopTimeEpoch)).toDateTime(DateTimeZone.UTC)
+					String stopTimeText = new DateTime(stopTimeEpoch*1000L).toDateTime(DateTimeZone.UTC)
 							.toString();
 
 					mc.setStartTime(startTimeText);
