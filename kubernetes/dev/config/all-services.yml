@@ -1,43 +1,4 @@
-# ------------------- Artifact Server Deployment ------------------- #
-apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
-kind: Deployment
-metadata:
-  name: artifact-server-layer-deployment
-  labels:
-    app: artifact-server
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: artifact-server
-  template:
-    metadata:
-      labels:
-        app: artifact-server
-    spec:
-      containers:
-      - name: artifact-server
-        image: registry.sports-cloud.com:5000/artifact-server
-        ports:
-        - containerPort: 9080
----
-# ------------------- Artifact Server Service ------------------- #
-apiVersion: v1
-kind: Service
-metadata:
-  name: artifact-server
-  labels:
-    app: artifact-server
-spec:
-  clusterIP: 100.68.16.196
-  selector:
-    app: artifact-server
-  type: NodePort
-  ports:
-  - name: http
-    port: 9082
-    protocol: TCP
----
+# -------------------- All packages for backend ---------------------------------#
 # ------------------- Zookeeper ------------------- #
 ---
 apiVersion: v1
@@ -536,7 +497,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: kibana-deployment
+  name: kibana
   namespace: default
   labels:
     component: kibana
@@ -573,46 +534,6 @@ spec:
         - containerPort: 5601
           name: kibana
           protocol: TCP
----
-# ------------------- Rest layer Deployment ------------------- #
-apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
-kind: Deployment
-metadata:
-  name: sc-rest-layer-deployment
-  labels:
-    app: sports-cloud-rest
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: sports-cloud-rest
-  template:
-    metadata:
-      labels:
-        app: sports-cloud-rest
-    spec:
-      containers:
-      - name: sports-cloud-rest
-        image: registry.sports-cloud.com:5000/sports-cloud-rest
-        ports:
-        - containerPort: 9080
----
-# ------------------- Rest layer Service ------------------- #
-apiVersion: v1
-kind: Service
-metadata:
-  name: sports-cloud-rest
-  labels:
-    app: sports-cloud-rest
-spec:
-  selector:
-    app: sports-cloud-rest
-  type: NodePort
-  ports:
-  - name: http
-    port: 9080
-    targetPort: 9080
-    protocol: TCP
 ---
 # ------------------- Kafka Service ------------------- #
 apiVersion: v1
@@ -804,7 +725,7 @@ spec:
 apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
 kind: Deployment
 metadata:
-  name: sc-cp-connect-deployment
+  name: sc-cp-connect
   labels:
     app: sc-cp-connect
 spec:
@@ -919,7 +840,7 @@ spec:
     matchLabels:
       app: spark # has to match .spec.template.metadata.labels
   serviceName: "spark"
-  replicas: 1 # by default is 1
+  replicas: 2 # by default is 1
   template:
     metadata:
       labels:
@@ -949,7 +870,7 @@ spec:
 apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
 kind: Deployment
 metadata:
-  name: spark-worker-deployment
+  name: spark-worker
   labels:
     app: spark-worker
 spec:
@@ -984,21 +905,21 @@ spec:
 apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
 kind: Deployment
 metadata:
-  name: spark-ui-proxy-deployment
+  name: spark-ui-proxy1
   labels:
-    app: spark-ui-proxy
+    app: spark-ui-proxy1
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: spark-ui-proxy
+      app: spark-ui-proxy1
   template:
     metadata:
       labels:
-        app: spark-ui-proxy
+        app: spark-ui-proxy1
     spec:
       containers:
-      - name: spark-ui-proxy
+      - name: spark-ui-proxy1
         image: elsonrodriguez/spark-ui-proxy:1.0
         args: ["master-0.spark:8080", "80"]
         livenessProbe:
@@ -1013,24 +934,70 @@ spec:
           requests:
             cpu: 100m
 ---
-# ------------------- Spark UI Proxy Service ------------------- #
+# ------------------- Spark UI Deployment  ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: spark-ui-proxy2
+  labels:
+    app: spark-ui-proxy2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-ui-proxy2
+  template:
+    metadata:
+      labels:
+        app: spark-ui-proxy2
+    spec:
+      containers:
+      - name: spark-ui-proxy2
+        image: elsonrodriguez/spark-ui-proxy:1.0
+        args: ["master-1.spark:8080", "80"]
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 120
+          timeoutSeconds: 5
+        ports:
+          - containerPort: 80
+        resources:
+          requests:
+            cpu: 100m
+---
+# ------------------- Spark UI Proxy Service1 ------------------- #
 kind: Service
 apiVersion: v1
 metadata:
-  name: spark-ui-proxy
+  name: spark-ui-proxy1
 spec:
   ports:
     - port: 80
       targetPort: 80
   selector:
-    app: spark-ui-proxy
+    app: spark-ui-proxy1
+  type: NodePort
+---
+# ------------------- Spark UI Proxy Service2 ------------------- #
+kind: Service
+apiVersion: v1
+metadata:
+  name: spark-ui-proxy2
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: spark-ui-proxy2
   type: NodePort
 ---
 # ------------------- Zeppelin  Deployemnt ------------------- #
 apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
 kind: Deployment
 metadata:
-  name: zeppelin-deployment
+  name: zeppelin
   labels:
     app: zeppelin
 spec:
@@ -1065,6 +1032,87 @@ spec:
     app: zeppelin
   type: NodePort
 ---
+# ------------------------------------- Application Related services ----------------------------- #
+# ------------------- Rest layer Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: sc-rest-layer
+  labels:
+    app: sports-cloud-rest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sports-cloud-rest
+  template:
+    metadata:
+      labels:
+        app: sports-cloud-rest
+    spec:
+      containers:
+      - name: sports-cloud-rest
+        image: registry.sports-cloud.com:5000/sports-cloud-rest
+        ports:
+        - containerPort: 9080
+---
+# ------------------- Rest layer Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: sports-cloud-rest
+  labels:
+    app: sports-cloud-rest
+spec:
+  selector:
+    app: sports-cloud-rest
+  type: NodePort
+  ports:
+  - name: http
+    port: 9080
+    targetPort: 9080
+    protocol: TCP
+---
+# ------------------- Artifact Server Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: artifact-server-layer
+  labels:
+    app: artifact-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artifact-server
+  template:
+    metadata:
+      labels:
+        app: artifact-server
+    spec:
+      containers:
+      - name: artifact-server
+        image: registry.sports-cloud.com:5000/artifact-server
+        ports:
+        - containerPort: 9080
+---
+# ------------------- Artifact Server Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: artifact-server
+  labels:
+    app: artifact-server
+spec:
+  clusterIP: 100.68.16.196
+  selector:
+    app: artifact-server
+  type: NodePort
+  ports:
+  - name: http
+    port: 9082
+    protocol: TCP
+---
 # -------------------- Ingress controller --------------------- #
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -1075,30 +1123,41 @@ metadata:
     #alb.ingress.kubernetes.io/subnets: subnet-1234
     #alb.ingress.kubernetes.io/security-groups: sg-1234
     alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+    ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
   - host: intsportscloud.slingbox.com
     http:
       paths:
-      - path: /kibana
+      - path: /
         backend:
           serviceName: kubernetes-dashboard
-          servicePort: 9090
-      - path: /rest
+          servicePort: 80
+      - path: /rest/*
         backend:
           serviceName: sports-cloud-rest
           servicePort: 9080
-      - path: /kibana
-        backend:
+  - host: intsc-kibana.slingbox.com
+    http:
+      paths:
+      - backend:
           serviceName: kibana
           servicePort: 80
-      - path: /zeppelin
-        backend:
+  - host: intsc-zeppelin.slingbox.com
+    http:
+      paths:
+      - backend:
           serviceName: zeppelin
           servicePort: 80
-      - path: /spark-ui
-        backend:
-          serviceName: spark-ui-proxy
+  - host: intsc-spui1.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: spark-ui-proxy1
           servicePort: 80
-      
----
+  - host: intsc-spui2.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: spark-ui-proxy2
+          servicePort: 80
