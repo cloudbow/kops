@@ -27,6 +27,6 @@ spec:
         "--conf", "spark.default.parallelism=4",
         "--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30  -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000 -XX:+UseCompressedOops",
         "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
-        "http://artifact-server.sports-cloud.com:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "TEAMSTANDINGS", "meta_batch" , "team_standings"]
+        "/jars/all-spark-jobs.jar" , "TEAMSTANDINGS", "meta_batch" , "team_standings"]
       restartPolicy: Never
   backoffLimit: 4

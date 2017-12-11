@@ -31,7 +31,7 @@ spec:
       template:
         spec:
           containers:
-          - name: download-schedules
+          - name: download-summary
             image: registry.sports-cloud.com:5000/sc-job-scheduler:latest
             args:
             - /bin/sh
@@ -51,7 +51,7 @@ spec:
       template:
         spec:
           containers:
-          - name: download-schedules
+          - name: download-thuuz
             image: registry.sports-cloud.com:5000/sc-job-scheduler:latest
             args:
             - /bin/sh

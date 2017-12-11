@@ -21,52 +21,42 @@ NETWORK=sports-cloud-k8s-network
 
 
 
-# Run Docker container
-#
+## Run this on the Jenkins server
+build-and-push-builder-docker:
+	@$(current_path)/dev/scripts/application/build-builder.sh $(current_path)/dev
 
-## Folloiwng are for building all custom docker containers
 
-build-rest-layer-docker-dev:
-	@$(current_path)/dev/scripts/application/build-rest-docker.sh $(current_path)/dev
+all-external-tools-once:
+	@$(current_path)/dev/scripts/application/external-tools-exactly-once.sh $(current_path)/dev
 
-build-art-serv-layer-docker-dev:
-	@$(current_path)/dev/scripts/application/build-art-serv-docker.sh $(current_path)/dev
-
-build-kafka-connect-docker-dev:
-	@$(current_path)/dev/scripts/application/build-kafka-connect-docker.sh $(current_path)/dev
-
-build-spark-cluster-docker-dev:
-	@$(current_path)/dev/scripts/application/build-spark-container.sh $(current_path)/dev
-
-build-spark-job-docker-dev:
-	@$(current_path)/dev/scripts/application/build-spark-job-container.sh $(current_path)/dev
-
-build-sc-job-scheduler-docker-dev:
-	@$(current_path)/dev/scripts/application/build-job-scheduler-container.sh $(current_path)/dev
-
-push-all-docker-containers: $(build-rest-layer-dev)
-	@$(current_path)/dev/scripts/application/push-all-docker-containers.sh $(current_path)/dev
-
-create-alb-attributes:
-	@$(current_path)/dev/scripts/aws/post-create-config.sh $(current_path)/dev
-
-create-docker-credentials:
-	@$(current_path)/dev/scripts/application/create-docker-credentials.sh
+## Create external tools required
+## Create private docker registry
 all-external-tools:
 	@$(current_path)/dev/scripts/application/external-tools.sh $(current_path)/dev
+
+# Following actions needs to be done whenever any change in image happens to any of the docker images
+# Build Docker images for the required applicatons
+
+## This will burn all required docker things into the corresponding docker directores
+add-docker-artifacts-from-project:
+	@$(current_path)/dev/scripts/application/burn-project-artifacts-for-docker.sh $(current_path)/dev
+
+# Following action is needed to push all docker contianers
+build-and-push-all-docker-containers: $(build-rest-layer-dev)
+	@$(current_path)/dev/scripts/application/push-all-docker-containers.sh $(current_path)/dev
+
+
 ## Use this to submit all serivces
 all-services:
 	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh  $(current_path)/dev/config/all-services.yml
 ## Use this to submit all the jobs	
 all-jobs:
 	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh  $(current_path)/dev/config/all-jobs.yml
+
+
 ## Use this to test a single srevce	
 services-placeholder:
 	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh  $(current_path)/dev/config/all-services-placeholder.yml
 ## Use this to test a single job
 jobs-placeholder:
 	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh $(current_path)/dev/config/job-placeholder.yml
-	
-kube-dashboard:
-	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh $(current_path)/dev/config/kube-dashboard.yml
-
