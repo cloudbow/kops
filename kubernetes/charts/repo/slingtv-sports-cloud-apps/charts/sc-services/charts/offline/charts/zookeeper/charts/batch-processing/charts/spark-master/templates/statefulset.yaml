@@ -1,0 +1,54 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ template "spark-master.fullname" . }}
+  labels:
+    app: {{ template "spark-master.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "spark-master.name" . }}
+      release: {{ .Release.Name }}
+  serviceName: {{ template "spark-master.fullname" . }}-hs
+  replicas: {{ .Values.deployment.replicas }} # by default is 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "spark-master.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
+        env:
+        {{- range $key, $value := .Values.image.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
+        - name: APP_SPARK_MASTERS_EPS
+          value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
+        - name: APP_SPARK_ZOOKEEPER_EP
+          value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: 
+        {{- range .Values.deployment.command }}
+        - {{ . | quote }}
+        {{- end }}
+        ports:
+          {{- range .Values.deployment.ports }}
+          - containerPort: {{ . }}
+          {{- end }}
+        resources:
+          requests:
+            cpu: {{ .Values.deployment.resources.minCpu }}
+        volumeMounts:
+        - name: workdir
+          mountPath: /spark/work
+      volumes:
+      - name: workdir
+        hostPath:
+          path: /data/apps/sports-cloud/{{ .Release.Name }}/spark/work
+          type: DirectoryOrCreate

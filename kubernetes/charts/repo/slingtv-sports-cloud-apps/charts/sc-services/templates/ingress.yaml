@@ -1,0 +1,48 @@
+# -------------------- Ingress controller --------------------- #
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-sports-cloud-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    #alb.ingress.kubernetes.io/subnets: subnet-1234
+    #alb.ingress.kubernetes.io/security-groups: sg-1234
+    alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: intsportscloud.slingbox.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ .Release.Name }}-kubernetes-dashboard
+          servicePort: 80
+      - path: /rest/*
+        backend:
+          serviceName: {{ .Release.Name }}-sc-rest-layer
+          servicePort: 9080
+  - host: intsc-kibana.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-kibana
+          servicePort: 80
+  - host: intsc-zeppelin.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-zeppelin
+          servicePort: 80
+  - host: intsc-spui1.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-spark-ui-proxy-1
+          servicePort: 80
+  - host: intsc-spui2.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-spark-ui-proxy-2
+          servicePort: 80

@@ -1,0 +1,40 @@
+# ------------------- SparkUI Proxy1  Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "spark-ui-proxy-2.fullname" . }}
+  labels:
+    app: {{ template "spark-ui-proxy-2.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "spark-ui-proxy-2.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "spark-ui-proxy-2.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
+        args:
+        - "{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:8080"
+        {{- range .Values.deployment.args }}
+        - {{ . | quote }}
+        {{- end }}     
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.deployment.livenessProbePort }}
+          initialDelaySeconds: {{ .Values.deployment.livenessProbeInitDelay }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbeTimeoutSeconds }}
+        ports:
+        - containerPort: {{ .Values.deployment.containerPort }}
+        resources:
+          requests:
+            cpu: {{ .Values.deployment.resources.cpu }}
