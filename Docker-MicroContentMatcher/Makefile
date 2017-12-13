@@ -17,7 +17,7 @@ current_path := $(dir $(mkfile_path))
 # execute it regardes of files existence.
 .PHONY: $(TAG) $(NETWORK) \
 	docker-build docker-network-create  \
-	sports-cloud-no-network docker-network-inspect
+	elastic sports-cloud-no-network docker-network-inspect
 	
 
 
@@ -37,27 +37,24 @@ docker-network-inspect:
 
 # Run Docker container
 #
-# To launch docker container for cloned java project it directory
-# name should be providaded to make as build target. Example:
-# $ make sport_api
-#
-# Container will have git credentials and configuration files of host
-# user mounted inside container user directory. As well as, user Gradle 
-# directory mounted, so it would not need to re-download all packages
-# each time container instance running.
-# Projects files would be mounted under "/project".
+
+elastic:
+	@docker exec -u elasticsearch:elasticsearch \
+                     -t sports-cloud-no-network \
+                     /elastic/bin/elasticsearch
 		
 sports-cloud-no-network:
 	@docker run --rm \
 		--name=$@ \
-	    -p 8983:8983 \
+            -p 9080:9080 \
+	    -p 9200:9200 \
 	    -p 4040:4040 \
 		-v /root/.m2:/root/.m2 \
 	 	-v /root/.ivy2:/root/.ivy2 \
 	 	-v /data/apps/content-matcher/feeds:/data/feeds \
-	 	-v /data/platforms/solr:/data/solr \
+	 	-v /data/platforms/elastic:/data/elastic \
 		-v /var/log:/var/log \
+		-v /var/log/elasticsearch:/var/log/elasticsearch \
 		-v $(current_path)/sports-cloud-schedulers/src/main/resources:/spark-log4j-config \
 		-v $(current_path):/project \
 		-it --cap-add=SYS_PTRACE --security-opt=apparmor:unconfined $(TAG)
-

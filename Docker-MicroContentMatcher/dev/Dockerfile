@@ -1,22 +1,25 @@
-FROM anapsix/alpine-java
+FROM anapsix/alpine-java:8_jdk
 ADD startup.sh /root/startup.sh
-ADD solr-configurations /solr-configurations
+ADD elastic-base /elastic-base
+RUN addgroup elasticsearch
+RUN adduser -G elasticsearch -S  elasticsearch
 ENV SCALA_VERSION=2.12.2 \
     SCALA_HOME=/usr/share/scala \
-    KAFKA_HOME=/kafka \
+    CONFLUENT_HOME=/confluent \
     SBT_VERSION=0.13.11 \
     SBT_HOME=/usr/local/sbt \
     SPARK_HOME=/spark-2.1.0-bin-hadoop2.7 \
     MAVEN_VERSION=3.3.9 \
     MAVEN_HOME=/usr/lib/maven \
-    SOLR_VERSION=6.6.0 \
-    SOLR_HOME=/solr \
+    ELASTIC_VERSION=5.6.0 \
+    ELASTIC_HOME=/elastic \
     KAFKA_HEAP_OPTS="-Xms512m -Xmx1g"
 RUN apk update && \
     apk add bash && \ 
     apk add wget && \
     apk add curl && \
     apk add strace && \
+    apk add jq && \
     apk add screen && \
     apk add --update coreutils && rm -rf /var/cache/apk/* && \
     apk add --update netcat-openbsd && rm -rf /var/cache/apk/* && \
@@ -29,11 +32,12 @@ RUN apk update && \
     mkdir -p /var/log/sports-cloud-batch-job && \
     curl -sL "http://dl.bintray.com/sbt/native-packages/sbt/$SBT_VERSION/sbt-$SBT_VERSION.tgz" | gunzip | tar -x -C /usr/local && \
     echo -ne "- with sbt $SBT_VERSION\n" >> /root/.built && \
-    curl http://www-us.apache.org/dist/kafka/0.10.2.0/kafka_2.11-0.10.2.0.tgz | tar -xzf - && \
-    mv kafka_2.11-0.10.2.0 $KAFKA_HOME && \
+    curl http://packages.confluent.io/archive/3.3/confluent-oss-3.3.0-2.11.tar.gz | tar -xzf - && \
+    mv confluent-3.3.0 $CONFLUENT_HOME && \
     mkdir /tmp/zookeeper && \
     mkdir /tmp/kafka-logs && \
     chmod +x /root/startup.sh && \
+    chmod +x /elastic-base/scripts/elastic-start.sh && \
     wget "https://downloads.typesafe.com/scala/${SCALA_VERSION}/scala-${SCALA_VERSION}.tgz" && \
     tar xzf "scala-${SCALA_VERSION}.tgz" && \
     mkdir "${SCALA_HOME}" && \
@@ -44,9 +48,10 @@ RUN apk update && \
     wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz && \
     tar -xvf spark-2.1.0-bin-hadoop2.7.tgz && \
     mv spark-2.1.0-bin-hadoop2.7 / && \
-    curl http://www-eu.apache.org/dist/lucene/solr/6.6.0/solr-6.6.0.tgz | tar -xzf - && \
-  	mv solr-6.6.0 $SOLR_HOME && \
-  	mkdir -p /var/log/solr && \
-  	cp -f /solr-configurations/solr.in.sh  $SOLR_HOME/bin/solr.in.sh
+    wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.0.tar.gz && \
+    tar -xvf elasticsearch-5.6.0.tar.gz && \
+    mv elasticsearch-5.6.0 /elastic && \
+    cp -f /elastic-base/config/elasticsearch.yml  $ELASTIC_HOME/config/elasticsearch.yml
 EXPOSE 8983
+EXPOSE 9080
 ENTRYPOINT /root/startup.sh

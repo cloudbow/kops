@@ -1,2 +1,3 @@
 #!/bin/sh
-nohup $KAFKA_HOME/bin/connect-standalone.sh $1 $2 >$3 2>&1 &
+echo "submitting config $1"
+curl -X POST -H "Content-Type: application/json" --data @$1 http://localhost:8083/connectors
