@@ -313,8 +313,14 @@ public class SportsCloudRestGamesHandler {
 			mainObj.add("league", new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
 			sportsCloudHomeScreenDelegate.addGameScheduleDates(mainObj, gameScheduleJson);
 
-			// collection
+			// Thuuz rating
 			mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
+
+			// Sling TV ratings
+			if (gameScheduleJson.has("ratings")) {
+				mainObj.add("ratings", gameScheduleJson.get("ratings").getAsJsonArray());
+			}
+
 			String teaser = "-";
 			if (gameScheduleJson.has("preGameTeaser")) {
 				teaser = gameScheduleJson.get("preGameTeaser").getAsString();
@@ -563,12 +569,12 @@ public class SportsCloudRestGamesHandler {
 
 					SportsTileAsset tile = new SportsTileAsset();
 
-					tile.setType("sport");
+					tile.setType("sportsv2");
 
 					String title = (String) map.get("anons_title");
 					tile.setTitle(title);
 
-					tile.setRatings(new ArrayList<String>());
+					tile.setRatings((List<String>) map.get("ratings"));
 
 					String gameId = (String) map.get("id");
 					String scheduleDate = (String) map.get("scheduledDate");
@@ -593,10 +599,8 @@ public class SportsCloudRestGamesHandler {
 					Integer stopTimeEpoch = (Integer) map.get("stopTimeEpoch");
 					tile.setDuration((stopTimeEpoch - startTimeEpoch));
 
-					String startTimeText = new DateTime(startTimeEpoch*1000L).toDateTime(DateTimeZone.UTC)
-							.toString();
-					String stopTimeText = new DateTime(stopTimeEpoch*1000L).toDateTime(DateTimeZone.UTC)
-							.toString();
+					String startTimeText = new DateTime(startTimeEpoch * 1000L).toDateTime(DateTimeZone.UTC).toString();
+					String stopTimeText = new DateTime(stopTimeEpoch * 1000L).toDateTime(DateTimeZone.UTC).toString();
 
 					tile.setStartTime(startTimeText);
 					tile.setStopTime(stopTimeText);
@@ -668,9 +672,11 @@ public class SportsCloudRestGamesHandler {
 							String contentId = litrContentIds.next();
 							try {
 								newTile = (TileAsset) tile.clone();
-								newTile.setId(contentId);
+
 								Map<String, Object> channelInfo = (Map<String, Object>) cIdToAsstInfo.get(contentId);
 								if (channelInfo != null) {
+									newTile.setId((String) channelInfo.get("assetGuid"));
+
 									Channel channel = new Channel();
 									channel.setGuid((String) channelInfo.get("channelGuid"));
 									channel.setTitle((String) channelInfo.get("callsign"));
@@ -726,7 +732,7 @@ public class SportsCloudRestGamesHandler {
 
 					String gameId = (String) map.get("id");
 					mc.setId(gameId);
-					
+
 					String sport = (String) map.get("sport");
 
 					String categoryNameForLogo = "";
@@ -743,10 +749,8 @@ public class SportsCloudRestGamesHandler {
 					Integer stopTimeEpoch = (Integer) map.get("stopTimeEpoch");
 					mc.setDuration((stopTimeEpoch - startTimeEpoch));
 
-					String startTimeText = new DateTime(startTimeEpoch*1000L).toDateTime(DateTimeZone.UTC)
-							.toString();
-					String stopTimeText = new DateTime(stopTimeEpoch*1000L).toDateTime(DateTimeZone.UTC)
-							.toString();
+					String startTimeText = new DateTime(startTimeEpoch * 1000L).toDateTime(DateTimeZone.UTC).toString();
+					String stopTimeText = new DateTime(stopTimeEpoch * 1000L).toDateTime(DateTimeZone.UTC).toString();
 
 					mc.setStartTime(startTimeText);
 					mc.setStopTime(stopTimeText);
@@ -755,8 +759,7 @@ public class SportsCloudRestGamesHandler {
 					mc.setAnons((String) map.get("anons"));
 					mc.setAnons_title((String) map.get("anons_title"));
 					mc.setLocation((String) map.get("location"));
-					
-					
+
 					SportTeam homeTeam = new SportTeam();
 					Map<String, Object> homeJson = (Map<String, Object>) map.get("homeTeam");
 					homeTeam.setAlias((String) homeJson.get("alias"));
@@ -809,8 +812,28 @@ public class SportsCloudRestGamesHandler {
 					gamestats.setNstats(nstats);
 					mc.setGamestats(gamestats);
 					List<String> contentIds = (List<String>) map.get("contentId");
-					mc.setContentId(contentIds);
+					//For slingtv native, update externel_id (assetGuid) as contentId.
 					
+					List<String> assetGuids = new ArrayList<String>();
+
+					Map<String, Object> cIdToAsstInfo = (Map<String, Object>) map.get("cIdToAsstInfo");
+					if (contentIds != null && contentIds.size() > 0) {
+						ListIterator<String> litrContentIds = contentIds.listIterator();
+						while (litrContentIds.hasNext()) {
+
+							String contentId = litrContentIds.next();
+
+							Map<String, Object> channelInfo = (Map<String, Object>) cIdToAsstInfo.get(contentId);
+							if (channelInfo != null) {
+								assetGuids.add((String) channelInfo.get("assetGuid"));
+							}
+
+						}
+
+					}
+
+					mc.setContentId(assetGuids);
+
 					mediaCard = mc;
 				}
 

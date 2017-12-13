@@ -48,6 +48,13 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 
 					// collection
 					mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
+					
+					//Sling TV ratings
+					if(gameScheduleJson.has("ratings"))
+					{
+					mainObj.add("ratings", gameScheduleJson.get("ratings").getAsJsonArray());
+					}
+					
 					String teaser = "-";
 					if (gameScheduleJson.has("preGameTeaser")) {
 						teaser = gameScheduleJson.get("preGameTeaser").getAsString();
