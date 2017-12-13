@@ -19,7 +19,7 @@
         "--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30  -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000 -XX:+UseCompressedOops",
         "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
         "--packages","org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1",
-        "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "content_match", "game_schedule"
+        "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "content_match", "game_schedule", "artifact-server.marathon.l4lb.thisdcos.directory"
         ],
     "docker": {
       "image": "registry.marathon.l4lb.thisdcos.directory:5000/spark:2.0.1-2.2.0-1-hadoop-2.6"

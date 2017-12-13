@@ -24,22 +24,22 @@ import org.apache.spark.sql.types.DoubleType
 import scala.util.parsing.json._
 import org.apache.spark.sql.types.DataType
 
-object NcaafHolder extends Serializable {
+object NflHolder extends Serializable {
   val serialVersionUID = 1L;
   @transient lazy val log = LoggerFactory.getLogger("LiveDataMuncher")
 }
 
 
 
-object NcaafLiveDataMuncher extends Serializable {
+object NflLiveDataMuncher extends Serializable {
   def main(args: Array[String]) {
-    Holder.log.debug("Args is $args")
-    new NcaafLiveDataMuncher().stream(args(0), args(1))
+    NflHolder.log.debug("Args is $args")
+    new NflLiveDataMuncher().stream(args(0), args(1))
   }
 
 }
 
-class NcaafLiveDataMuncher extends Serializable with Muncher {
+class NflLiveDataMuncher extends Serializable with Muncher {
 
 
   //All Udfs starts here
@@ -74,29 +74,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
   }
   val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
   
-  
-  
-  val toJson: (Seq[Map[String,String]]) =>  ArrayBuffer[driveFlat] = (driveList: Seq[Map[String,String]]) => {
-    val jsonArray = ArrayBuffer.empty[driveFlat] 
-    for(m <- driveList) {
-       //val jsonString = Serialization.write(m)
-      
-       jsonArray += driveFlat(m.get("teamId").getOrElse(null), m.get("summaryText").getOrElse(null), m.get("seconds").getOrElse(null), m.get("driveTitlt").getOrElse(null))
-    }
-    jsonArray
-  }
-  
-  /*val toJson: (Array[String] =>  ArrayBuffer[JSO]) = (driveList: Array[String]) => {
-    val jsonArray = ArrayBuffer.empty[JSONType]
-    for(m <- driveList) {
-      jsonArray += JSON.parseRaw(m).getOrElse(null);
-      
-    }
-    jsonArray
-  }*/
-  val getFlatDrivesUDF = udf(toJson(_: Seq[Map[String,String]]))
- 
-    
+
   //All udfs ends here
   
 
@@ -127,7 +105,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
         :: StructField("status", StringType, true)
         :: StructField("statusId", IntegerType, true)
         :: StructField("gameType", StringType, true)
-        :: StructField("league", StringType, true)
+        :: StructField("division", StringType, true)
         :: StructField("gameId", StringType, true)
         :: StructField("gameCode", StringType, true)
         :: StructField("lastPlay", StringType, true)
@@ -185,7 +163,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
     indexResult match {
       case Success(data) =>
-        Holder.log.info(data.toString)
+        NflHolder.log.info(data.toString)
         val kafkaLiveInfoT10DF2 = kafkaLiveInfoT9DF3.select($"lastPlay",
           $"batchTime",
           $"srcTimeEpoch".alias("srcTime"),
@@ -207,7 +185,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
         indexResults( "scoring_events", kafkaLiveInfoT11DF3)
 
       case Failure(e) =>
-        Holder.log.error("Error occurred in live_info indexing ", e)
+        NflHolder.log.error("Error occurred in live_info indexing ", e)
     }
 
   }
@@ -224,7 +202,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
   }
 
   override def stream(inputKafkaTopic: String, outputCollName: String): Unit = {
-    Holder.log.debug("Args is $args")
+    NflHolder.log.debug("Args is $args")
 
     val sc = SparkContext.getOrCreate()
     val spark = SparkSession.builder().getOrCreate()
@@ -260,5 +238,3 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
   }
 
 }
-
-case class driveFlat (teamId : String, suumaryText: String, seconds: String, driveTitle: String) 

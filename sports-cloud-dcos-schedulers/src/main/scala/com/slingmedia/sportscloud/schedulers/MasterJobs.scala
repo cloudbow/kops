@@ -49,6 +49,18 @@ class KafkaConnectContentMatchJob {
           "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ncaaf/ftp-content-match-ncaaf.json",
           "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect-ncaaf.log",
           "ftp-content-match-ncaaf") !
+      case "nfl" =>
+        log.trace("Executing task : nfl KafkaConnectContentMatchJob")
+        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+          "content_match_nfl",
+          "5",
+          "15",
+          "unused",
+          "36000000",
+          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
+          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/nfl/ftp-content-match-nfl.json",
+          "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect-nfl.log",
+          "ftp-content-match-nfl") !
       case "_" =>
 
         log.trace("Executing task : KafkaConnectContentMatchJob")
@@ -89,6 +101,18 @@ class KafkaConnectMetaBatchJob {
            "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ncaaf/ftp-meta-batch-ncaaf.json",
            "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-ncaaf.log",
            "ftp-meta-batch-ncaaf") !
+       case "nfl" =>
+         log.trace("Executing task nfl: KafkaConnectMetaBatchJob")
+         Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+           "meta_batch_nfl",
+           "5",
+           "15",
+           "unused",
+           "36000000",
+           "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
+           "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/nfl/ftp-meta-batch-nfl.json",
+           "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-nfl.log",
+           "ftp-meta-batch-nfl") !
        case "_" =>
          log.trace("Executing task : KafkaConnectMetaBatchJob")
          Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
@@ -128,7 +152,19 @@ class KafkaConnectLiveInfoJob {
           "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
           "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ncaaf/ftp-live-info-ncaaf.json",
           "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-ncaaf.log",
-          "ftp-live-scores-ncaaf") !
+          "ftp-live-info-ncaaf") !
+      case "nfl" =>
+        log.trace("Executing task: KafkaConnectLiveInfoJob for nfl")
+        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+          "live_info_nfl",
+          "0",
+          "0",
+          "unused",
+          "1800000",
+          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
+          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/nfl/ftp-live-info-nfl.json",
+          "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-nfl.log",
+          "ftp-live-info-nfl") !
       case "_" =>
         log.trace("Executing task: KafkaConnectLiveInfoJob")
         Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",

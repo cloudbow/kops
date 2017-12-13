@@ -23,3 +23,8 @@ dcos confluent-kafka topic create meta_batch --replication $DEFAULT_REPLICATION_
 dcos confluent-kafka topic create content_match_ncaaf --replication $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
 dcos confluent-kafka topic create live_info_ncaaf --replication $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
 dcos confluent-kafka topic create meta_batch_ncaaf --replication $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS
+
+# Create topic nfl
+dcos confluent-kafka topic create content_match_nfl --replication $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
+dcos confluent-kafka topic create live_info_nfl --replication $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
+dcos confluent-kafka topic create meta_batch_nfl --replication $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS

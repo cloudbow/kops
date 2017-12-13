@@ -58,7 +58,7 @@ function restartOnError() {
 	echo "Only checking current status -  $STATUS"
 }
 
-if [ "$topicName" == "live_info" ]
+if [[ "$topicName" == *"live_info"* ]]
 then
     restartOnError
 else

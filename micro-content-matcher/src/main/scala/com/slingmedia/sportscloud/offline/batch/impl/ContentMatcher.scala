@@ -34,8 +34,8 @@ object CMHolder extends Serializable {
 object ContentMatcher extends Serializable {
   def main(args: Array[String]) {
     CMHolder.log.debug("Args is $args")
-    //"content_match", "game_schedule", "localhost:9983"
-    new ContentMatcher().munch(args(0), args(1))
+    //"content_match", "game_schedule", "artifact-server.marathon.l4lb.thisdcos.directory"
+    new ContentMatcher().munch(args(0), args(1), args(2))
 
   }
 }
@@ -43,16 +43,16 @@ object ContentMatcher extends Serializable {
 class ContentMatcher extends Serializable with Muncher {
 
 
-  override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
+  override def munch(inputKafkaTopic: String, outputCollName: String, artifactUrl: String): Unit = {
 
     //fetch thuuz games
-    fetchThuuzGames()
+    fetchThuuzGames(artifactUrl)
 
     //fetch sports channels
-    val summaryJson6 = fetchSportsChannels()
+    val summaryJson6 = fetchSportsChannels(artifactUrl)
 
     //fetch program schedules
-    fetchProgramSchedules(summaryJson6)
+    fetchProgramSchedules(summaryJson6, artifactUrl)
 
     //Fetch MLB schedule
     val mlbScheduleDF32 = fetchMLBSchedule(inputKafkaTopic)
@@ -93,8 +93,22 @@ class ContentMatcher extends Serializable with Muncher {
   }
   val partialWithMLB = udf(addDeduplicateLogic(_: String, "MLB:"))
 
-  val makeImgUrlFunc: (String => String) = (teamExternalId: String) => { if (teamExternalId == null) "http://qahsports.slingbox.com/sport_teams/baseball/mlb/gid1.png" else "http://qahsports.slingbox.com/sport_teams/baseball/mlb/gid".concat(teamExternalId).concat(".png") }
-  val makeImgUrl = udf(makeImgUrlFunc)
+  val makeImgUrlFunc: (String, String) => String = (teamExternalId: String, league: String) => {
+    if (teamExternalId == null) {
+      "http://qahsports.slingbox.com/sport_teams/baseball/mlb/gid1.png"
+    } else {
+      league match {
+        case "NCAAF" =>
+          "http://qahsports.slingbox.com/sport_teams/football/ncaaf/gid".concat(teamExternalId).concat(".png")
+        case "NFL" =>
+          "http://qahsports.slingbox.com/sport_teams/football/nfl/gid".concat(teamExternalId).concat(".png")
+        case _ =>
+          "http://qahsports.slingbox.com/sport_teams/baseball/mlb/gid".concat(teamExternalId).concat(".png")
+      }
+
+    }
+  }
+  val makeImgUrl = udf(makeImgUrlFunc(_:String,_:String))
 
   val listToStrFunc: (WrappedArray[String] => String) = (genres: WrappedArray[String]) => {
     if (genres == null) "" else genres.mkString("::")
@@ -196,8 +210,9 @@ class ContentMatcher extends Serializable with Muncher {
       "startTimeEpoch" -> 0,
       "stopTimeEpoch" -> 0,
       "selfTimeEpoch" -> 0,
-      "selfTime" -> "0")
-    val allStatsArrayColumns = Seq("subpackage_guids", "subpack_titles")
+      "selfTime" -> "0",
+      "type" -> "0")
+    val allStatsArrayColumns = Seq("subpackage_guids", "subpack_titles","ratings")
     val allSelectedColumns = gameScheduleOrig.columns.map(gameScheduleOrig(_)) ++ (allStatsNullFills.keys ++ allStatsArrayColumns).map(statsTargetProgramsJoin2(_))
     //join with all stats data to fetch the full schedules for programs not availabe in slingtv
     //deselect duplicate columns by selecting the columns from 
@@ -209,6 +224,7 @@ class ContentMatcher extends Serializable with Muncher {
     //A limitation of na.fill
     val statsTargetProgramsJoin5 = statsTargetProgramsJoin4.
       withColumn("subpackage_guids", coalesce($"subpackage_guids", array_())).
+      withColumn("ratings", coalesce($"ratings", array_())).
       withColumn("subpack_titles", coalesce($"subpack_titles", array_()))
 
     //intersect the data with thuuz
@@ -237,11 +253,11 @@ class ContentMatcher extends Serializable with Muncher {
     (totalMatchedCount, totalGamesCount, totalMatchedCount.toFloat / totalGamesCount.toFloat * 100)
   }
 
-  val fetchThuuzGames: () => Unit = () => {
+  val fetchThuuzGames: (String) => Unit = (artifactUrl: String) => {
     //Fetch from thuuz and update 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/thuuz.json")
+    spark.sparkContext.addFile(s"http://$artifactUrl:9082/artifacts/slingtv/sports-cloud/thuuz.json")
     val thuuzGamesDF = spark.read.json(SparkFiles.get("thuuz.json"))
     val thuuzGamesDF1 = thuuzGamesDF.withColumn("gamesExp", explode(thuuzGamesDF.col("ratings"))).drop("ratings")
     val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameId")
@@ -250,11 +266,11 @@ class ContentMatcher extends Serializable with Muncher {
 
   }
 
-  val fetchSportsChannels: () => DataFrame = () => {
+  val fetchSportsChannels: (String) => DataFrame = (artifactUrl: String) => {
     //fetch summary json
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/summary.json")
+    spark.sparkContext.addFile(s"http://$artifactUrl:9082/artifacts/slingtv/sports-cloud/summary.json")
     val summaryJson = spark.read.json(SparkFiles.get("summary.json"))
     val subPackIds = summaryJson.select($"subscriptionpacks")
     val subPackIds2 = subPackIds.withColumn("subpacksExploded", explode($"subscriptionpacks")).drop("spIdsExploded");
@@ -284,10 +300,10 @@ class ContentMatcher extends Serializable with Muncher {
     summaryJson7
   }
 
-  val fetchProgramSchedules: (DataFrame) => Unit = (summaryJson6: DataFrame) => {
+  val fetchProgramSchedules: (DataFrame, String) => Unit = (summaryJson6: DataFrame, artifactUrl:String) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    spark.sparkContext.addFile("http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/schedules_plus_3")
+    spark.sparkContext.addFile(s"http://$artifactUrl:9082/artifacts/slingtv/sports-cloud/schedules_plus_3")
     val linearFeedDF = spark.read.json(SparkFiles.get("schedules_plus_3"))
     val programsDF1 = linearFeedDF.select($"_self", $"programs")
     val programsDF2 = programsDF1.withColumn("programsExploded", explode(programsDF1.col("programs"))).drop("programs");
@@ -295,7 +311,7 @@ class ContentMatcher extends Serializable with Muncher {
     //programsDF2.groupBy("programsExploded.name").count.count
 
     val programsDF21 = programsDF2.withColumn("genres", listToStrUDF($"programsExploded.genres"))
-    val programsDF3 = programsDF21.select($"_self", $"programsExploded.id" as "program_id", $"programsExploded.guid" as "program_guid", $"programsExploded.name" as "program_title", $"genres").
+    val programsDF3 = programsDF21.select($"_self", $"programsExploded.id" as "program_id", $"programsExploded.guid" as "program_guid", $"programsExploded.name" as "program_title", $"genres", $"programsExploded.ratings" as "ratings", $"programsExploded.type" as "type").
     withColumn("channel_guid_extr", channelGuidUDF($"_self")).
     withColumn("selfTime", selfTimeUDF($"_self")).
     withColumn("selfTimeEpoch",timeSchToEpochUDF($"selfTime")).
@@ -409,15 +425,20 @@ class ContentMatcher extends Serializable with Muncher {
       $"game-schedule.league" as "league",
       $"game-schedule.sport" as "sport",
       $"game-schedule.stadium.name" as "stadiumName",
-      concat(col("game-schedule.date.year"), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.month")), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.date")), lit("T"), col("game-schedule.time.hour"), lit(":"), col("game-schedule.time.minute"), lit(":00.00"), lit(getZeroPaddedUDF($"game-schedule.time.utc-hour")), lit(":"), col("game-schedule.time.utc-minute")) as "date")
+      concat(col("game-schedule.date.year"), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.month")), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.date")), lit("T"), lit(getZeroPaddedUDF($"game-schedule.time.hour")), lit(":"), col("game-schedule.time.minute"), lit(":00.00"), lit(getZeroPaddedUDF($"game-schedule.time.utc-hour")), lit(":"), col("game-schedule.time.utc-minute")) as "date")
+
+
+      //val leagueCheck = mlbScheduleDF3.first();
+    // get the league inorder to process the images
+    //val league =  mlbScheduleDF3.select($"league").first.getString(0)
 
     val mlbScheduleDF31 = mlbScheduleDF3.
       withColumn("game_date_epoch", timeStrToEpochUDF($"date")).
       withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
     val mlbScheduleDF311 = mlbScheduleDF31.
       withColumn("anonsTitle", getAnonsTitleUDF($"homeTeamName", $"awayTeamName", $"stadiumName")).
-      withColumn("homeTeamImg", makeImgUrl($"homeTeamExternalId")).
-      withColumn("awayTeamImg", makeImgUrl($"awayTeamExternalId"))
+      withColumn("homeTeamImg", makeImgUrl($"homeTeamExternalId", $"league")).
+      withColumn("awayTeamImg", makeImgUrl($"awayTeamExternalId", $"league"))
 
     val mlbScheduleDF32 = mlbScheduleDF311.distinct.toDF.na.fill(0L, Seq("homeTeamScore")).na.fill(0L, Seq("awayTeamScore"))
     mlbScheduleDF32

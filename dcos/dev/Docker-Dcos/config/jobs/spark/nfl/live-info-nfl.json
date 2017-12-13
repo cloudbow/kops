@@ -1,14 +1,14 @@
 {
-  "id": "content-match-ncaaf",
+  "id": "live-info-nfl",
   "run": {
-    "cpus": 1,
+    "cpus": 6,
     "mem": 5000,
     "disk": 20000,
     "args": ["/opt/spark/dist/bin/spark-submit",
-        "--name","SportsCloudContentMatchNcaaf","--class", "com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher" ,
-        "--driver-memory", "4G", 
-        "--executor-memory", "4G", 
-        "--total-executor-cores", "1", 
+        "--name","SportsCloudLiveInfoNfl","--class", "com.slingmedia.sportscloud.offline.streaming.impl.NflLiveDataMuncher" ,
+        "--driver-memory", "7G", 
+        "--executor-memory", "7G", 
+        "--total-executor-cores", "4", 
         "--conf", "spark.es.index.auto.create=true",
         "--conf", "spark.es.resource=sports-cloud/game_schedule",
         "--conf", "spark.es.nodes=data.marathon.l4lb.thisdcos.directory",
@@ -19,7 +19,7 @@
         "--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30  -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000 -XX:+UseCompressedOops",
         "--conf", "spark.serializer=org.apache.spark.serializer.KryoSerializer",
         "--packages","org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1",
-        "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "content_match_ncaaf", "game_schedule","artifact-server.marathon.l4lb.thisdcos.directory"
+        "http://artifact-server.marathon.l4lb.thisdcos.directory:9082/artifacts/slingtv/sports-cloud/all-spark-jobs.jar" , "live_info_nfl", "live_info"
         ],
     "docker": {
       "image": "registry.marathon.l4lb.thisdcos.directory:5000/spark:2.0.1-2.2.0-1-hadoop-2.6"
@@ -31,15 +31,5 @@
     },
     "user": "root"
   },
-  "schedules": [
-    {
-      "id": "default",
-      "enabled": true,
-      "cron": "30 7 * * *",
-      "timezone": "UTC",
-      "concurrencyPolicy": "ALLOW",
-      "startingDeadlineSeconds": 60
-    }
-  ],
-  "description": "Content Match NCAAF job for game_schedule"
+  "description": "live_info NFL job for live"
 }

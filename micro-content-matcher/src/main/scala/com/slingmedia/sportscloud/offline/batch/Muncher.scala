@@ -23,6 +23,7 @@ object MLogHolder extends Serializable {
 trait Muncher {
   def munch(inputKafkaTopic: String, outputCollName: String): Unit = {}
   def stream(inputKafkaTopic: String, outputCollName: String): Unit = {}
+  def munch(inputKafkaTopic: String, outputCollName: String, artifactUrl: String): Unit = {}
   def munch(inputKafkaTopic: String, outputCollName: String, schema: StructType, filterCond: String): Unit = {}
   def munch(batchTime: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
   val children: (String, DataFrame) => Array[Column] = (colname: String, df: DataFrame) => {
@@ -48,7 +49,7 @@ trait Muncher {
         val absTime = Math.abs(timeInInt)
         "-".concat(getZeroPaddedFunc(absTime.toString))
       } else if (timeInInt < 10) {
-        "0".concat(timeStr)
+        "0".concat(timeInInt.toString)
       } else {
         timeStr
       }
@@ -70,7 +71,13 @@ trait Muncher {
 
   }
   val timeEpochtoStrUDF = udf(timeEpochToStr(_: Long))
-  
+
+  //get game seconds
+  val getGameSeconds: (Int, Int) => Int = (sourceSeconds: Int, gameStartSeconds: Int) => {
+    (sourceSeconds - gameStartSeconds)
+  }
+
+  val getGameSecondsUDF = udf(getGameSeconds(_: Int, _: Int))
   
   val indexResults: (String,DataFrame) => Unit = ( outputCollName: String, input: DataFrame) => {
     val inputConverted = input.toJSON

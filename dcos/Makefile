@@ -271,6 +271,16 @@ ncaaf-schedule-kafka-connect-content-match:
 ncaaf-schedule-kafka-connect-live-info:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-live-info-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/kafka/ncaaf/confluent-connect-live_info_ncaaf.json	
 
+### Kafka NFL	
+nfl-schedule-kafka-connect-meta-batch:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-meta-batch-nfl $(current_path)/dev/Docker-Dcos/config/jobs/kafka/nfl/confluent-connect-meta_batch_nfl.json	
+
+nfl-schedule-kafka-connect-content-match:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-content-match-nfl $(current_path)/dev/Docker-Dcos/config/jobs/kafka/nfl/confluent-connect-content_match_nfl.json	
+
+nfl-schedule-kafka-connect-live-info:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-live-info-nfl $(current_path)/dev/Docker-Dcos/config/jobs/kafka/nfl/confluent-connect-live_info_nfl.json	
+
 ## spark mlb
 schedule-player-stats-batch-job:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh player-stats-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/player-stats.json
@@ -290,3 +300,14 @@ ncaaf-schedule-team-standings-batch-job:
 
 ncaaf-schedule-live-info-batch-job:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh live-info-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/spark/ncaaf/live-info-ncaaf.json	
+
+#spark nfl
+nfl-schedule-content-match-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh content-match-nfl $(current_path)/dev/Docker-Dcos/config/jobs/spark/nfl/content-match-nfl.json	
+
+nfl-schedule-team-standings-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh team-standings-nfl $(current_path)/dev/Docker-Dcos/config/jobs/spark/nfl/team-standings-nfl.json	
+
+nfl-schedule-live-info-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh live-info-nfl $(current_path)/dev/Docker-Dcos/config/jobs/spark/nfl/live-info-nfl.json
+

@@ -7,7 +7,7 @@ import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.functions.{coalesce, col, collect_list, concat, explode, from_json, lit, max, min, udf}
 import java.time.Instant
 
-import com.slingmedia.sportscloud.offline.streaming.impl.{LiveDataMuncher, NcaafLiveDataMuncher}
+import com.slingmedia.sportscloud.offline.streaming.impl.{LiveDataMuncher, NcaafLiveDataMuncher, NflLiveDataMuncher}
 
 
 object LDMHolder extends Serializable {
@@ -16,7 +16,7 @@ object LDMHolder extends Serializable {
 
 object MetaBatchJobType extends Enumeration {
   type MetaBatchJobType = Value
-  val TEAMSTANDINGS, PLAYERSTATS, LIVEINFO, NCAAFLIVEINFO = Value
+  val TEAMSTANDINGS, PLAYERSTATS, LIVEINFO, NCAAFLIVEINFO, NFLLIVEINFO = Value
 }
 
 object MetaDataMuncher extends Serializable {
@@ -52,6 +52,9 @@ object MetaDataMuncher extends Serializable {
       case MetaBatchJobType.NCAAFLIVEINFO =>
         //live_info, live_info, localhost:9983
         new NcaafLiveDataMuncher().munch(args(1), args(2))
+      case MetaBatchJobType.NFLLIVEINFO =>
+        //live_info, live_info, localhost:9983
+        new NflLiveDataMuncher().munch(args(1), args(2))
 
     }
   }
