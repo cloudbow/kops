@@ -1,0 +1,18 @@
+{
+  "Comment": "A record for artifact server",
+  "Changes": [
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "artifact-server.sports-cloud.com",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "100.68.16.196"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+# --------------------- Storage class for aws ------------- #
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: slow
+  namespace: default
+provisioner: kubernetes.io/aws-ebs
+reclaimPolicy: Retain
+parameters:
+  type: gp2
+  zone: us-east-2a
+---
+# --------------------- Persistent Volume claim for 20Gi for registry ------------- #
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: image-claim
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: slow
+---
+# --------------------- Kube Registry Deployment ------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: kube-registry-v0
+  namespace: default
+  labels:
+    k8s-app: kube-registry
+    version: v0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: kube-registry
+  template:
+    metadata:
+      labels:
+        k8s-app: kube-registry
+        version: v0
+    spec:
+      containers:
+        - name: registry
+          image: registry:2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          env:
+          - name: REGISTRY_HTTP_ADDR
+            value: :5000
+          - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+            value: /var/lib/registry
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /certs/domain.crt
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: /certs/domain.key
+          volumeMounts:
+          - name: image-store
+            mountPath: /var/lib/registry
+          - name: cert-dir
+            mountPath: /certs
+          ports:
+          - containerPort: 5000
+            name: registry
+            protocol: TCP
+      volumes:
+      - name: image-store
+        persistentVolumeClaim:
+          claimName: image-claim
+      - name: cert-dir
+        secret:
+          secretName: registry-tls-secret
+---
+# --------------------- Kube Registry service ------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-registry
+  namespace: default
+  labels:
+    k8s-app: kube-registry
+#    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "KubeRegistry"
+spec:
+  selector:
+    k8s-app: kube-registry
+  clusterIP: 100.69.212.32
+  type: NodePort
+  ports:
+  - name: registry
+    port: 5000
+    protocol: TCP

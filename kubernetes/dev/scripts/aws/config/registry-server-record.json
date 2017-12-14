@@ -1,0 +1,18 @@
+{
+  "Comment": "A record for docer registry server",
+  "Changes": [
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "registry.sports-cloud.com",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "100.69.212.32"
+          }
+        ]
+      }
+    }
+  ]
+}
