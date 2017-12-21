@@ -7,6 +7,7 @@
     "ftp.user": "DishSportsO",
     "ftp.password": "D1sh3325",
     "ftp.refresh": "PT1S",
+    "ftp.max.backoff": "PT1M",
     "ftp.file.maxage": "P1D",
     "ftp.monitor.update": "/:live_info",
     "ftp.keystyle": "string",

@@ -154,7 +154,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
     val kafkaLiveInfoT3DF1 = kafkaLiveInfoT2DF1.select(from_json($"payloadStruct.payload", liveInfoSchema) as "liveInfoStruct")
     val kafkaLiveInfoT3DF2 = kafkaLiveInfoT3DF1.select(children("liveInfoStruct", kafkaLiveInfoT3DF1): _*)
-    val kafkaLiveInfoT4DF2 = kafkaLiveInfoT3DF2.withColumn("srcTimeEpoch", timeStrToEpochUDF(concat(col("srcYear"), lit("-"), lit(getZeroPaddedUDF($"srcMonth")), lit("-"), lit(getZeroPaddedUDF($"srcDate")), lit("T"), lit(getZeroPaddedUDF($"srcHour")), lit(":"), col("srcMinute"), lit(":"), col("srcSecond"), lit(".00"), lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"), col("srcUtcMinute"))))
+    val kafkaLiveInfoT4DF2 = kafkaLiveInfoT3DF2.withColumn("srcTimeEpoch", timeStrToEpochUDF(concat(col("srcYear"), lit("-"), lit(getZeroPaddedUDF($"srcMonth")), lit("-"), lit(getZeroPaddedUDF($"srcDate")), lit("T"), lit(getZeroPaddedUDF($"srcHour")), lit(":"), lit(getZeroPaddedUDF($"srcMinute")), lit(":"), lit(getZeroPaddedUDF($"srcSecond")), lit(".00"), lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"), lit(getZeroPaddedUDF($"srcUtcMinute")))))
     // filte only data with non null gameId
     val kafkaLiveInfoT5DF1 = kafkaLiveInfoT4DF2.filter(col("gameId").isNotNull)
     //reorder statusId so that the ordering is right
@@ -167,7 +167,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
     val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameId").
       //withColumn("fieldCountsTxt", getFieldsCountUDF($"balls", $"strikes", $"outs")).
       //withColumn("fieldState", getFieldStateUDF($"firstGameBase", $"secondGameBase", $"thirdGameBase")).
-      withColumn("date", concat(col("year"), lit("-"), lit(getZeroPaddedUDF($"month")), lit("-"), lit(getZeroPaddedUDF($"date")), lit("T"), col("hour"), lit(":"), col("minute"), lit(":00.00"), lit(getZeroPaddedUDF($"utcHour")), lit(":"), col("utcMinute")))
+      withColumn("date", concat(col("year"), lit("-"), lit(getZeroPaddedUDF($"month")), lit("-"), lit(getZeroPaddedUDF($"date")), lit("T"), lit(getZeroPaddedUDF($"hour")), lit(":"), lit(getZeroPaddedUDF($"minute")), lit(":00.00"), lit(getZeroPaddedUDF($"utcHour")), lit(":"), lit(getZeroPaddedUDF($"utcMinute"))))
 
     val kafkaLiveInfoT8DF2 = kafkaLiveInfoT7DF2.
       withColumn("batchTime", lit(batchTimeStamp)).
