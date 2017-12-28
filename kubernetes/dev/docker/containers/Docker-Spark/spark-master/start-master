@@ -13,6 +13,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+function join { local IFS="$1"; shift; echo "$*"; }
+IFS=', ' read -r -a masterList <<< "$APP_SPARK_MASTERS_EPS"
+## START Read from env variables and output to file /opt/spark/conf/spark-defaults.conf
+## Append zookeeper url dynamically to file /opt/spark/conf/spark-defaults.conf
+printf "\nspark.deploy.zookeeper.url %s" $APP_SPARK_ZOOKEEPER_EP >>  /opt/spark/conf/spark-defaults.conf
+## START Append spark:// to each element of array and output it to /opt/spark/conf/spark-defaults.conf
+cnt=${#masterList[@]}
+masterListPrepended=()
+for ((i=0;i<cnt;i++)); do
+    masterListPrepended[i]="spark://${masterList[i]}"
+done 
+echo "Created prepended master list"
+printf "\nspark.master %s" `join , ${masterListPrepended[@]}` >>  /opt/spark/conf/spark-defaults.conf
+## END Append spark:// to each element of array and output it to /opt/spark/conf/spark-defaults.conf
+## END Read from env variables and output to file /opt/spark/conf/spark-defaults.conf
+
+
 echo "Env $SPARK_LOCAL_DIRS"
 echo "Env $SPARK_WORKER_DIR"
 /opt/spark/sbin/start-master.sh --webui-port 8080

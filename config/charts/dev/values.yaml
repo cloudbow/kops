@@ -1,0 +1,459 @@
+global:
+  repository: registry.sports-cloud.com:5000
+
+sc-services:
+  deployment:
+    terminationGracePeriodSeconds: 60
+  image:
+    repository: quay.io/coreos
+    tag: alb-ingress-controller:1.0-alpha.7
+    pullPolicy: IfNotPresent
+    env:
+      AWS_REGION: "us-east-2"
+      CLUSTER_NAME: "sports-cloud.k8s.local"
+      AWS_ACCESS_KEY_ID: "AKIAI2L3MWG32WAGY5HQ"
+      AWS_SECRET_ACCESS_KEY: "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"
+      AWS_DEBUG: "false"
+  data:
+    indexing:
+      # Default values for elasticsearch.
+      # This is a YAML-formatted file.
+      # Declare variables to be passed into your templates.
+      appVersion: "5.4"
+
+      image:
+        repository: "centerforopenscience/elasticsearch"
+        tag: "5.4"
+        pullPolicy: "IfNotPresent"
+
+      cluster:
+        name: "elasticsearch"
+        config:
+        env:
+          # IMPORTANT: https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#minimum_master_nodes
+          # To prevent data loss, it is vital to configure the discovery.zen.minimum_master_nodes setting so that each master-eligible
+          # node knows the minimum number of master-eligible nodes that must be visible in order to form a cluster.
+          MINIMUM_MASTER_NODES: "2"
+
+      client:
+        name: client
+        replicas: 2
+        serviceType: ClusterIP
+        heapSize: "512m"
+        antiAffinity: "soft"
+        resources:
+          limits:
+            cpu: "1"
+            # memory: "1024Mi"
+          requests:
+            cpu: "25m"
+            memory: "512Mi"
+
+        ## (dict) If specified, apply these annotations to each client Pod
+        # podAnnotations:
+        #   example: client-foo
+
+      master:
+        name: master
+        replicas: 3
+        heapSize: "512m"
+        persistence:
+          enabled: true
+          accessMode: ReadWriteOnce
+          name: data
+          size: "4Gi"
+          # storageClass: "ssd"
+        antiAffinity: "soft"
+        resources:
+          limits:
+            cpu: "1"
+            # memory: "1024Mi"
+          requests:
+            cpu: "25m"
+            memory: "512Mi"
+
+        ## (dict) If specified, apply these annotations to each master Pod
+        # podAnnotations:
+        #   example: master-foo
+
+      data:
+        name: data
+        replicas: 2
+        heapSize: "1536m"
+        persistence:
+          enabled: true
+          accessMode: ReadWriteOnce
+          name: data
+          size: "30Gi"
+          # storageClass: "ssd"
+        terminationGracePeriodSeconds: 3600
+        antiAffinity: "soft"
+        resources:
+          limits:
+            cpu: "1"
+            # memory: "2048Mi"
+          requests:
+            cpu: "25m"
+            memory: "1536Mi"
+
+        ## (dict) If specified, apply these annotations to each data Pod
+        # podAnnotations:
+        #   example: data-foo
+
+      ## Install Default RBAC roles and bindings
+      rbac:
+        create: false
+
+  monitoring:
+    default-http-backend:
+      image:
+        repository: gcr.io/google_containers
+        tag: defaultbackend:1.0
+        pullPolicy: IfNotPresent   
+      deployment:
+        resources:
+          minCpu: 10m
+          maxCpu: 10m
+          minMem: 20Mi
+          maxMem: 20Mi
+        containerPort: 8080
+        replicas: 1
+        terminationGracePeriodSeconds: 60
+        livenessPath: "/healthz"
+        livenessProbeInitDelay: 30
+        livenessProbeTimeoutSeconds: 5
+        livenessProbePort: 8080  
+      service:
+        name: default-http-backend
+        type: NodePort
+        externalPort: 8080
+        internalPort: 80
+  offline:
+    zookeeper:
+      image:
+        repository: gcr.io/google_containers
+        tag: kubernetes-zookeeper:1.0-3.4.10
+        pullPolicy: Always
+      pdb:
+        maxUnavailable: 1
+      deployment:
+        replicas: 3
+        resources:
+          minCpu: "0.5"
+          minMem: "1Gi"
+        ports:
+          client: 2181
+          server: 2888
+          leader-election: 3888   
+        volumes:
+          storage: 10Gi
+        readinessProbe:
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+      serviceCs:
+        ports: 
+          client: 2181
+      serviceHs:
+        clusterIP: None
+        ports:
+          server: 2888
+          leader-election: 3888
+      ## End of zookeeper config. All other dependencies will follow after this . 
+      ## This is done intentionally as zookeepr is the parent of all  other components in offline 
+      batch-processing:
+        spark-master:
+          image:
+            tag: spark-master:0.0.1-alpha.1
+            pullPolicy: IfNotPresent  
+          deployment:
+            replicas: 2
+            terminationGracePeriodSeconds: 10
+            command:
+            - "/start-master"
+            ports: ["7077","8080"]
+            resources:
+                minCpu: "100m"
+          service:
+              name: spark-master
+              clusterIP: None
+              externalPort: 7077
+              internalPort: 7077
+        spark-worker:
+          image:
+            tag: spark-worker:0.0.1-alpha.1
+            pullPolicy: IfNotPresent  
+          deployment:
+            resources:
+              cpu: 100m
+            containerPort: 8081
+            replicas: 3
+            command: 
+            - "/start-worker"
+      streaming-platform:
+        ## Represents all streaming data related paltform. The one platform we chose is confluent
+        confluent:
+          ## Kafka deployment 
+          kafka:
+            image:
+              repository: gcr.io/google_containers
+              tag: kubernetes-kafka:1.0-10.2.1
+              pullPolicy: IfNotPresent 
+            pdb:
+              maxUnavailable: 1
+            service:
+              name: kafka
+              type: NodePort
+              clusterIP: None
+              externalPort: 9092
+              internalPort: 9092
+            deployment:
+              containerPort: 9092
+              env:
+                KAFKA_HEAP_OPTS:  "-Xmx512M -Xms512M"
+                KAFKA_OPTS: "-Dlogging.level=INFO"
+              terminationGracePeriodSeconds: 300
+              replicas: 3
+              resources:
+                minCpu: "0.5"
+                minMem: "1Gi"
+              volumes:
+                hostPath: /data/apps/sports-cloud/kafka/data
+          ## The kafka connect deployment and service
+          connect:
+            image:
+              tag: sc-cp-connect:latest
+              env:
+                CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+                CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+                CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+                CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+                CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
+                CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
+                CONNECT_PLUGIN_PATH: "/data/kafka/connect/libs"
+                CONNECT_REST_PORT: "8083"
+                CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+                CONNECT_GROUP_ID: "sc-connect-group"
+                CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                CONNECT_STATUS_STORAGE_TOPIC: "connect-sc-status"
+                CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
+                CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+                KAFKA_HEAP_OPTS: "-Xmx512M"
+                CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                CONNECT_OFFSET_STORAGE_TOPIC: "connect-sc-offsets"
+                CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
+              pullPolicy: IfNotPresent 
+            deployment:
+              containerPort: 8083
+              replicas: 3   
+            service:
+              name: kafka-connect
+              type: NodePort
+              externalPort: 8083
+              internalPort: 8083
+  online:
+    sc-rest-layer:
+      image:
+        tag: sports-cloud-rest:0.0.1-alpha.1
+        pullPolicy: IfNotPresent  
+      deployment:
+        containerPort: 9080
+        replicas: 1 
+      service:
+        name: sc-rest
+        type: NodePort
+        externalPort: 9080
+        internalPort: 9080
+    artifact-server:
+      image:
+        tag: artifact-server:0.0.1-alpha.1
+        pullPolicy: IfNotPresent 
+      deployment:
+        containerPort: 9082
+        replicas: 1   
+      service:
+        name: artifact-server
+        type: NodePort
+        clusterIP: 100.68.16.196
+        externalPort: 9082
+        internalPort: 9082
+  tools:
+    kubernetes-dashboard:
+      # Default values for kubernetes-dashboard
+      # This is a YAML-formatted file.
+      # Declare name/value pairs to be passed into your templates.
+      # name: value
+
+      image: gcr.io/google_containers/kubernetes-dashboard-amd64
+      imageTag: "v1.7.1"
+      imagePullPolicy: "IfNotPresent"
+
+      nodeSelector: {}
+
+      httpPort: 80
+
+      serviceType: NodePort
+
+      resources:
+        limits:
+          cpu: 100m
+          memory: 50Mi
+        requests:
+          cpu: 100m
+          memory: 50Mi
+
+      ingress:
+        ## If true, Kubernetes Dashboard Ingress will be created.
+        ##
+        enabled: true
+
+        ## Kubernetes Dashboard Ingress annotations
+        ##
+        annotations:
+          alb.ingress.kubernetes.io/scheme: internet-facing
+          ingress.kubernetes.io/rewrite-target: /
+
+        ## Kubernetes Dashboard Ingress hostnames
+        ## Must be provided if Ingress is enabled
+        ##
+        hosts:
+         - intsportscloud.slingbox.com
+
+        ## Kubernetes Dashboard Ingress TLS configuration
+        ## Secrets must be manually created in the namespace
+        ##
+        # tls:
+        #   - secretName: kubernetes-dashboard-tls
+        #     hosts:
+        #       - kubernetes-dashboard.domain.com
+
+      rbac:
+        ## If true, create & use RBAC resources
+        #
+        create: false
+
+        ## Ignored if rbac.create is true
+        #
+        serviceAccountName: default
+    zeppelin:
+      image:
+        tag: zeppelin:0.0.1-alpha.1
+        pullPolicy: IfNotPresent
+        env:
+          SPARK_HOME: /opt/spark
+          ZEPPELIN_HOME: /opt/zeppelin
+          ZEPPELIN_JAVA_OPTS: "-Dspark.jars: /opt/spark/jars/gcs-connector-latest-hadoop2.jar"
+          CLASSPATH: "/opt/spark/lib/gcs-connector-latest-hadoop2.jar"
+          ZEPPELIN_NOTEBOOK_DIR: "/opt/zeppelin/notebook"
+          ZEPPELIN_MEM: -Xmx10000m
+          ZEPPELIN_PORT: 8080
+          PYTHONPATH: "/opt/spark/python:/opt/spark/python/lib/py4j-0.8.2.1-src.zip"
+          ZEPPELIN_CONF_DIR: "/opt/zeppelin/conf"
+      deployment:
+        command:
+        - /opt/zeppelin/bin/docker-zeppelin.sh
+        resources:
+          cpu: 100m
+        containerPort: 8080
+        replicas: 1   
+      service:
+        name: zeppelin
+        type: NodePort
+        externalPort: 8080
+        internalPort: 80
+    kibana:
+      image:
+        repository: cfontes
+        tag: kibana-xpack-less:5.5.0
+        pullPolicy: IfNotPresent   
+        env:
+         CLUSTER_NAME: "elasticsearch"
+         XPACK_SECURITY_ENABLED: "false"
+         XPACK_GRAPH_ENABLED: "false"
+         XPACK_ML_ENABLED: "false"
+         XPACK_REPORTING_ENABLED: "false"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 1000m
+        containerPort: 5601
+        replicas: 1   
+      service:
+        name: kibana
+        type: NodePort
+        externalPort: 5601
+        internalPort: 80
+      ingress:
+        ## If true, Kubernetes Dashboard Ingress will be created.
+        ##
+        enabled: true
+
+        ## Kubernetes Dashboard Ingress annotations
+        ##
+        annotations:
+          alb.ingress.kubernetes.io/scheme: internet-facing
+          ingress.kubernetes.io/rewrite-target: /
+
+        ## Kubernetes Dashboard Ingress hostnames
+        ## Must be provided if Ingress is enabled
+        ##
+        hosts:
+         - intsc-kibana.slingbox.com
+    spark-ui-proxy-1:
+      image:
+        repository: elsonrodriguez
+        tag: spark-ui-proxy:1.0
+        pullPolicy: IfNotPresent   
+      deployment:
+        resources:
+          cpu: 100m
+        containerPort: 80
+        replicas: 1   
+        args: 
+        - "80"
+        livenessProbeInitDelay: 120
+        livenessProbeTimeoutSeconds: 5
+        livenessProbePort: 80  
+      service:
+        name: spark-ui-proxy-1
+        type: NodePort
+        externalPort: 80
+        internalPort: 80
+    spark-ui-proxy-2:
+      image:
+        repository: elsonrodriguez
+        tag: spark-ui-proxy:1.0
+        pullPolicy: IfNotPresent   
+      deployment:
+        resources:
+          cpu: 100m
+        containerPort: 80
+        replicas: 1   
+        args: 
+        - "80"
+        livenessProbeInitDelay: 120
+        livenessProbeTimeoutSeconds: 5
+        livenessProbePort: 80  
+      service:
+        name: spark-ui-proxy-2
+        type: NodePort
+        externalPort: 80
+        internalPort: 80
+sc-jobs:
+  thuuz-download-job:
+    ingress: {}
+    service: {}
+    image:
+      tag: sc-job-scheduler:0.0.1-alpha.1
+      pullPolicy: IfNotPresent
+    cronJob:
+      args: 
+      - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+      - "download-thuuz"
+      type: ClusterIP
+      restartPolicy: Never
+      schedule: "0 */3 * * *"

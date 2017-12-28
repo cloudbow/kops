@@ -1,0 +1,17 @@
+# ------------------- Kafka headless service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "kafka.fullname" . }}-hs
+  labels:
+    app: {{ template "kafka.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  ports:
+  - port: {{ .Values.service.internalPort }}
+    name: {{ .Values.service.name }}
+  clusterIP: {{ .Values.service.clusterIP }}
+  selector:
+    app: {{ template "kafka.name" . }}
+    release: {{ .Release.Name }}

@@ -19,6 +19,7 @@ FROM registry.sports-cloud.com:5000/spark-base
 
 ENV ZEPPELIN_VER  0.6.2
 
+
 RUN mkdir -p /opt && \
     cd /opt && \
     curl http://archive.apache.org/dist/zeppelin/zeppelin-${ZEPPELIN_VER}/zeppelin-${ZEPPELIN_VER}-bin-all.tgz | \
@@ -30,4 +31,3 @@ ADD zeppelin-log4j.properties /opt/zeppelin/conf/log4j.properties
 ADD zeppelin-env.sh /opt/zeppelin/conf/zeppelin-env.sh
 ADD docker-zeppelin.sh /opt/zeppelin/bin/docker-zeppelin.sh
 EXPOSE 8080
-ENTRYPOINT ["/opt/zeppelin/bin/docker-zeppelin.sh"]

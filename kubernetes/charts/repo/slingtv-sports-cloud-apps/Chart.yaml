@@ -1,0 +1,9 @@
+apiVersion: v1
+description: All sports cloud apps
+name: slingtv-sports-cloud-apps
+version: 0.0.2
+maintainers:
+  - name: Arun George
+    email: arun.george@dish.com
+  - name: Roopesh Gottipatti
+    email: Roopesh.Gottipati@dish.com

@@ -1,0 +1,39 @@
+# ------------------- Rest layer Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "connect.fullname" . }}
+  labels:
+    app: {{ template "connect.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "connect.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "connect.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
+        env:
+        {{- range $key, $value := .Values.image.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
+        - name: CONNECT_ZOOKEEPER_CONNECT
+          value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        ports:
+        - containerPort: {{ .Values.deployment.containerPort }}

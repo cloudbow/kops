@@ -13,18 +13,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+##
+# APP_SPARK_ZOOKEEPER_EP Env variable which carries zookeeper url
+# APP_SPARK_MASTERS_EPS Env variable which carries spark masters
+
+function join { local IFS="$1"; shift; echo "$*"; }
+IFS=', ' read -r -a masterList <<< "$APP_SPARK_MASTERS_EPS"
+## START Read from env variables and output to file /opt/spark/conf/spark-defaults.conf
+## Append zookeeper url dynamically to file /opt/spark/conf/spark-defaults.conf
+printf "\nspark.deploy.zookeeper.url %s" $APP_SPARK_ZOOKEEPER_EP >>  /opt/spark/conf/spark-defaults.conf
+## START Append spark:// to each element of array and output it to /opt/spark/conf/spark-defaults.conf
+cnt=${#masterList[@]}
+masterListPrepended=()
+for ((i=0;i<cnt;i++)); do
+    masterListPrepended[i]="spark://${masterList[i]}"
+done 
+echo "Created prepended master list"
+printf "\nspark.master %s" `join , ${masterListPrepended[@]}` >>  /opt/spark/conf/spark-defaults.conf
+## END Append spark:// to each element of array and output it to /opt/spark/conf/spark-defaults.conf
+## END Read from env variables and output to file /opt/spark/conf/spark-defaults.conf
+
+
 connect_to_one=false
 for j in `seq 1 4`;
 do
-  for i in `seq 0 2`;
+  for i in "${masterList[@]}"
   do
-	  if ! getent hosts master-$i.spark; then
+  	  mHost=`echo $i | cut -f1 -d ':'`
+	  echo "$mHost"
+	  if ! getent hosts $mHost; then
 		  echo "=== Cannot resolve the DNS entry for spark-master. Has the service been created yet, and is SkyDNS functional?"
 		  echo "=== See http://kubernetes.io/v1.1/docs/admin/dns.html for more details on DNS integration."
 		  echo "=== Sleeping 10s before pod exit."
 	  else
 	  	connect_to_one=true;
-	  	echo "Connected to master-$i.spark"
+	  	echo "Connected to $mHost.spark"
 	  	break
 	  fi
 	  sleep 10;
@@ -32,7 +56,7 @@ do
 done    
 
 if [ "$connect_to_one" = true ] ; then
-    /opt/spark/sbin/start-slave.sh -d /spark/work --webui-port 8081 master-0.spark:7077,master-1.spark:7077,master-2.spark:7077
+    /opt/spark/sbin/start-slave.sh -d /spark/work --webui-port 8081 `join , ${masterList[@]}`
 	tail -f /opt/spark/logs/spark-*.out
 else
 	echo 'No connection to any masters'
