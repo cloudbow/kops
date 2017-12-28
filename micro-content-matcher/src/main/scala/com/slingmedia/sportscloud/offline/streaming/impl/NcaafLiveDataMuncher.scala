@@ -69,29 +69,6 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
   val getFieldStateUDF = udf(getFieldState(_: String, _: String, _: String))
 
 
-  //get game seconds
-  val getGameSeconds: (Int, Int) => Int = (sourceSeconds: Int, gameStartSeconds: Int) => {
-    (sourceSeconds - gameStartSeconds)
-  }
-
-  val getGameSecondsUDF = udf(getGameSeconds(_: Int, _: Int))
-
-  val getTeamId: (String, String, String) => String = (inningTitle: String, htId: String, atId: String) => {
-    var teamId = "0"
-    if (inningTitle != null) {
-      if (inningTitle.toLowerCase.startsWith("bottom")) {
-        teamId = htId
-      } else {
-        teamId = atId
-      }
-    }
-    teamId
-  }
-
-  val getTeamIdUDF = udf(getTeamId(_: String, _: String, _: String))
-
-  
-
   val getReorderedStatusId: (Int => Int) = (statusId: Int) => {
     if (statusId == 23) 2 else statusId
   }
@@ -150,7 +127,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
         :: StructField("status", StringType, true)
         :: StructField("statusId", IntegerType, true)
         :: StructField("gameType", StringType, true)
-        :: StructField("division", StringType, true)
+        :: StructField("league", StringType, true)
         :: StructField("gameId", StringType, true)
         :: StructField("gameCode", StringType, true)
         :: StructField("lastPlay", StringType, true)
@@ -177,7 +154,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
     val kafkaLiveInfoT3DF1 = kafkaLiveInfoT2DF1.select(from_json($"payloadStruct.payload", liveInfoSchema) as "liveInfoStruct")
     val kafkaLiveInfoT3DF2 = kafkaLiveInfoT3DF1.select(children("liveInfoStruct", kafkaLiveInfoT3DF1): _*)
-    val kafkaLiveInfoT4DF2 = kafkaLiveInfoT3DF2.withColumn("srcTimeEpoch", timeStrToEpochUDF(concat(col("srcYear"), lit("-"), lit(getZeroPaddedUDF($"srcMonth")), lit("-"), lit(getZeroPaddedUDF($"srcDate")), lit("T"), lit(getZeroPaddedUDF($"srcHour")), lit(":"), col("srcMinute"), lit(":"), col("srcSecond"), lit(".00"), lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"), col("srcUtcMinute"))))
+    val kafkaLiveInfoT4DF2 = kafkaLiveInfoT3DF2.withColumn("srcTimeEpoch", timeStrToEpochUDF(concat(col("srcYear"), lit("-"), lit(getZeroPaddedUDF($"srcMonth")), lit("-"), lit(getZeroPaddedUDF($"srcDate")), lit("T"), lit(getZeroPaddedUDF($"srcHour")), lit(":"), lit(getZeroPaddedUDF($"srcMinute")), lit(":"), lit(getZeroPaddedUDF($"srcSecond")), lit(".00"), lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"), lit(getZeroPaddedUDF($"srcUtcMinute")))))
     // filte only data with non null gameId
     val kafkaLiveInfoT5DF1 = kafkaLiveInfoT4DF2.filter(col("gameId").isNotNull)
     //reorder statusId so that the ordering is right
@@ -190,7 +167,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
     val kafkaLiveInfoT7DF2 = kafkaLiveInfoT6DF2.withColumn("id", $"gameId").
       //withColumn("fieldCountsTxt", getFieldsCountUDF($"balls", $"strikes", $"outs")).
       //withColumn("fieldState", getFieldStateUDF($"firstGameBase", $"secondGameBase", $"thirdGameBase")).
-      withColumn("date", concat(col("year"), lit("-"), lit(getZeroPaddedUDF($"month")), lit("-"), lit(getZeroPaddedUDF($"date")), lit("T"), col("hour"), lit(":"), col("minute"), lit(":00.00"), lit(getZeroPaddedUDF($"utcHour")), lit(":"), col("utcMinute")))
+      withColumn("date", concat(col("year"), lit("-"), lit(getZeroPaddedUDF($"month")), lit("-"), lit(getZeroPaddedUDF($"date")), lit("T"), lit(getZeroPaddedUDF($"hour")), lit(":"), lit(getZeroPaddedUDF($"minute")), lit(":00.00"), lit(getZeroPaddedUDF($"utcHour")), lit(":"), lit(getZeroPaddedUDF($"utcMinute"))))
 
     val kafkaLiveInfoT8DF2 = kafkaLiveInfoT7DF2.
       withColumn("batchTime", lit(batchTimeStamp)).
@@ -239,7 +216,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
     val kafkaLiveInfoT1DF1 = ds2.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
     mergeLiveInfo(kafkaLiveInfoT1DF1)
@@ -255,7 +232,7 @@ class NcaafLiveDataMuncher extends Serializable with Muncher {
 
 
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "localhost:9092",
+      "bootstrap.servers" -> "broker.confluent-kafka.l4lb.thisdcos.directory:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> "NcaafliveDataMatcherStream",

@@ -71,19 +71,17 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 
 	/** The Constant LOGGER. */
 	public static final Logger LOGGER = LoggerFactory.getLogger(SportsCloudRestDecoder.class);
-	
+
 	private SportsCloudHomeScreenDelegate sportsCloudHomeScreenDelegate = new SportsCloudHomeScreenDelegate();
 	private SportsCloudMCDelegate sportsCloudMCDelegate = new SportsCloudMCDelegate();
 
+	private SportsCloudRestGamesHandler sportsCloudRestGamesHandler = new SportsCloudRestGamesHandler();
 
 	private DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("YYYY-MM-dd Z").withLocale(Locale.US);
-	
+
 	SportsCloudRestDecoder() {
 
 	}
-
-
-
 
 	/*
 	 * (non-Javadoc)
@@ -104,6 +102,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
 			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+			
 
 			String uri = request.uri();
 
@@ -121,13 +120,21 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 				}
 				long endDate = Long.MAX_VALUE;
 				if (params.get("endDate") != null) {
-					endDate = dateTimeFormatter.parseDateTime(params.get("endDate").get(0)).getMillis() / 1000 ;
+					endDate = dateTimeFormatter.parseDateTime(params.get("endDate").get(0)).getMillis() / 1000;
 				}
 
 				Set<String> subpackIds = getSubPackIdsFromParam(params);
 
 				finalResponse = prepareGameScheduleDataForHomeScreen(finalResponse, startDate, endDate, subpackIds);
-			} else if (m.find( )) {
+			}
+			if (uri.startsWith("/api/slingtv/airtv/v1/game")) {
+				
+				QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
+				Map<String, List<String>> params = queryStringDecoder.parameters();
+				
+				finalResponse=sportsCloudRestGamesHandler.handle(request.headers().getAsString("Host"),uri,params);
+
+			} else if (m.find()) {
 				try {
 					String league = m.group(1);
 					QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
@@ -170,7 +177,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			future.addListener(ChannelFutureListener.CLOSE);
 		}
 	}
-	
+
 	private Set<String> getSubPackIdsFromParam(Map<String, List<String>> params) {
 		List<String> subPackIdsParam = params.get("sub_pack_ids");
 		List<String> legacySubPackIds = params.get("legacy_sub_pack_ids");
@@ -188,7 +195,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 	private String prepareMCData(String gameScheduleId, String teamId, Set<String> subpackIds, String league) {
 		String finalResponse;
 		JsonObject gameFinderDrillDownJson = new JsonObject();
-		ActiveTeamGame activeGame = new ActiveTeamGame( "0",null, "0", null, null, null, null, Role.NONE);
+		ActiveTeamGame activeGame = new ActiveTeamGame("0", null, "0", null, null, null, null, Role.NONE);
 		if (gameScheduleId != null) {
 
 			try {
@@ -202,20 +209,21 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 
 			if (teamId != null) {
 				JsonElement teamIdResponse = SportsDataFacade$.MODULE$.getNearestGameScheduleForActiveTeam(teamId);
-				JsonArray teamDocs = teamIdResponse.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
+				JsonArray teamDocs = teamIdResponse.getAsJsonObject().get("hits").getAsJsonObject().get("hits")
+						.getAsJsonArray();
 				activeGame = sportsCloudMCDelegate.getActiveTeamGame(teamId, teamDocs);
 				gameScheduleId = activeGame.getGameId();
 			}
 
 		}
 
-		if(league.toUpperCase().equals(League.MLB.toString())) {
-			sportsCloudMCDelegate.prepareMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson, activeGame);
+		if (league.toUpperCase().equals(League.MLB.toString())) {
+			sportsCloudMCDelegate.prepareMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson,
+					activeGame);
 		} else {
-			sportsCloudMCDelegate.prepareNonMlbMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson, activeGame, league);
+			sportsCloudMCDelegate.prepareNonMlbMCJson(gameScheduleId, teamId, subpackIds, gameFinderDrillDownJson,
+					activeGame, league);
 		}
-
-
 
 		finalResponse = gameFinderDrillDownJson.toString();
 		return finalResponse;
@@ -223,10 +231,10 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 
 	private String prepareGameScheduleDataForHomeScreen(String finalResponse, long startDate, long endDate,
 			Set<String> subpackIds) {
-		
-	   JsonElement gameSchedulesJson = SportsDataFacade$.MODULE$.getGameScheduleDataForHomeScreen(startDate,endDate);
-	   finalResponse = sportsCloudHomeScreenDelegate.prepareJsonResponseForHomeScreen( finalResponse, startDate, endDate, subpackIds,
-				gameSchedulesJson);
+
+		JsonElement gameSchedulesJson = SportsDataFacade$.MODULE$.getGameScheduleDataForHomeScreen(startDate, endDate);
+		finalResponse = sportsCloudHomeScreenDelegate.prepareJsonResponseForHomeScreen(finalResponse, startDate,
+				endDate, subpackIds, gameSchedulesJson);
 		return finalResponse;
 	}
 

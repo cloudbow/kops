@@ -2,68 +2,7 @@
   "id": "/sports-cloud",
   "apps": [],
   "groups": [
-    {
-      "id": "/sports-cloud/tools",
-      "apps": [
-        {
-          "id": "/sports-cloud/tools/artifact-server",
-          "container": {
-            "type": "DOCKER",
-            "docker": {
-              "image": "registry.marathon.l4lb.thisdcos.directory:5000/artifact-server",
-              "forcePullImage": true
-            },
-            "portMappings": [
-              {
-                "containerPort": 9082,
-                "hostPort": 9082,
-                "labels": {
-                  "VIP_0": "/artifact-server:9082"
-                },
-                "protocol": "tcp",
-                "servicePort": 0,
-                "name": "artifact-server-endpoint"
-              }
-            ],
-            "volumes": [
-              {
-                "containerPath": "/artifacts",
-                "hostPath": "/data/apps/sports-cloud/artifacts",
-                "mode": "RW"
-              }
-            ]
-          },
-          "networks": [
-            {
-              "mode": "container/bridge"
-            }
-          ],
-          "instances": 1,
-          "cpus": 0.1,
-          "mem": 1024,
-          "disk": 1000,
-          "ports": [
-            9082
-          ],
-          "acceptedResourceRoles": [
-            "slave_public"
-          ],
-          "healthChecks": [
-            {
-              "portIndex": 0,
-              "gracePeriodSeconds": 300,
-              "intervalSeconds": 60,
-              "timeoutSeconds": 20,
-              "maxConsecutiveFailures": 3,
-              "protocol": "MESOS_HTTP",
-              "path": "/healthcheck.json"
-            }
-          ]
-        }
-      ],
-      "groups": [],
-      "dependencies": []
-    },
+    
     {
       "id": "/sports-cloud/data",
       "apps": [],
@@ -75,178 +14,76 @@
               "id": "/sports-cloud/data/indexing/elastic",
               "connected": true,
               "recovered": false,
-              "TASK_UNREACHABLE": 0,
               "backoffFactor": 1.15,
               "backoffSeconds": 1,
-              "cmd": "export LD_LIBRARY_PATH=$MESOS_SANDBOX/libmesos-bundle/lib:$LD_LIBRARY_PATH; export MESOS_NATIVE_JAVA_LIBRARY=$(ls $MESOS_SANDBOX/libmesos-bundle/lib/libmesos-*.so); export JAVA_HOME=$(ls -d $MESOS_SANDBOX/jre*/); export JAVA_HOME=${JAVA_HOME%/}; export PATH=$(ls -d $JAVA_HOME/bin):$PATH &&  export JAVA_OPTS=\"-Xms256M -Xmx1024M -XX:-HeapDumpOnOutOfMemoryError\" &&  ./elastic-scheduler/bin/elastic ./elastic-scheduler/svc.yml",
               "cpus": 0.5,
               "disk": 0,
-              "env": {
-                "DIAGNOSTICS_URI": "https://github.com/elastic/elasticsearch-support-diagnostics/releases/download/6.0/support-diagnostics-6.0-dist.zip",
-                "MASTER_NODE_CPUS": "0.3",
-                "COORDINATOR_NODE_DISK_TYPE": "ROOT",
-                "TASKCFG_ALL_HTTP_CORS_ENABLED": "false",
-                "INGEST_NODE_HEAP_MB": "512",
-                "TASKCFG_ALL_HTTP_PIPELINING": "true",
-                "TASKCFG_ALL_THREAD_POOL_GENERIC_KEEP_ALIVE": "30s",
-                "DATA_NODE_HEAP_MB": "256",
-                "TASKCFG_ALL_HTTP_DETAILED_ERRORS_ENABLED": "true",
-                "TASKCFG_ALL_THREAD_POOL_SEARCH_QUEUE_SIZE": "1000",
-                "DATA_NODE_COUNT": "1",
-                "JAVA_URI": "https://downloads.mesosphere.com/java/jre-8u144-linux-x64.tar.gz",
-                "COORDINATOR_NODE_DISK": "1000",
-                "DATA_NODE_DISK": "10000",
-                "COORDINATOR_NODE_MEM": "512",
-                "TASKCFG_ALL_TRANSPORT_TCP_COMPRESS": "false",
-                "MASTER_NODE_TRANSPORT_PORT": "9300",
-                "TASKCFG_ALL_THREAD_POOL_REFRESH_KEEP_ALIVE": "5m",
-                "CONFIG_TEMPLATE_PATH": "elastic-scheduler",
-                "ELASTICSEARCH_HEALTH_USER": "elastic",
-                "BOOTSTRAP_URI": "https://downloads.mesosphere.com/elastic/assets/2.0.2-5.6.2/bootstrap.zip",
-                "TASKCFG_ALL_TRANSPORT_TCP_CONNECT_TIMEOUT": "30s",
-                "TASKCFG_ALL_NETWORK_TCP_NO_DELAY": "true",
-                "MASTER_NODE_DISK_TYPE": "ROOT",
-                "TASKCFG_ALL_HTTP_COMPRESSION": "true",
-                "FRAMEWORK_USER": "nobody",
-                "TASKCFG_ALL_NETWORK_TCP_KEEP_ALIVE": "true",
-                "COORDINATOR_NODE_HEAP_MB": "512",
-                "DEPLOY_STRATEGY": "parallel",
-                "LIBMESOS_URI": "https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.10-1.4-63e0814.tar.gz",
-                "ELASTICSEARCH_JAVA_URI": "https://downloads.mesosphere.com/java/jre-8u144-linux-x64.tar.gz",
-                "TASKCFG_ALL_HTTP_MAX_CONTENT_LENGTH": "100mb",
-                "MASTER_NODE_DISK": "2000",
-                "DATA_NODE_MEM": "512",
-                "MASTER_NODE_HEAP_MB": "256",
-                "INGEST_NODE_COUNT": "0",
-                "SCHEDULER_URI": "https://downloads.mesosphere.com/elastic/assets/2.0.2-5.6.2/elastic-scheduler.zip",
-                "DATA_NODE_CPUS": "0.3",
-                "TASKCFG_ALL_HTTP_COMPRESSION_LEVEL": "3",
-                "TASKCFG_ALL_HTTP_CORS_MAX_AGE": "1728000",
-                "STATSD_URI": "https://github.com/mesosphere/elasticsearch-statsd-plugin/releases/download/5.6.2.0/elasticsearch-statsd-5.6.2.0.zip",
-                "ELASTICSEARCH_HEALTH_USER_PASSWORD": "changeme",
-                "TASKCFG_ALL_HTTP_MAX_HEADER_SIZE": "8kB",
-                "INGEST_NODE_DISK_TYPE": "ROOT",
-                "TASKCFG_ALL_TRANSPORT_PING_SCHEDULE": "-1",
-                "MASTER_NODE_MEM": "512",
-                "EXECUTOR_URI": "https://downloads.mesosphere.com/elastic/assets/2.0.2-5.6.2/executor.zip",
-                "COORDINATOR_NODE_COUNT": "0",
-                "INGEST_NODE_MEM": "1048",
-                "TASKCFG_ALL_HTTP_CORS_ALLOW_CREDENTIALS": "false",
-                "DATA_NODE_DISK_TYPE": "ROOT",
-                "TASKCFG_ALL_HTTP_ENABLED": "true",
-                "TASKCFG_ALL_GATEWAY_RECOVER_AFTER_TIME": "5m",
-                "TASKCFG_ALL_NETWORK_TCP_REUSE_ADDRESS": "true",
-                "INGEST_NODE_DISK": "2000",
-                "TASKCFG_ALL_HTTP_CORS_ALLOW_HEADERS": "X-Requested-With,Content-Type,Content-Length",
-                "TASKCFG_ALL_XPACK_ENABLED": "false",
-                "TASKCFG_ALL_THREAD_POOL_SNAPSHOT_KEEP_ALIVE": "5m",
-                "FRAMEWORK_NAME": "elastic",
-                "ELASTIC_VERSION": "5.6.2",
-                "TASKCFG_ALL_HTTP_CONTENT_TYPE_REQUIRED": "false",
-                "XPACK_URI": "https://artifacts.elastic.co/downloads/packs/x-pack/x-pack-5.6.2.zip",
-                "INGEST_NODE_CPUS": "0.1",
-                "TASKCFG_ALL_THREAD_POOL_GET_QUEUE_SIZE": "200",
-                "TASKCFG_ALL_HTTP_MAX_INITIAL_LINE_LENGTH": "4kb",
-                "ELASTICSEARCH_URI": "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.2.tar.gz",
-                "TASKCFG_ALL_THREAD_POOL_WARMER_KEEP_ALIVE": "5m",
-                "FRAMEWORK_LOG_LEVEL": "INFO",
-                "TASKCFG_ALL_HTTP_CORS_ALLOW_METHODS": "OPTIONS,HEAD,GET,POST,PUT,DELETE",
-                "TASKCFG_ALL_HTTP_PIPELINING_MAX_EVENTS": "10000",
-                "COORDINATOR_NODE_CPUS": "0.1",
-                "TASKCFG_ALL_THREAD_POOL_BULK_QUEUE_SIZE": "200",
-                "TASKCFG_ALL_THREAD_POOL_INDEX_QUEUE_SIZE": "200"
-              },
-              "labels": {
-                "DCOS_COMMONS_UNINSTALL": "true",
-                "DCOS_SERVICE_SCHEME": "http",
-                "DCOS_PACKAGE_SOURCE": "https://universe.mesosphere.com/repo",
-                "DCOS_SERVICE_NAME": "elastic",
-                "DCOS_PACKAGE_FRAMEWORK_NAME": "elastic",
-                "DCOS_SERVICE_PORT_INDEX": "0",
-                "DCOS_PACKAGE_VERSION": "2.0.2-5.6.2",
-                "DCOS_COMMONS_API_VERSION": "v1",
-                "DCOS_PACKAGE_NAME": "elastic",
-                "MARATHON_SINGLE_INSTANCE_APP": "true"
-              },
-              "fetch": [
-                {
-                  "uri": "https://downloads.mesosphere.com/java/jre-8u144-linux-x64.tar.gz",
-                  "extract": true,
-                  "executable": false,
-                  "cache": false
-                },
-                {
-                  "uri": "https://downloads.mesosphere.com/elastic/assets/2.0.2-5.6.2/elastic-scheduler.zip",
-                  "extract": true,
-                  "executable": false,
-                  "cache": false
-                },
-                {
-                  "uri": "https://downloads.mesosphere.io/libmesos-bundle/libmesos-bundle-1.10-1.4-63e0814.tar.gz",
-                  "extract": true,
-                  "executable": false,
-                  "cache": false
-                }
-              ],
-              "healthChecks": [
-                {
-                  "gracePeriodSeconds": 900,
-                  "ignoreHttp1xx": false,
-                  "intervalSeconds": 30,
-                  "maxConsecutiveFailures": 0,
-                  "portIndex": 0,
-                  "timeoutSeconds": 30,
-                  "delaySeconds": 15,
-                  "protocol": "HTTP",
-                  "path": "/v1/plans/deploy"
-                },
-                {
-                  "gracePeriodSeconds": 900,
-                  "ignoreHttp1xx": false,
-                  "intervalSeconds": 30,
-                  "maxConsecutiveFailures": 0,
-                  "portIndex": 0,
-                  "timeoutSeconds": 30,
-                  "delaySeconds": 15,
-                  "protocol": "HTTP",
-                  "path": "/v1/plans/recovery"
-                }
-              ],
               "instances": 1,
               "maxLaunchDelaySeconds": 3600,
               "mem": 2048,
               "gpus": 0,
-              "networks": [
+              "container": {
+                "portMappings": [
+                  {
+                    "containerPort": 9200,
+                    "hostPort": 0,
+                    "labels": {
+                      "VIP_0": "/data/:9200"
+                    },
+                    "protocol": "tcp",
+                    "servicePort": 10000,
+                    "name": "elastic-endpoint"
+                  }
+                ],
+                "type": "DOCKER",
+                "volumes": [
+                  {
+                    "containerPath": "/usr/share/elasticsearch/data",
+                    "hostPath": "/data/apps/sports-cloud/elastic/data",
+                    "mode": "RW"
+                  }
+                ],
+                "docker": {
+                  "image": "docker.elastic.co/elasticsearch/elasticsearch:5.6.5",
+                  "forcePullImage": false,
+                  "privileged": false,
+                  "parameters": []
+                }
+              },
+              "env": {
+                "ES_JAVA_OPTS": "-Xms512m -Xmx512m",
+                "xpack.security.enabled": "false"
+              },
+              "healthChecks": [
                 {
-                  "mode": "host"
+                  "gracePeriodSeconds": 900,
+                  "intervalSeconds": 30,
+                  "maxConsecutiveFailures": 0,
+                  "portIndex": 0,
+                  "timeoutSeconds": 30,
+                  "delaySeconds": 15,
+                  "protocol": "MESOS_HTTP",
+                  "path": "/_cat/nodes"
                 }
               ],
-              "portDefinitions": [
+             "networks": [
                 {
-                  "labels": {
-                    "VIP_0": "/api.elastic:80"
-                  },
-                  "name": "api",
-                  "protocol": "tcp",
-                  "port": 10006
+                "name": "dcos",
+                "mode": "container"
                 }
               ],
               "requirePorts": false,
               "upgradeStrategy": {
-                "maximumOverCapacity": 0,
-                "minimumHealthCapacity": 0
+                "maximumOverCapacity": 1,
+                "minimumHealthCapacity": 1
               },
-              "user": "nobody",
               "killSelection": "YOUNGEST_FIRST",
               "unreachableStrategy": {
                 "inactiveAfterSeconds": 300,
                 "expungeAfterSeconds": 600
               },
-              "constraints": [],
-              "container": {
-                "type": "MESOS",
-                "volumes": []
-              }
+              "fetch": [],
+              "constraints": []
             }
           ],
           "groups": [],
@@ -305,7 +142,7 @@
       ],
       "groups": [],
       "dependencies": [
-        "/sports-cloud/tools",
+        "/tools",
         "/sports-cloud/data"
       ]
     },
@@ -327,7 +164,7 @@
                   "TASK_UNREACHABLE": 0,
                   "backoffFactor": 1.15,
                   "backoffSeconds": 1,
-                  "cmd": "export LD_LIBRARY_PATH=$MESOS_SANDBOX/libmesos-bundle/lib:$LD_LIBRARY_PATH; export MESOS_NATIVE_JAVA_LIBRARY=$(ls $MESOS_SANDBOX/libmesos-bundle/lib/libmesos-*.so); export JAVA_HOME=$(ls -d $MESOS_SANDBOX/jre*/); export JAVA_HOME=${JAVA_HOME%/}; export PATH=$(ls -d $JAVA_HOME/bin):$PATH && export JAVA_OPTS=\"-Xms256M -Xmx512M\" && ./confluent-kafka-scheduler/bin/confluent-kafka ./confluent-kafka-scheduler/svc.yml",
+                  "cmd": "export LD_LIBRARY_PATH=$MESOS_SANDBOX/libmesos-bundle/lib:$LD_LIBRARY_PATH; export MESOS_NATIVE_JAVA_LIBRARY=$(ls $MESOS_SANDBOX/libmesos-bundle/lib/libmesos-*.so); export JAVA_HOME=$(ls -d $MESOS_SANDBOX/jre*/); export JAVA_HOME=${JAVA_HOME%/}; export PATH=$(ls -d $JAVA_HOME/bin):$PATH && export JAVA_OPTS=\"-Xms256M -Xmx1024M\" && ./confluent-kafka-scheduler/bin/confluent-kafka ./confluent-kafka-scheduler/svc.yml",
                   "cpus": 1,
                   "disk": 0,
                   "env": {
@@ -523,7 +360,7 @@
                   ],
                   "instances": 1,
                   "maxLaunchDelaySeconds": 3600,
-                  "mem": 1024,
+                  "mem": 1536,
                   "gpus": 0,
                   "networks": [
                     {
@@ -612,7 +449,7 @@
                     "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR": "1",
                     "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR": "1",
                     "CONNECT_ZOOKEEPER_CONNECT": "master.mesos:2181/dcos-service-confluent-kafka",
-                    "KAFKA_HEAP_OPTS": "-Xmx512M",
+                    "KAFKA_HEAP_OPTS": "-Xmx1024M",
                     "CONNECT_INTERNAL_VALUE_CONVERTER": "org.apache.kafka.connect.json.JsonConverter",
                     "CONNECT_OFFSET_STORAGE_TOPIC": "dcos-connect-offsets",
                     "CONNECT_CONFIG_STORAGE_TOPIC": "dcos-connect-configs"
@@ -638,9 +475,9 @@
                       "path": "/"
                     }
                   ],
-                  "instances": 1,
+                  "instances": 2,
                   "maxLaunchDelaySeconds": 3600,
-                  "mem": 1024,
+                  "mem": 1536,
                   "gpus": 0,
                   "networks": [
                     {
@@ -763,7 +600,7 @@
         }
       ],
       "dependencies": [
-        "/sports-cloud/tools",
+        "/tools",
         "/sports-cloud/data"
       ]
     }

@@ -149,13 +149,26 @@ class NcaafBoxScoreParser extends ParsedItem {
                           startQuarter-=1;
                       }
                   }
-                  if(startQuarter != endQuarter) {
-                      driveTitle = "%s%d:%02d - %s%d:%02d".format( quarterStrings(startQuarter), startMins, startSecs, quarterStrings(endQuarter), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                try {
+
+                  if (startQuarter != endQuarter) {
+                    driveTitle = "%s%d:%02d - %s%d:%02d".format(quarterStrings(startQuarter), startMins, startSecs,
+                      quarterStrings(endQuarter), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
                   } else {
-                      driveTitle = "%s%d:%02d - %d:%02d".format( quarterStrings(endQuarter), startMins, startSecs, toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                    driveTitle = "%s%d:%02d - %d:%02d".format(quarterStrings(endQuarter), startMins, startSecs,
+                      toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
                   }
+                } catch {
+                  case e: Exception => log.error("error ArrayIndexOutOfBoundsException ",e)
+                }
               } else {
-                  driveTitle = "%s%d:%02d".format( quarterStrings(toInt(quarterDrive).getOrElse(1) - 1), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                try {
+                  driveTitle = "%s%d:%02d".format(quarterStrings(toInt(quarterDrive).getOrElse(1) - 1), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                }
+                catch {
+                  case e: Exception => log.error("error ArrayIndexOutOfBoundsException ", e)
+
+                }
               }
              val drivesSummary1 = drivesSummary + ("quarter" -> s"$quarterDrive", "summaryText" -> s"$summaryText")
              val drivesSummary2 = drivesSummary1 + ("teamId" -> s"$teamId", "minutes" -> s"$min", "seconds" -> s"$seconds", "driveTitle" ->s"$driveTitle")

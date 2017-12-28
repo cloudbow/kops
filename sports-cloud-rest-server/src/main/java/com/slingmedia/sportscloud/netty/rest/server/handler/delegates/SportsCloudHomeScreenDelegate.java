@@ -43,13 +43,27 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 							new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
 					addGameScheduleDates(mainObj, gameScheduleJson);
 	
+					//title
+					mainObj.add("anons_title", new JsonPrimitive(solrDoc.getAsJsonObject().get("anonsTitle").getAsString()));
+
 					// collection
 					mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
+					
+					//Sling TV ratings
+					if(gameScheduleJson.has("ratings"))
+					{
+					mainObj.add("ratings", gameScheduleJson.get("ratings").getAsJsonArray());
+					}
+					
 					String teaser = "-";
 					if (gameScheduleJson.has("preGameTeaser")) {
 						teaser = gameScheduleJson.get("preGameTeaser").getAsString();
 					}
 					mainObj.add("teaser", new JsonPrimitive(teaser));
+					
+					//anons
+					mainObj.add("anons", new JsonPrimitive(teaser));
+					
 					JsonObject homeTeam = new JsonObject();
 					JsonObject awayTeam = new JsonObject();
 					JsonObject homeTeamRecord = new JsonObject();
@@ -62,6 +76,13 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 						homeTeamAlias = solrDoc.get("homeTeamAlias").getAsString();
 						homeTeam.add("alias", new JsonPrimitive(homeTeamAlias));
 					}
+					//Added for city
+					String homeTeamCity = "-";
+					if (solrDoc.has("homeTeamCity")) {
+						homeTeamCity = solrDoc.get("homeTeamCity").getAsString();
+						homeTeam.add("city", new JsonPrimitive(homeTeamCity));
+					}
+					
 					homeTeam.add("img", new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
 					homeTeam.add("id", new JsonPrimitive(gameScheduleJson.get("homeTeamExternalId").getAsString()));
 					mainObj.add("awayTeam", awayTeam);
@@ -71,6 +92,13 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 						awayTeamAlias = solrDoc.get("awayTeamAlias").getAsString();
 						awayTeam.add("alias", new JsonPrimitive(awayTeamAlias));
 					}
+					//Added for city
+					String awayTeamCity = "-";
+					if (solrDoc.has("awayTeamCity")) {
+						awayTeamCity = solrDoc.get("awayTeamCity").getAsString();
+						awayTeam.add("city", new JsonPrimitive(awayTeamCity));
+					}
+					
 					awayTeam.add("img", new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
 					awayTeam.add("id", new JsonPrimitive(gameScheduleJson.get("awayTeamExternalId").getAsString()));
 	
@@ -121,6 +149,36 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 				LOGGER.error("Error occurred in parsing json", e);
 			} finally {
 				finalResponse = allGames.toString();
+			}
+		}
+		return finalResponse;
+	}
+	
+	
+	public String prepareJsonResponseForCategories(String finalResponse, long startDate, long endDate, Set<String> subpackIds, JsonElement gamesCategoriesJson) {
+		// &fq=%7B!collapse%20field=gameId%7D&expand=true&fl=homeTeamScore,awayTeamScore&expand.rows=100&wt=json
+		//Map<String, JsonObject> liveResponseJson = prepareLiveGameInfoData(startDate, endDate,500);
+	
+		if (gamesCategoriesJson != null) {
+			JsonArray allCategories = new JsonArray();
+			JsonObject jsonCategories=new JsonObject();
+			try {
+				JsonArray groupedDocs = gamesCategoriesJson.getAsJsonObject().get("aggregations").getAsJsonObject()
+						.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
+				for (JsonElement groupedDocSrc : groupedDocs) {
+					// get game categories
+	
+					String gameCategory=groupedDocSrc.getAsJsonObject().get("key").getAsString();
+					System.out.println(gameCategory);
+					
+					allCategories.add(gameCategory);
+				}
+				
+				jsonCategories.add("games_categories", allCategories);
+			} catch (Exception e) {
+				LOGGER.error("Error occurred in parsing json", e);
+			} finally {
+				finalResponse = jsonCategories.toString();
 			}
 		}
 		return finalResponse;

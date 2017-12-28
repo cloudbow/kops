@@ -183,6 +183,8 @@ install-services:
 	@$(current_path)/dev/scripts/dcos/deploy-services-group.sh $(current_path)/dev/Docker-Dcos/config/service-groups/all-services.json
 # Run Docker container
 #
+install-artifact:
+	@$(current_path)/dev/scripts/dcos/deploy-services-group.sh $(current_path)/dev/Docker-Dcos/config/service-groups/artifact-server.json
 
 build-rest-layer-dev:
 	@$(current_path)/dev/scripts/docker/build-docker-container.sh $(current_path)/dev/Docker-Rest $(TAG_REST) $(DOCKER_ID)
@@ -249,6 +251,7 @@ schedule-job-download-thuuz-dev:
 schedule-job-download-schedules-dev:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh download-schedules $(current_path)/dev/Docker-Dcos/config/jobs/download-schedules.json	
 
+### Kafka MLB
 schedule-kafka-connect-meta-batch:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-meta-batch $(current_path)/dev/Docker-Dcos/config/jobs/kafka/confluent-connect-meta_batch.json	
 
@@ -258,6 +261,27 @@ schedule-kafka-connect-content-match:
 schedule-kafka-connect-live-info:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-live-info $(current_path)/dev/Docker-Dcos/config/jobs/kafka/confluent-connect-live_info.json	
 
+### Kafka NCAAF	
+ncaaf-schedule-kafka-connect-meta-batch:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-meta-batch-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/kafka/ncaaf/confluent-connect-meta_batch_ncaaf.json	
+
+ncaaf-schedule-kafka-connect-content-match:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-content-match-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/kafka/ncaaf/confluent-connect-content_match_ncaaf.json	
+
+ncaaf-schedule-kafka-connect-live-info:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-live-info-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/kafka/ncaaf/confluent-connect-live_info_ncaaf.json	
+
+### Kafka NFL	
+nfl-schedule-kafka-connect-meta-batch:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-meta-batch-nfl $(current_path)/dev/Docker-Dcos/config/jobs/kafka/nfl/confluent-connect-meta_batch_nfl.json	
+
+nfl-schedule-kafka-connect-content-match:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-content-match-nfl $(current_path)/dev/Docker-Dcos/config/jobs/kafka/nfl/confluent-connect-content_match_nfl.json	
+
+nfl-schedule-kafka-connect-live-info:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh confluent-connect-live-info-nfl $(current_path)/dev/Docker-Dcos/config/jobs/kafka/nfl/confluent-connect-live_info_nfl.json	
+
+## spark mlb
 schedule-player-stats-batch-job:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh player-stats-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/player-stats.json
 	
@@ -266,3 +290,24 @@ schedule-team-standings-batch-job:
 	
 schedule-content-match-batch-job:
 	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh content-match-mlb $(current_path)/dev/Docker-Dcos/config/jobs/spark/mlb/content-match.json
+
+#spark ncaaf
+ncaaf-schedule-content-match-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh content-match-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/spark/ncaaf/content-match-ncaaf.json
+
+ncaaf-schedule-team-standings-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh team-standings-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/spark/ncaaf/team-standings-ncaaf.json	
+
+ncaaf-schedule-live-info-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh live-info-ncaaf $(current_path)/dev/Docker-Dcos/config/jobs/spark/ncaaf/live-info-ncaaf.json	
+
+#spark nfl
+nfl-schedule-content-match-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh content-match-nfl $(current_path)/dev/Docker-Dcos/config/jobs/spark/nfl/content-match-nfl.json	
+
+nfl-schedule-team-standings-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh team-standings-nfl $(current_path)/dev/Docker-Dcos/config/jobs/spark/nfl/team-standings-nfl.json	
+
+nfl-schedule-live-info-batch-job:
+	@$(current_path)/dev/scripts/dcos/submit-dcos-job.sh live-info-nfl $(current_path)/dev/Docker-Dcos/config/jobs/spark/nfl/live-info-nfl.json
+
