@@ -34,8 +34,8 @@ object CMHolder extends Serializable {
 object ContentMatcher extends Serializable {
   def main(args: Array[String]) {
     CMHolder.log.debug("Args is $args")
-    //"content_match", "game_schedule", "artifact-server.marathon.l4lb.thisdcos.directory"
-    new ContentMatcher().munch(args(0), args(1), args(2))
+    //"content_match", "game_schedule"
+    new ContentMatcher().munch(args(0), args(1))
 
   }
 }
@@ -43,16 +43,16 @@ object ContentMatcher extends Serializable {
 class ContentMatcher extends Serializable with Muncher {
 
 
-  override def munch(inputKafkaTopic: String, outputCollName: String, artifactUrl: String): Unit = {
+  override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
 
     //fetch thuuz games
-    fetchThuuzGames(artifactUrl)
+    fetchThuuzGames(System.getenv("ARTIFACT_SERVER_EP"))
 
     //fetch sports channels
-    val summaryJson6 = fetchSportsChannels(artifactUrl)
+    val summaryJson6 = fetchSportsChannels(System.getenv("ARTIFACT_SERVER_EP"))
 
     //fetch program schedules
-    fetchProgramSchedules(summaryJson6, artifactUrl)
+    fetchProgramSchedules(summaryJson6, System.getenv("ARTIFACT_SERVER_EP"))
 
     //Fetch MLB schedule
     val mlbScheduleDF32 = fetchMLBSchedule(inputKafkaTopic)
@@ -351,7 +351,7 @@ class ContentMatcher extends Serializable with Muncher {
   val fetchMLBSchedule: (String => DataFrame) = (inputKafkaTopic: String) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", "broker.confluent-kafka.l4lb.thisdcos.directory:9092").option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", System.getenv("KAFKA_BROKER_EP")).option("subscribe", inputKafkaTopic).load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
 
     val scoreSchema = StructType(StructField("score", StringType, true) :: Nil)

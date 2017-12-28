@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Second Spark Proxy
+name: spark-ui-proxy-2
+version: 0.0.1

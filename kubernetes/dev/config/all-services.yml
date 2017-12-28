@@ -1063,7 +1063,7 @@ spec:
         ports:
         - containerPort: 8083  
 ---
-# ------------------- Artifact Server Service ------------------- #
+# ------------------- Kafka connect Server Service ------------------- #
 apiVersion: v1
 kind: Service
 metadata:

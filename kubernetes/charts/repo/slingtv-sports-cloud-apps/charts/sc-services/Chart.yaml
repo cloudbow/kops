@@ -1,0 +1,4 @@
+apiVersion: v1
+description: The sports cloud services chart
+name: sc-services
+version: 0.0.1

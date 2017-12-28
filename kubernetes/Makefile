@@ -42,9 +42,14 @@ add-docker-artifacts-from-project:
 	@$(current_path)/dev/scripts/application/burn-project-artifacts-for-docker.sh $(current_path)/dev
 
 # Following action is needed to push all docker contianers
-build-and-push-all-docker-containers: $(build-rest-layer-dev)
+build-and-push-all-docker-containers:
 	@$(current_path)/dev/scripts/application/push-all-docker-containers.sh $(current_path)/dev
 
+add-docker-artifacts-from-project-for-tag:
+	@$(current_path)/dev/scripts/jenkins/burn-project-artifacts-for-docker-tag.sh
+
+build-and-push-docker-container-for-tag:
+	@$(current_path)/dev/scripts/jenkins/build-and-push-docker-container-for-tag.sh
 
 ## Use this to submit all serivces
 all-services:

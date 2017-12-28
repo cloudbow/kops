@@ -1,0 +1,17 @@
+{
+  "name": "ftp-meta-batch",
+  "config": {
+    "connector.class": "com.eneco.trading.kafka.connect.ftp.source.FtpSourceConnector",
+    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.MetaBatchSourceConverter",
+    "ftp.address": "ftp.stats.com",
+    "ftp.user": "DishSportsO",
+    "ftp.password": "D1sh3325",
+    "ftp.refresh": "PT1M",
+    "ftp.max.backoff": "PT1M",
+    "ftp.file.maxage": "P1D",
+    "ftp.monitor.update": "/:meta_batch",
+    "ftp.keystyle": "string",
+    "tasks.max": "1",
+    "topics": "meta_batch"
+  }
+}

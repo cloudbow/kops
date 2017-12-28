@@ -1,0 +1,54 @@
+# ------------------- Spark Worker  Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "spark-worker.fullname" . }}
+  labels:
+    app: {{ template "spark-worker.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "spark-worker.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "spark-worker.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
+        env:
+        {{- range $key, $value := .Values.image.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
+        - name: APP_SPARK_MASTERS_EPS
+          value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
+        - name: APP_SPARK_ZOOKEEPER_EP
+          value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"  
+        - name: KAFKA_BROKER_EP
+          value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
+        - name: ARTIFACT_SERVER_EP
+          value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
+        command:
+        {{- range .Values.deployment.command }}
+        - {{ . | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: workdir
+          mountPath: /spark/work
+        ports:
+        - containerPort: {{ .Values.deployment.containerPort }}
+        resources:
+          requests:
+            cpu: {{ .Values.deployment.resources.cpu }}
+      volumes:
+      - name: workdir
+        hostPath:
+          path: /data/apps/sports-cloud/{{ .Release.Name }}/spark/work
+          type: DirectoryOrCreate

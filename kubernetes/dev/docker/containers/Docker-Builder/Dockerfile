@@ -6,7 +6,8 @@ ENV SCALA_VERSION=2.12.2 \
     MAVEN_VERSION=3.3.9 \
     MAVEN_HOME=/usr/lib/maven
 RUN apk update && \
-    apk add bash && \ 
+    apk add bash && \
+    apk add make && \
     apk add wget && \
     apk add curl && \
     apk add strace && \

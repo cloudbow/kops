@@ -46,7 +46,7 @@ function getValForProp {
 
 
 function restartOnError() {
-	INIT_STATUS=`getValForProp "http://sc-cp-connect.default.svc.cluster.local:8083/connectors/$connectId/tasks" ".error_code"`
+	INIT_STATUS=`getValForProp "http://$CONNECT_EP/connectors/$connectId/tasks" ".error_code"`
 	if [ "$INIT_STATUS" == "404" ]
     then
     	echo "The kafka job $topicName is not running."
@@ -54,11 +54,11 @@ function restartOnError() {
     else
        echo "There is a status for this job"     
     fi
-    STATUS=`getValForProp "http://sc-cp-connect.default.svc.cluster.local:8083/connectors/$connectId/status" ".connector.state"`
+    STATUS=`getValForProp "http://$CONNECT_EP/connectors/$connectId/status" ".connector.state"`
 	echo "Only checking current status -  $STATUS"
 }
 
-if [ "$topicName" == "live_info" ]
+if [[ "$topicName" == *"live_info"* ]]
 then
     restartOnError
 else
@@ -67,13 +67,13 @@ else
    then
        restartOnError
    else
-      STATUS=`getValForProp "http://sc-cp-connect.default.svc.cluster.local:8083/connectors/$connectId/status" ".connector.state"`
+      STATUS=`getValForProp "http://$CONNECT_EP/connectors/$connectId/status" ".connector.state"`
       if [ -z "$STATUS" ]
       then
          echo "The kafka job $topicName is not running out of interval"
       else
          echo "Killing kafka job $topicName as it is out of time "
-         curl -X DELETE http://sc-cp-connect.default.svc.cluster.local:8083/connectors/$connectId
+         curl -X DELETE http://$CONNECT_EP/connectors/$connectId
       fi
    fi
 fi

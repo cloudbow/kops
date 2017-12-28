@@ -1,0 +1,26 @@
+# ------------------- Rest layer Deployment ------------------- #
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "artifact-server.fullname" . }}
+  labels:
+    app: {{ template "artifact-server.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "artifact-server.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "artifact-server.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
+        ports:
+        - containerPort: {{ .Values.deployment.containerPort }}

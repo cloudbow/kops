@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Healthz
+name: default-http-backend
+version: 0.0.1
