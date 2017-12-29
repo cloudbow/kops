@@ -36,7 +36,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			cd micro-content-matcher
 			sbt clean assembly
 			mkdir -p $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars
-			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars
+			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars/all-spark-jobs.jar
 			;;
 		sc-job-scheduler)
 			cd /tmp
@@ -46,6 +46,8 @@ case "$DOCKER_IMAGE_TYPE" in
 			### Add the jar to the docker image
 			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs
 			cp target/scala-*/sports-cloud-*-schedulers-assembly-*.jar $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs/sports-cloud-schedulers-assembly.jar
+			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect
+			cp -rf $CONFIG_PATH/worker-config $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect
 			;;
         *)
             echo $"Nothing special to do"

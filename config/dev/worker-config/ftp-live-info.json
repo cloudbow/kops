@@ -1,0 +1,17 @@
+{
+  "name": "ftp-live-info",
+  "config": {
+    "connector.class": "com.eneco.trading.kafka.connect.ftp.source.FtpSourceConnector",
+    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.LiveGameInfoSourceConverter",
+    "ftp.address": "ftp.stats.com",
+    "ftp.user": "DishSportsO",
+    "ftp.password": "D1sh3325",
+    "ftp.refresh": "PT1S",
+    "ftp.max.backoff": "PT1M",
+    "ftp.file.maxage": "P1D",
+    "ftp.monitor.update": "/:live_info",
+    "ftp.keystyle": "string",
+    "tasks.max": "1",
+    "topics": "live_info"
+  }
+}

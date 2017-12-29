@@ -3,11 +3,11 @@ global:
 
 sc-services:
   deployment:
-    terminationGracePeriodSeconds: 60
+    terminationGracePeriodSeconds: 30
   image:
     repository: quay.io/coreos
     tag: alb-ingress-controller:1.0-alpha.7
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     env:
       AWS_REGION: "us-east-2"
       CLUSTER_NAME: "sports-cloud.k8s.local"
@@ -16,93 +16,94 @@ sc-services:
       AWS_DEBUG: "false"
   data:
     indexing:
-      # Default values for elasticsearch.
-      # This is a YAML-formatted file.
-      # Declare variables to be passed into your templates.
-      appVersion: "5.4"
+      elasticsearch:
+        # Default values for elasticsearch.
+        # This is a YAML-formatted file.
+        # Declare variables to be passed into your templates.
+        appVersion: "5.5"
 
-      image:
-        repository: "centerforopenscience/elasticsearch"
-        tag: "5.4"
-        pullPolicy: "IfNotPresent"
+        image:
+          repository: "centerforopenscience/elasticsearch"
+          tag: "5.5"
+          pullPolicy: "IfNotPresent"
 
-      cluster:
-        name: "elasticsearch"
-        config:
-        env:
-          # IMPORTANT: https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#minimum_master_nodes
-          # To prevent data loss, it is vital to configure the discovery.zen.minimum_master_nodes setting so that each master-eligible
-          # node knows the minimum number of master-eligible nodes that must be visible in order to form a cluster.
-          MINIMUM_MASTER_NODES: "2"
+        cluster:
+          name: "elasticsearch"
+          config:
+          env:
+            # IMPORTANT: https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#minimum_master_nodes
+            # To prevent data loss, it is vital to configure the discovery.zen.minimum_master_nodes setting so that each master-eligible
+            # node knows the minimum number of master-eligible nodes that must be visible in order to form a cluster.
+            MINIMUM_MASTER_NODES: "2"
 
-      client:
-        name: client
-        replicas: 2
-        serviceType: ClusterIP
-        heapSize: "512m"
-        antiAffinity: "soft"
-        resources:
-          limits:
-            cpu: "1"
-            # memory: "1024Mi"
-          requests:
-            cpu: "25m"
-            memory: "512Mi"
+        client:
+          name: client
+          replicas: 2
+          serviceType: ClusterIP
+          heapSize: "512m"
+          antiAffinity: "soft"
+          resources:
+            limits:
+              cpu: "1"
+              # memory: "1024Mi"
+            requests:
+              cpu: "25m"
+              memory: "512Mi"
 
-        ## (dict) If specified, apply these annotations to each client Pod
-        # podAnnotations:
-        #   example: client-foo
+          ## (dict) If specified, apply these annotations to each client Pod
+          # podAnnotations:
+          #   example: client-foo
 
-      master:
-        name: master
-        replicas: 3
-        heapSize: "512m"
-        persistence:
-          enabled: true
-          accessMode: ReadWriteOnce
+        master:
+          name: master
+          replicas: 3
+          heapSize: "512m"
+          persistence:
+            enabled: true
+            accessMode: ReadWriteOnce
+            name: data
+            size: "4Gi"
+            # storageClass: "ssd"
+          antiAffinity: "soft"
+          resources:
+            limits:
+              cpu: "1"
+              # memory: "1024Mi"
+            requests:
+              cpu: "25m"
+              memory: "512Mi"
+
+          ## (dict) If specified, apply these annotations to each master Pod
+          # podAnnotations:
+          #   example: master-foo
+
+        data:
           name: data
-          size: "4Gi"
-          # storageClass: "ssd"
-        antiAffinity: "soft"
-        resources:
-          limits:
-            cpu: "1"
-            # memory: "1024Mi"
-          requests:
-            cpu: "25m"
-            memory: "512Mi"
+          replicas: 2
+          heapSize: "1536m"
+          persistence:
+            enabled: true
+            accessMode: ReadWriteOnce
+            name: data
+            size: "30Gi"
+            # storageClass: "ssd"
+          terminationGracePeriodSeconds: 3600
+          antiAffinity: "soft"
+          resources:
+            limits:
+              cpu: "1"
+              # memory: "2048Mi"
+            requests:
+              cpu: "25m"
+              memory: "1536Mi"
 
-        ## (dict) If specified, apply these annotations to each master Pod
-        # podAnnotations:
-        #   example: master-foo
+          ## (dict) If specified, apply these annotations to each data Pod
+          # podAnnotations:
+          #   example: data-foo
 
-      data:
-        name: data
-        replicas: 2
-        heapSize: "1536m"
-        persistence:
-          enabled: true
-          accessMode: ReadWriteOnce
-          name: data
-          size: "30Gi"
-          # storageClass: "ssd"
-        terminationGracePeriodSeconds: 3600
-        antiAffinity: "soft"
-        resources:
-          limits:
-            cpu: "1"
-            # memory: "2048Mi"
-          requests:
-            cpu: "25m"
-            memory: "1536Mi"
-
-        ## (dict) If specified, apply these annotations to each data Pod
-        # podAnnotations:
-        #   example: data-foo
-
-      ## Install Default RBAC roles and bindings
-      rbac:
-        create: false
+        ## Install Default RBAC roles and bindings
+        rbac:
+          create: false
 
   monitoring:
     default-http-backend:
@@ -183,7 +184,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.1
+            tag: spark-worker:0.0.1-alpha.2
             pullPolicy: IfNotPresent  
           deployment:
             resources:
@@ -224,7 +225,7 @@ sc-services:
           ## The kafka connect deployment and service
           connect:
             image:
-              tag: sc-cp-connect:latest
+              tag: sc-cp-connect:0.0.1-alpha.3
               env:
                 CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
                 CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
@@ -371,7 +372,6 @@ sc-services:
         tag: kibana-xpack-less:5.5.0
         pullPolicy: IfNotPresent   
         env:
-         CLUSTER_NAME: "elasticsearch"
          XPACK_SECURITY_ENABLED: "false"
          XPACK_GRAPH_ENABLED: "false"
          XPACK_ML_ENABLED: "false"
@@ -448,8 +448,10 @@ sc-jobs:
     ingress: {}
     service: {}
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.1
+      tag: sc-job-scheduler:0.0.1-alpha.6
       pullPolicy: IfNotPresent
+      env:
+        ARTIFACT_SERVER_EP: sc-apps-dev-artifact-server.default.svc.cluster.local:9082
     cronJob:
       args: 
       - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
@@ -457,3 +459,43 @@ sc-jobs:
       type: ClusterIP
       restartPolicy: Never
       schedule: "0 */3 * * *"
+  connect-meta-batch-nfl:
+    ingress: {}
+    service: {}
+    image:
+      tag: sc-job-scheduler:0.0.1-alpha.6
+      pullPolicy: IfNotPresent
+      env:
+    cronJob:
+      command: 
+      - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+      - "connect-jobs"
+      - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+      - "nfl"
+      type: ClusterIP
+      restartPolicy: Never
+      schedule: "0/50 * * * *"
+  nfl:    
+    spark-meta-batch-nfl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.3
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NflTeamStandingsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "TEAMSTANDINGS"
+        - "meta_batch_nfl"
+        - "team_standings"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/55 * * * *"

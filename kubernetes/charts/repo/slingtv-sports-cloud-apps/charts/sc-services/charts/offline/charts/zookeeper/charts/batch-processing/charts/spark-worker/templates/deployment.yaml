@@ -31,6 +31,10 @@ spec:
           value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
         - name: APP_SPARK_ZOOKEEPER_EP
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"  
+        - name: KAFKA_BROKER_EP
+          value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
+        - name: ARTIFACT_SERVER_EP
+          value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
         command:
         {{- range .Values.deployment.command }}
         - {{ . | quote }}

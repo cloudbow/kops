@@ -27,6 +27,12 @@ spec:
         - name: "{{ $key }}"
           value: "{{ $value }}"
         {{- end }}
+        - name: CLUSTER_NAME
+          value: {{ .Release.Name }}-elasticsearch-client
+        - name: SERVER_NAME
+          value: {{ .Release.Name }}-elasticsearch-client.default.svc.cluster.local
+        - name: ELASTICSEARCH_URL
+          value: http://{{ .Release.Name }}-elasticsearch-client.default.svc.cluster.local
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:

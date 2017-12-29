@@ -1,2 +1,3 @@
 #!/bin/sh
-scala -classpath /deploy-scheduled-jobs/libs/sports-cloud-dcos-schedulers-assembly.jar $2 $3
+echo "All args : $@"
+scala -classpath /deploy-scheduled-jobs/libs/sports-cloud-schedulers-assembly.jar $2 $3
