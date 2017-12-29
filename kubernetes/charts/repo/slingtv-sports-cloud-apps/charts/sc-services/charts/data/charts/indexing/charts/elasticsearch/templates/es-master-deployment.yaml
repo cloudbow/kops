@@ -1,0 +1,68 @@
+# ------------------- Elastic Search Master Deployment  --------------------------------------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "elasticsearch.fullname" . }}-master
+  labels:
+    app: {{ template "elasticsearch.name" . }}
+    release: {{ .Release.Name }}
+    role: {{ .Values.deployment.master.role }}
+spec:
+  replicas: {{ .Values.deployment.master.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "elasticsearch.name" . }}
+        release: {{ .Release.Name }}
+        role: {{ .Values.deployment.master.role }}
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: {{ .Chart.Name }}-master
+        securityContext:
+          privileged: false
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CLUSTER_NAME
+          value: {{ .Release.Name }}-elasticsearch
+        - name: DISCOVERY_SERVICE
+          value: {{ .Release.Name }}-elasticsearch-discovery
+        {{- range $key, $value := .Values.deployment.master.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
+        ports:
+        {{- range $key, $value := .Values.deployment.master.ports }}
+        - containerPort:  {{ $value }}
+          name: "{{ $key }}"
+          protocol: TCP
+        {{- end }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.deployment.master.livenessProbe.port }}
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      volumes:
+          - emptyDir:
+              medium: ""
+            name: "storage"

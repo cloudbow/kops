@@ -32,7 +32,8 @@ spec:
           value: "{{ $value }}"
         {{- end }}
         - name: MASTER
-          value: "spark://{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,spark://{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077" 
+          value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077, \ 
+          {{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077" 
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:
