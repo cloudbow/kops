@@ -1,0 +1,12 @@
+# ------------------- Elastic Search Prod Disrubtion Budget for Data   --------------------------------------------------- #
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "elasticsearch.fullname" . }}-data-pdb
+spec:
+  maxUnavailable: {{ .Values.pdb.data.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ template "elasticsearch.name" . }}
+      release: {{ .Release.Name }}
+      role: data
