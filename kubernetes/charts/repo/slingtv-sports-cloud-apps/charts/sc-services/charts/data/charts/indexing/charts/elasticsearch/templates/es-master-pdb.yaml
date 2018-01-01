@@ -1,0 +1,13 @@
+# ------------------- Elastic Search Prod Disrubtion Budget for Master   --------------------------------------------------- #
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "elasticsearch.fullname" . }}-master-pdb
+spec:
+  maxUnavailable: {{ .Values.pdb.master.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ template "elasticsearch.name" . }}
+      release: {{ .Release.Name }}
+      role: master
+      

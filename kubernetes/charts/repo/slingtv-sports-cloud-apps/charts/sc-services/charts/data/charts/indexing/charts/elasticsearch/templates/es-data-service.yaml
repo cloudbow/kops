@@ -1,0 +1,19 @@
+# ------------------- Elastic Search Service --------------------------------------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "elasticsearch.fullname" . }}-data
+  labels:
+    app: {{ template "elasticsearch.name" . }}
+    release: {{ .Release.Name }}
+    role: {{ .Values.services.data.role }}
+spec:
+  selector:
+    app: {{ template "elasticsearch.name" . }}
+    release: {{ .Release.Name }}
+    role: {{ .Values.services.data.role }}
+  clusterIP: {{ .Values.services.data.clusterIP }}
+  ports:
+  - name: {{ .Values.services.data.portName }}
+    port: {{ .Values.services.data.internalPort }}
+    protocol: TCP

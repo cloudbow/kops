@@ -22,3 +22,4 @@ sports-cloud-rest-server/.settings
 micro-content-matcher/.idea
 sports-cloud-dcos-schedulers/.idea
 sports-cloud-rest-server/.idea
+sports-cloud-k8s-schedulers/.idea

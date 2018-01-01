@@ -1,0 +1,70 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ template "elasticsearch.fullname" . }}-data
+  labels:
+    app: {{ template "elasticsearch.name" . }}
+    release: {{ .Release.Name }}
+    role: {{ .Values.deployment.data.role }}
+spec:
+  serviceName: {{ template "elasticsearch.fullname" . }}-data
+  replicas: {{ .Values.deployment.data.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "elasticsearch.name" . }}
+        release: {{ .Release.Name }}
+        role: {{ .Values.deployment.data.role }}
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox:1.27.2
+        command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        securityContext:
+          privileged: true
+      containers:
+      - name: {{ .Chart.Name }}-data
+        image: quay.io/pires/docker-elasticsearch-kubernetes:6.0.0
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CLUSTER_NAME
+          value: {{ .Release.Name }}-elasticsearch
+        - name: DISCOVERY_SERVICE
+          value: {{ .Release.Name }}-elasticsearch-discovery
+        {{- range $key, $value := .Values.deployment.data.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
+        ports:
+        {{- range $key, $value := .Values.deployment.data.ports }}
+        - containerPort:  {{ $value }}
+          name: "{{ $key }}"
+          protocol: TCP
+        {{- end }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.deployment.data.livenessProbe.port }}
+          initialDelaySeconds: {{ .Values.deployment.data.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.deployment.data.livenessProbe.periodSeconds }}
+        volumeMounts:
+        - name: {{ template "elasticsearch.fullname" . }}-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ template "elasticsearch.fullname" . }}-data
+    spec:
+      storageClassName: {{ .Release.Name }}-datastore
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: {{ .Values.deployment.data.storage }}
