@@ -17,94 +17,83 @@ sc-services:
   data:
     indexing:
       elasticsearch:
-        # Default values for elasticsearch.
-        # This is a YAML-formatted file.
-        # Declare variables to be passed into your templates.
-        appVersion: "5.5"
-
         image:
-          repository: "centerforopenscience/elasticsearch"
-          tag: "5.5"
-          pullPolicy: "IfNotPresent"
-
-        cluster:
-          name: "elasticsearch"
-          config:
-          env:
-            # IMPORTANT: https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#minimum_master_nodes
-            # To prevent data loss, it is vital to configure the discovery.zen.minimum_master_nodes setting so that each master-eligible
-            # node knows the minimum number of master-eligible nodes that must be visible in order to form a cluster.
-            MINIMUM_MASTER_NODES: "2"
-
-        client:
-          name: client
-          replicas: 2
-          serviceType: ClusterIP
-          heapSize: "512m"
-          antiAffinity: "soft"
-          resources:
-            limits:
-              cpu: "1"
-              # memory: "1024Mi"
-            requests:
-              cpu: "25m"
-              memory: "512Mi"
-
-          ## (dict) If specified, apply these annotations to each client Pod
-          # podAnnotations:
-          #   example: client-foo
-
-        master:
-          name: master
-          replicas: 3
-          heapSize: "512m"
-          persistence:
-            enabled: true
-            accessMode: ReadWriteOnce
-            name: data
-            size: "4Gi"
-            # storageClass: "ssd"
-          antiAffinity: "soft"
-          resources:
-            limits:
-              cpu: "1"
-              # memory: "1024Mi"
-            requests:
-              cpu: "25m"
-              memory: "512Mi"
-
-          ## (dict) If specified, apply these annotations to each master Pod
-          # podAnnotations:
-          #   example: master-foo
-
-        data:
-          name: data
-          replicas: 2
-          heapSize: "1536m"
-          persistence:
-            enabled: true
-            accessMode: ReadWriteOnce
-            name: data
-            size: "30Gi"
-            # storageClass: "ssd"
-          terminationGracePeriodSeconds: 3600
-          antiAffinity: "soft"
-          resources:
-            limits:
-              cpu: "1"
-              # memory: "2048Mi"
-            requests:
-              cpu: "25m"
-              memory: "1536Mi"
-
-          ## (dict) If specified, apply these annotations to each data Pod
-          # podAnnotations:
-          #   example: data-foo
-
-        ## Install Default RBAC roles and bindings
-        rbac:
-          create: false
-
+            repository: quay.io/pires
+            tag: docker-elasticsearch-kubernetes:6.0.0
+            pullPolicy: Always
+        pdb:
+          master:
+            maxUnavailable: 1
+          data:
+            maxUnavailable: 1
+        services:
+          data:
+            internalPort: 9300
+            role: data
+            portName: transport
+            clusterIP: None
+          client:
+            internalPort: 9200
+            role: client
+            portName: http
+          discovery:
+            internalPort: 9300
+            role: master
+            portName: transport
+        deployment:
+          curator:
+            image: 
+              repository:  quay.io/pires
+              tag: docker-elasticsearch-curator:5.4.1
+          master:
+            role: master
+            replicas: 3
+            livenessProbe:
+              port: transport
+            ports:
+              transport: 9300
+            env:
+              NETWORK_HOST: "_eth0_"
+              NUMBER_OF_MASTERS: "2"
+              NODE_MASTER: "true"
+              NODE_INGEST: "false"
+              NODE_DATA: "false"
+              HTTP_ENABLE: "false"
+              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+          client:
+            role: client
+            replicas: 2
+            livenessProbe:
+              port: transport
+            readinessProbe:
+              port: http
+              initialDelaySeconds: 20
+              timeoutSeconds: 5
+            ports:
+              transport: 9300
+              http: 9200
+            env:
+              NETWORK_HOST: "_eth0_"
+              NODE_MASTER: "false"
+              NODE_DATA: "false"
+              HTTP_ENABLE: "true"
+              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+          data:
+            role: data
+            replicas: 3
+            livenessProbe: 
+              initialDelaySeconds: 20
+              periodSeconds: 10
+              port: transport
+            storage: 60G
+            ports:
+              transport: 9300
+            env:
+              NETWORK_HOST: "_eth0_" 
+              NODE_MASTER: "false"
+              NODE_INGEST: "false"
+              HTTP_ENABLE: "true"
+              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
   monitoring:
     default-http-backend:
       image:
@@ -184,7 +173,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.2
+            tag: spark-worker:0.0.1-alpha.3
             pullPolicy: IfNotPresent  
           deployment:
             resources:
@@ -354,6 +343,13 @@ sc-services:
           ZEPPELIN_PORT: 8080
           PYTHONPATH: "/opt/spark/python:/opt/spark/python/lib/py4j-0.8.2.1-src.zip"
           ZEPPELIN_CONF_DIR: "/opt/zeppelin/conf"
+          SPARK_SUBMIT_OPTIONS: "--packages com.typesafe.scala-logging:scala-logging_2.11:3.7.2, \ 
+          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1, \ 
+          org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1, \ 
+          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1, \ 
+          com.databricks:spark-csv_2.10:1.5.0, \ 
+          ch.qos.logback:logback-classic:1.1.7, \ 
+          org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
       deployment:
         command:
         - /opt/zeppelin/bin/docker-zeppelin.sh
@@ -368,14 +364,10 @@ sc-services:
         internalPort: 80
     kibana:
       image:
-        repository: cfontes
-        tag: kibana-xpack-less:5.5.0
+        repository: "docker.elastic.co/kibana"
+        tag: "kibana-oss:6.0.0"
         pullPolicy: IfNotPresent   
         env:
-         XPACK_SECURITY_ENABLED: "false"
-         XPACK_GRAPH_ENABLED: "false"
-         XPACK_ML_ENABLED: "false"
-         XPACK_REPORTING_ENABLED: "false"
       deployment:
         resources:
           minCpu: 100m
@@ -448,10 +440,11 @@ sc-jobs:
     ingress: {}
     service: {}
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.6
+      tag: sc-job-scheduler:0.0.1-alpha.7
       pullPolicy: IfNotPresent
       env:
-        ARTIFACT_SERVER_EP: sc-apps-dev-artifact-server.default.svc.cluster.local:9082
+        cmsHost: "cbd46b77"
+        cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
     cronJob:
       args: 
       - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
@@ -459,6 +452,38 @@ sc-jobs:
       type: ClusterIP
       restartPolicy: Never
       schedule: "0 */3 * * *"
+  summary-download-job:
+    ingress: {}
+    service: {}
+    image:
+      tag: sc-job-scheduler:0.0.1-alpha.7
+      pullPolicy: IfNotPresent
+      env:
+        cmsHost: "cbd46b77"
+        cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
+    cronJob:
+      args: 
+      - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+      - "download-summary"
+      type: ClusterIP
+      restartPolicy: Never
+      schedule: "20 5 * * *"
+  schedules-download-job:
+    ingress: {}
+    service: {}
+    image:
+      tag: sc-job-scheduler:0.0.1-alpha.7
+      pullPolicy: IfNotPresent
+      env:
+        cmsHost: "cbd46b77"
+        cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
+    cronJob:
+      args: 
+      - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+      - "download-schedules"
+      type: ClusterIP
+      restartPolicy: Never
+      schedule: "0/10 * * * *"
   connect-meta-batch-nfl:
     ingress: {}
     service: {}
@@ -499,3 +524,119 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "0/55 * * * *"
+    connect-content-match-nfl:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.6
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "nfl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/55 * * * *"
+    spark-content-match-nfl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.3
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
+        jobName: NflContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_nfl"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "35 7 * * *"
+  ncaaf:    
+    connect-meta-batch-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.6
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "ncaaf"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/50 * * * *"
+    spark-meta-batch-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.3
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaafTeamStandingsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "TEAMSTANDINGS"
+        - "meta_batch_ncaaf"
+        - "team_standings"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0 */3 * * *"
+    connect-content-match-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.6
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "ncaaf"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-content-match-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.3
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
+        jobName: NcaafContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_ncaaf"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "30 7 * * *"

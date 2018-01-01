@@ -2,7 +2,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ template "thuuz-download-job.fullname" . }}
+  name: {{ template "schedules-download-job.fullname" . }}
 spec:
   schedule: {{ .Values.cronJob.schedule }}
   jobTemplate:
