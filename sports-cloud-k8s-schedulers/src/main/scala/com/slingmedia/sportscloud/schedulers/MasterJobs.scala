@@ -267,7 +267,7 @@ class DownloadSchedulesJob {
 						}
 					}
 				}
-				"curl --upload-file /tmp/schedules_plus_3 http://$artifactServer/artifacts/slingtv/sports-cloud/schedules_plus_3" !
+				s"curl --upload-file /tmp/schedules_plus_3 http://$artifactServer/artifacts/slingtv/sports-cloud/schedules_plus_3" !
 
 
 		})
@@ -295,7 +295,7 @@ class DownloadThuuzJob  {
     val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
     log.trace("Executing task : ThuuzJob")	  
 		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/tmp/thuuz.json") ! ;
-		"curl --upload-file /tmp/thuuz.json http://$artifactServer/artifacts/slingtv/sports-cloud/thuuz.json" !
+		s"curl --upload-file /tmp/thuuz.json http://$artifactServer/artifacts/slingtv/sports-cloud/thuuz.json" !
   }
 }
 
@@ -314,7 +314,7 @@ class  DownloadSummaryJob {
 		val cmsSummaryUrl = System.getenv("cmsSummaryUrl")
     val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
 		s"curl http://$cmsHost.cdn.cms.movetv.com/$cmsSummaryUrl" #> new File("/tmp/summary.json") ! ;
-		"curl --upload-file /tmp/summary.json http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" !
+		s"curl --upload-file /tmp/summary.json http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" !
 	}
 
 }
