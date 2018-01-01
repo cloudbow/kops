@@ -1,8 +1,8 @@
-# ------------------- Download thuuz for slingtv ------------------- #
+# ------------------- Download summary for slingtv ------------------- #
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ template "thuuz-download-job.fullname" . }}
+  name: {{ template "summary-download-job.fullname" . }}
 spec:
   schedule: {{ .Values.cronJob.schedule }}
   jobTemplate:
