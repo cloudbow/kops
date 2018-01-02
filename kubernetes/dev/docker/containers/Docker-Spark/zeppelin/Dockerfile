@@ -17,7 +17,7 @@
 
 FROM registry.sports-cloud.com:5000/spark-base
 
-ENV ZEPPELIN_VER  0.6.2
+ENV ZEPPELIN_VER  0.7.3
 
 
 RUN mkdir -p /opt && \
@@ -28,6 +28,8 @@ RUN mkdir -p /opt && \
     echo Zeppelin ${ZEPPELIN_VER} installed in /opt
 
 ADD zeppelin-log4j.properties /opt/zeppelin/conf/log4j.properties
+ENV PATH $PATH:/opt/spark/bin
+ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/opt/hadoop/lib/native
 ADD zeppelin-env.sh /opt/zeppelin/conf/zeppelin-env.sh
 ADD docker-zeppelin.sh /opt/zeppelin/bin/docker-zeppelin.sh
 EXPOSE 8080

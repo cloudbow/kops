@@ -173,7 +173,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.3
+            tag: spark-worker:0.0.1-alpha.5
             pullPolicy: IfNotPresent  
           deployment:
             resources:
@@ -248,7 +248,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.1
+        tag: sports-cloud-rest:0.0.1-alpha.2
         pullPolicy: IfNotPresent  
       deployment:
         containerPort: 9080
@@ -343,13 +343,6 @@ sc-services:
           ZEPPELIN_PORT: 8080
           PYTHONPATH: "/opt/spark/python:/opt/spark/python/lib/py4j-0.8.2.1-src.zip"
           ZEPPELIN_CONF_DIR: "/opt/zeppelin/conf"
-          SPARK_SUBMIT_OPTIONS: "--packages com.typesafe.scala-logging:scala-logging_2.11:3.7.2, \ 
-          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1, \ 
-          org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1, \ 
-          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1, \ 
-          com.databricks:spark-csv_2.10:1.5.0, \ 
-          ch.qos.logback:logback-classic:1.1.7, \ 
-          org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
       deployment:
         command:
         - /opt/zeppelin/bin/docker-zeppelin.sh
@@ -362,6 +355,11 @@ sc-services:
         type: NodePort
         externalPort: 8080
         internalPort: 80
+      spark:
+        driverMemory: 1g
+        executorMemory: 1g
+        numExecutors: 2
+        coresMax: 4
     kibana:
       image:
         repository: "docker.elastic.co/kibana"
@@ -475,8 +473,8 @@ sc-jobs:
         resources:
           minCpu: 100m
           maxCpu: 100m
-          minMem: 128Mi
-          maxMem: 128Mi
+          minMem: 256Mi
+          maxMem: 256Mi
     image:
       tag: sc-job-scheduler:0.0.1-alpha.8
       pullPolicy: IfNotPresent
@@ -489,7 +487,7 @@ sc-jobs:
       - "download-schedules"
       type: ClusterIP
       restartPolicy: Never
-      schedule: "0/10 * * * *"
+      schedule: "40 5 * * *"
   connect-meta-batch-nfl:
     ingress: {}
     service: {}
@@ -511,7 +509,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -550,7 +548,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -567,7 +565,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "35 7 * * *"
+        schedule: "40 7 * * *"
   ncaaf:    
     connect-meta-batch-ncaaf:
       ingress: {}
@@ -589,7 +587,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -607,7 +605,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0 */3 * * *"
+        schedule: "0/59 * * * *"
     connect-content-match-ncaaf:
       ingress: {}
       service: {}
@@ -628,7 +626,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -641,6 +639,50 @@ sc-jobs:
         execArgs:
         - "content_match_ncaaf"
         - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "30 7 * * *"
+    connect-live-info-ncaaf:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.6
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "ncaaf"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/10 * * * *"
+    spark-live-info-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.impl.NcaafLiveDataMuncher
+        jobName: NcaafLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_ncaaf"
+        - "live_info"
       cronJob:
         command: 
         type: ClusterIP

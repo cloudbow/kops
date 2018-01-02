@@ -31,9 +31,24 @@ spec:
         - name: "{{ $key }}"
           value: "{{ $value }}"
         {{- end }}
-        - name: MASTER
-          value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077, \ 
-          {{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077" 
+        - name: ZEPPELIN_JAVA_OPTS
+          value: "-Dspark.driver.memory={{ .Values.spark.driverMemory }}  {{ "" -}}
+          -Dspark.executor.memory={{ .Values.spark.executorMemory }}  {{ "" -}}
+          -Dspark.cores.max={{ .Values.spark.coresMax }}"
+        - name: SPARK_SUBMIT_OPTIONS
+          value: "--num-executors {{ .Values.spark.numExecutors }} --packages {{ "" -}}
+          com.typesafe.scala-logging:scala-logging_2.11:3.7.2,{{ "" -}}
+          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,{{ "" -}}
+          org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1,{{ "" -}}
+          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,{{ "" -}}
+          com.databricks:spark-csv_2.10:1.5.0,{{ "" -}} 
+          ch.qos.logback:logback-classic:1.1.7,{{ "" -}}
+          org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
+        - name: APP_SPARK_MASTERS_EPS
+          value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ "" -}}
+          {{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
+        - name: APP_SPARK_ZOOKEEPER_EP
+          value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:

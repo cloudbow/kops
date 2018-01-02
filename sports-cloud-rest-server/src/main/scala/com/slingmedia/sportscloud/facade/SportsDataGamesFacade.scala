@@ -16,20 +16,24 @@ object SportsDataGamesFacade {
   	private val LIVE_INFO_INDEX_ENTITY="live_info";
   	
 
-	private val INDEX_CONTEXT="sports-cloud"
+	private val GAME_SCHEDULE_INDEX_CONTEXT="sc-game-schedule"
+
+	private val LIVE_INFO_INDEX_CONTEXT="sc-live-info"
+
+
 	private val INDEX_VERB="_search"
-  	private val INDEX_HOST = if(System.getProperty("indexingHost") == null)  "localhost" else System.getProperty("indexingHost")
-	private val INDEX_PORT = if(System.getProperty("indexingPort")==null) "9200" else System.getProperty("indexingPort")
+  	private val INDEX_HOST = if(System.getProperty("ELASTIC_SEARCH_URL") == null)  "localhost" else System.getProperty("ELASTIC_SEARCH_URL")
+	private val INDEX_PORT = if(System.getProperty("ELASTIC_SEARCH_PORT")==null) "9200" else System.getProperty("ELASTIC_SEARCH_PORT")
 	
 	private val INDEX_HOST_SECONDAY = if(System.getProperty("indexingHostSec") == null)  "localhost" else System.getProperty("indexingHostSec")
 	private val INDEX_PORT_SECONDARY = if(System.getProperty("indexingPortSec")==null) "9200" else System.getProperty("indexingPortSec")
 
 
-	private val GAMES_CATEGORIES_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+GAMES_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
+	private val GAMES_CATEGORIES_FETCH_BASE_URL = "/"+GAME_SCHEDULE_INDEX_CONTEXT+"/"+GAMES_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
 	
-	private val GAMES_SCHEDULE_CATEGORY_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+GAMES_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
+	private val GAMES_SCHEDULE_CATEGORY_FETCH_BASE_URL = "/"+GAME_SCHEDULE_INDEX_CONTEXT+"/"+GAMES_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
 	
-	private val LIVE_INFO_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+LIVE_INFO_INDEX_ENTITY+"/"+INDEX_VERB
+	private val LIVE_INFO_FETCH_BASE_URL = "/"+LIVE_INFO_INDEX_CONTEXT+"/"+LIVE_INFO_INDEX_ENTITY+"/"+INDEX_VERB
   	
     private val elasticSearchClient  = ElasticSearchClient()
      

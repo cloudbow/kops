@@ -1,9 +1,7 @@
-
-# ------------------- Download Schedules for slingtv ------------------- #
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ template "schedules-download-job.fullname" . }}
+  name: {{ template "connect-live-info-ncaaf.fullname" . }}
 spec:
   schedule: {{ .Values.cronJob.schedule }}
   jobTemplate:
@@ -15,7 +13,7 @@ spec:
             image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
             imagePullPolicy: {{ .Values.image.pullPolicy }}
             args:
-            {{- range .Values.cronJob.args }}
+            {{- range .Values.cronJob.command }}
             - {{ . | quote }}
             {{- end }}
             env:
@@ -23,8 +21,8 @@ spec:
             - name: "{{ $key }}"
               value: "{{ $value }}"
             {{- end }}
-            - name: ARTIFACT_SERVER_EP
-              value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
+            - name: CONNECT_EP
+              value: "{{ .Release.Name }}-connect.default.svc.cluster.local:8083"
             resources:
               limits:  
                 cpu: {{ .Values.deployment.resources.maxCpu }}

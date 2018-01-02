@@ -25,7 +25,7 @@ trait Muncher {
   def stream(inputKafkaTopic: String, outputCollName: String): Unit = {}
   def munch(inputKafkaTopic: String, outputCollName: String, artifactUrl: String): Unit = {}
   def munch(inputKafkaTopic: String, outputCollName: String, schema: StructType, filterCond: String): Unit = {}
-  def munch(batchTime: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
+  def munch(batchTime: Long, index:String, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {}
   val children: (String, DataFrame) => Array[Column] = (colname: String, df: DataFrame) => {
     val parent = df.schema.fields.filter(_.name == colname).head
     val fields = parent.dataType match {
@@ -79,9 +79,9 @@ trait Muncher {
 
   val getGameSecondsUDF = udf(getGameSeconds(_: Int, _: Int))
   
-  val indexResults: (String,DataFrame) => Unit = ( outputCollName: String, input: DataFrame) => {
+  val indexResults: (String, String,DataFrame) => Unit = ( index:String, outputCollName: String, input: DataFrame) => {
     val inputConverted = input.toJSON
-    EsSpark.saveJsonToEs(inputConverted.rdd,s"sports-cloud/$outputCollName", Map("es.mapping.id" -> "id"))
+    EsSpark.saveJsonToEs(inputConverted.rdd,s"$index/$outputCollName", Map("es.mapping.id" -> "id"))
   }
 
 }
