@@ -16,14 +16,14 @@
 
 echo "=== Launching Zeppelin under Docker ==="
 function join { local IFS="$1"; shift; echo "$*"; }
-IFS=', ' read -r -a masterList <<< "$MASTER"
+IFS=', ' read -r -a masterList <<< "$APP_SPARK_MASTERS_EPS"
 cnt=${#masterList[@]}
 masterListPrepended=()
 for ((i=0;i<cnt;i++)); do
     masterListPrepended[i]="spark://${masterList[i]}"
 done 
 echo "Created prepended master list"
-printf "\nexport MASTER=\"%s\"" "`join , ${masterListPrepended[@]}`" >>  /opt/zeppelin/conf/zeppelin-env.sh
+printf "\nexport MASTER=\"%s\"" "spark://`join , ${masterList[@]}`" >>  /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport SPARK_HOME=\"%s\"" "$SPARK_HOME" >> /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport ZEPPELIN_HOME=\"%s\"" "$ZEPPELIN_HOME" >> /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport ZEPPELIN_JAVA_OPTS=\"%s\"" "$ZEPPELIN_JAVA_OPTS" >> /opt/zeppelin/conf/zeppelin-env.sh
@@ -34,5 +34,9 @@ printf "\nexport ZEPPELIN_PORT=\"%s\"" "$ZEPPELIN_PORT" >> /opt/zeppelin/conf/ze
 printf "\nexport PYTHONPATH=\"%s\"" "$PYTHONPATH" >> /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport ZEPPELIN_CONF_DIR=\"%s\"" "$ZEPPELIN_CONF_DIR" >> /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport SPARK_SUBMIT_OPTIONS=\"%s\"" "$SPARK_SUBMIT_OPTIONS" >> /opt/zeppelin/conf/zeppelin-env.sh
+
+## Write to spark config as well
+printf "\nspark.master %s" `join , ${masterListPrepended[@]}` >>  /opt/spark/conf/spark-defaults.conf
+printf "\nspark.deploy.zookeeper.url %s" $APP_SPARK_ZOOKEEPER_EP >>  /opt/spark/conf/spark-defaults.conf
 
 /opt/zeppelin/bin/zeppelin.sh "${ZEPPELIN_CONF_DIR}"
