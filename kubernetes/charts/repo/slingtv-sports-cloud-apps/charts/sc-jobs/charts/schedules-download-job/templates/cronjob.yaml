@@ -1,4 +1,5 @@
-# ------------------- Download thuuz for slingtv ------------------- #
+
+# ------------------- Download Schedules for slingtv ------------------- #
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -24,4 +25,12 @@ spec:
             {{- end }}
             - name: ARTIFACT_SERVER_EP
               value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
+            resources:
+              limits:  
+                cpu: {{ .Values.deployment.resources.maxCpu }}
+                memory: {{ .Values.deployment.resources.maxMem }}
+              requests:
+                cpu: {{ .Values.deployment.resources.minCpu }}
+                memory: {{ .Values.deployment.resources.minMem }}
+          terminationGracePeriodSeconds: 10
           restartPolicy: {{ .Values.cronJob.restartPolicy }}

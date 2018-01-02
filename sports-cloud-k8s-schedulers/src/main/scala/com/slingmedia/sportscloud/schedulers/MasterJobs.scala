@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 import sys.process._
+import java.net.URL
 import scala.io.Source
 import scala.util.Properties
 import scala.language.postfixOps
@@ -200,7 +201,7 @@ class DownloadSchedulesJob {
 	 def execute() {
     log.trace("Executing task : DownloadSchedulesJob")
 		val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
-		s"curl http://$artifactServer/artifacts/slingtv/summary.json" #> new File("/tmp/summary.json") ! ;
+		new URL(s"curl http://$artifactServer/artifacts/slingtv/summary.json") #> new File("/tmp/summary.json") ! ;
 
 		"cat /dev/null" #> new File("/tmp/schedules_plus_3") ! ;
 		getFileContents("/tmp/summary.json").foreach( it => {
