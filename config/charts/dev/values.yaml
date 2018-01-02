@@ -343,13 +343,6 @@ sc-services:
           ZEPPELIN_PORT: 8080
           PYTHONPATH: "/opt/spark/python:/opt/spark/python/lib/py4j-0.8.2.1-src.zip"
           ZEPPELIN_CONF_DIR: "/opt/zeppelin/conf"
-          SPARK_SUBMIT_OPTIONS: "--packages com.typesafe.scala-logging:scala-logging_2.11:3.7.2, \ 
-          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1, \ 
-          org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1, \ 
-          org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1, \ 
-          com.databricks:spark-csv_2.10:1.5.0, \ 
-          ch.qos.logback:logback-classic:1.1.7, \ 
-          org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
       deployment:
         command:
         - /opt/zeppelin/bin/docker-zeppelin.sh
@@ -362,6 +355,11 @@ sc-services:
         type: NodePort
         externalPort: 8080
         internalPort: 80
+      spark:
+        driverMemory: 1g
+        executorMemory: 1g
+        numExecutors: 2
+        coresMax: 4
     kibana:
       image:
         repository: "docker.elastic.co/kibana"
