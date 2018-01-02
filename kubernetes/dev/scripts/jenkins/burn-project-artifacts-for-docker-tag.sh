@@ -38,6 +38,14 @@ case "$DOCKER_IMAGE_TYPE" in
 			mkdir -p $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars
 			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars/all-spark-jobs.jar
 			;;
+		spark-job)
+			cd /tmp
+			cp -rf $BASE_PATH/../../micro-content-matcher  .
+			cd micro-content-matcher
+			sbt clean assembly
+			mkdir -p $BASE_PATH/docker/containers/Docker-SparkJob/jars
+			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-SparkJob/jars/all-spark-jobs.jar
+			;;
 		sc-job-scheduler)
 			cd /tmp
 			cp -rf $BASE_PATH/../../sports-cloud-k8s-schedulers  .

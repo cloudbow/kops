@@ -159,7 +159,7 @@ class NflLiveDataMuncher extends Serializable with Muncher {
     kafkaLiveInfoT9DF3.select($"gameId", $"gameCode", $"statusId", $"drives", $"awayTeamlineScore", $"homeTeamlineScore").show(false)
 
 
-    val indexResult = Try(indexResults("live_info",  kafkaLiveInfoT9DF3))
+    val indexResult = Try(indexResults("sc-live-info", "live_info",  kafkaLiveInfoT9DF3))
 
     indexResult match {
       case Success(data) =>
@@ -182,7 +182,7 @@ class NflLiveDataMuncher extends Serializable with Muncher {
           drop("homeTeamExtId", "awayTeamExtId")
         val kafkaLiveInfoT11DF3 = kafkaLiveInfoT10DF2.filter("lastPlay != ''")
 
-        indexResults( "scoring_events", kafkaLiveInfoT11DF3)
+        indexResults( "sc-scoring-events","scoring_events", kafkaLiveInfoT11DF3)
 
       case Failure(e) =>
         NflHolder.log.error("Error occurred in live_info indexing ", e)

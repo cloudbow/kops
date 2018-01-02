@@ -32,7 +32,7 @@ object MetaDataMuncher extends Serializable {
           :: StructField("losses", IntegerType, true) :: Nil)
         //"meta_batch", "player_stats", "localhost:9983"
 
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+        new MetaDataMuncher().munch(batchTimeStamp, "sc-player-stats", args(1), args(2), schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
       case MetaBatchJobType.TEAMSTANDINGS =>
         schema = StructType(StructField("league", StringType, true) ::
           StructField("alias", StringType, true) ::
@@ -45,7 +45,7 @@ object MetaDataMuncher extends Serializable {
           StructField("losses", IntegerType, true) ::
           StructField("pct", FloatType, true) :: Nil)
         //"meta_batch", "team_standings", "localhost:9983"
-        new MetaDataMuncher().munch(batchTimeStamp, args(1), args(2), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+        new MetaDataMuncher().munch(batchTimeStamp, "sc-team-standings", args(1), args(2), schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
       case MetaBatchJobType.LIVEINFO =>
         //live_info, live_info, localhost:9983
         new LiveDataMuncher().munch(args(1), args(2))
@@ -63,7 +63,7 @@ object MetaDataMuncher extends Serializable {
 
 class MetaDataMuncher extends Serializable with Muncher {
 
-  override def munch(batchTimeStamp: Long, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
+  override def munch(batchTimeStamp: Long, index: String, inputKafkaTopic: String, outputCollName: String, schema: StructType, imgRequired: Boolean, idColumn: Column, filterCond: String, testColumn: Column): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -85,7 +85,7 @@ class MetaDataMuncher extends Serializable with Muncher {
       finalDataFrame = ds9
     }
     finalDataFrame.toJSON.toDF.show(120,false)
-    indexResults( outputCollName,  finalDataFrame)
+    indexResults( index, outputCollName,  finalDataFrame)
 
 
   }

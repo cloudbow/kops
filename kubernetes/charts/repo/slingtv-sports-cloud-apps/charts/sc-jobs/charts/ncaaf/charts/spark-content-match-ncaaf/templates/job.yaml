@@ -16,9 +16,9 @@ spec:
             command:
               - "/opt/spark/bin/spark-submit"
               - "--master"
-              - "spark://{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:6066,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:6066"
+              - "local[4]"
               - "--deploy-mode"
-              - "cluster"
+              - "client"
               - "--name"
               - "{{ .Values.sparkJobArgs.jobName }}"
               - "--class"
@@ -31,8 +31,6 @@ spec:
               - "{{ .Values.sparkJobArgs.executorCores }}"
               - "--conf"
               - "spark.es.index.auto.create=true"
-              - "--conf"
-              - "spark.es.resource=sports-cloud/game_schedule"
               - "--conf"
               - "spark.es.nodes={{ .Release.Name }}-elasticsearch-client.default.svc.cluster.local"
               - "--conf"
@@ -56,4 +54,8 @@ spec:
             - name: "{{ $key }}"
               value: "{{ $value }}"
             {{- end }}
+            - name: KAFKA_BROKER_EP
+              value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
+            - name: ARTIFACT_SERVER_EP
+              value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
           restartPolicy: {{ .Values.cronJob.restartPolicy }}
