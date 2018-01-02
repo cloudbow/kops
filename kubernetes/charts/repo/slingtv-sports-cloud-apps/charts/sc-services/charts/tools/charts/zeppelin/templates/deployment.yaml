@@ -43,14 +43,23 @@ spec:
           org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,{{ "" -}}
           com.databricks:spark-csv_2.10:1.5.0,{{ "" -}} 
           ch.qos.logback:logback-classic:1.1.7,{{ "" -}}
+          org.scala-lang.modules:scala-parser-combinators:1.0.4,{{ "" -}}
+          org.scala-lang.modules:scala-xml:1.0.2,{{ "" -}}
           org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
         - name: APP_SPARK_MASTERS_EPS
           value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ "" -}}
           {{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
         - name: APP_SPARK_ZOOKEEPER_EP
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
+        volumeMounts:
+          - name: {{ template "zeppelin.fullname" . }}-note-store-claim
+            mountPath: /opt/zeppelin/notebook
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:
             requests:
               cpu: {{ .Values.deployment.resources.cpu }}
+      volumes:
+      - name: {{ template "zeppelin.fullname" . }}-note-store
+        persistentVolumeClaim:
+          claimName: {{ template "zeppelin.fullname" . }}-note-store-claim

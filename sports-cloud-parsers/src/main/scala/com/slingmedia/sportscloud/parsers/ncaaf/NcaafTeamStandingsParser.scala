@@ -1,14 +1,18 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.ncaaf
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
-import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
+import scala.xml.Elem
 import org.apache.kafka.connect.source.SourceRecord
-import org.slf4j.LoggerFactory
-
+import com.slingmedia.sportscloud.parsers.model.League
 import scala.collection.JavaConverters._
-import scala.xml.{Elem, NodeSeq}
+import org.apache.kafka.connect.data.Schema
+import org.apache.kafka.connect.data.Struct
+import org.apache.kafka.connect.data.SchemaBuilder
+import org.slf4j.LoggerFactory;
+import com.typesafe.scalalogging.slf4j.Logger
+import scala.xml.NodeSeq
 
-class NflTeamStandingsParser extends ParsedItem {
+class NcaafTeamStandingsParser extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
@@ -17,23 +21,23 @@ class NflTeamStandingsParser extends ParsedItem {
 
     var teamStandingsRows = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     xmlRoot.map { leagueStandings =>
-      (leagueStandings \\ "football-nfl-conference-standings").map { conferenceStanding =>
-        val subLeague = (conferenceStanding \ "@name").text
+      (leagueStandings \\ "cfb-conference-standings").map { conferenceStanding =>
+        val subLeague = (conferenceStanding \ "@abbrev").text
 
-        val mlbDivisionStandingsRows = (conferenceStanding \\ "football-nfl-division-standings").map {
+        val mlbDivisionStandingsRows = (conferenceStanding \\ "cfb-conference-division").map {
           mlbDivisionStandings =>
-            val division = (mlbDivisionStandings \ "@name").text
-            (mlbDivisionStandings \\ "football-nfl-team-standings").map {
+            val division = (mlbDivisionStandings \ "@division").text
+            (mlbDivisionStandings \\ "cfb-team-standings").map {
               teamStandings =>
                 val teamName = (teamStandings \\ "team-name" \ "@name").text
-                val teamCity = (teamStandings \\ "team-city" \ "@city").text
+                val teamCity = (teamStandings \\ "college-name" \ "@name").text
                 val alias = (teamStandings \\ "team-name" \ "@alias").text
                 //val teamCity = (teamStandings \\ "team-city" \ "@city").text
                 val teamCode = (teamStandings \\ "team-code" \ "@global-id").text
                 val wins = toInt((teamStandings \\ "wins" \ "@number").text).getOrElse(0)
                 val losses = toInt((teamStandings \\ "losses" \ "@number").text).getOrElse(0)
                 val pct = toFloat((teamStandings \\ "winning-percentage" \ "@percentage").text).getOrElse(0f)
-                val message = NflLeagueStandings(alias, leagueStr, subLeague, division, teamName, teamCity, teamCode, wins, losses, pct)
+                val message = NcaafLeagueStandings(alias, leagueStr, subLeague, division, teamCity, teamName, teamCode, wins, losses, pct)
                 teamStandingsRows += new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
             }
         }
@@ -43,7 +47,7 @@ class NflTeamStandingsParser extends ParsedItem {
 
   }
 
-  case class NflLeagueStandings(alias: String, league: String, subLeague: String, division: String, teamName: String, teamCity: String, teamCode: String, wins: Int, losses: Int, pct: Float) {
+  case class NcaafLeagueStandings(alias: String, league: String, subLeague: String, division: String, teamName: String, teamCity: String, teamCode: String, wins: Int, losses: Int, pct: Float) {
 
     val teamStandingSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.TeamStandingSchema")
       .field("alias", Schema.STRING_SCHEMA)

@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.mlb
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import scala.xml.Elem
@@ -11,14 +11,13 @@ import org.apache.kafka.connect.data.SchemaBuilder
 import org.slf4j.LoggerFactory;
 import com.typesafe.scalalogging.slf4j.Logger
 
-class BoxScoreParser extends ParsedItem {
+class MlbBoxScoreParser extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("BoxScoreParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
     log.trace("Parsing rows for boxscore")
     val leagueStr = (data \\ "league" \ "@alias").text
-    val league = League.withNameOpt(leagueStr.toUpperCase)
 
     var mlbBoxScores = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     val rows = xmlRoot.map { rowData =>

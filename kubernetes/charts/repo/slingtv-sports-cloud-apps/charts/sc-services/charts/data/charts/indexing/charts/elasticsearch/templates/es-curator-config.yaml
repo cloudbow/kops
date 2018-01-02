@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: curator-config
+  name: {{ template "elasticsearch.fullname" . }}-curator-config
 data:
   action_file.yml: |-
     ---

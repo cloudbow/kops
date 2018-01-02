@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.mlb
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import scala.xml.Elem
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.scalalogging.slf4j.Logger
 import scala.xml.NodeSeq
 
-class TeamStandingsParser extends ParsedItem {
+class MlbTeamStandingsParser extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("ScheduleParser")
 

@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.mlb
 
 import com.eneco.trading.kafka.connect.ftp.source.SourceRecordConverter
 import org.apache.kafka.connect.source.SourceRecord
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.scalalogging.slf4j.Logger
 import scala.xml.NodeSeq
 
-class PlayerStatsParser extends ParsedItem {
+class MlbPlayerStatsParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
   override def generateRows(data: Elem, in: SourceRecord,xmlRoot:NodeSeq): java.util.List[SourceRecord] = {
