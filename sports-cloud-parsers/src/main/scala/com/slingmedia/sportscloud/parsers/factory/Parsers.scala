@@ -8,7 +8,7 @@ import com.slingmedia.sportscloud.parsers.{ DefaultParser }
 object ParserType extends Enumeration {
   type ParserType = Value
   val MlbScheduleParser, NcaafScheduleParser, NflScheduleParser, MlbTeamStandingsParser, NcaafTeamStandingsParser, NflTeamStandingsParser,MlbBoxScoreParser, NcaafBoxScoreParser,
-  NflBoxScoreParser,MlbPlayerStatsParser, LiveParser, Default = Value
+  NflBoxScoreParser,MlbPlayerStatsParser, Default = Value
 
 }
 
@@ -38,8 +38,6 @@ object Parsers {
         new NflBoxScoreParser()
       case ParserType.MlbPlayerStatsParser =>
         new MlbPlayerStatsParser()
-      case ParserType.LiveParser =>
-        new MlbBoxScoreParser()
       case ParserType.Default =>
         new DefaultParser()
       case _ =>

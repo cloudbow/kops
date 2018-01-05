@@ -114,7 +114,7 @@ class MlbBoxScoreParser extends ParsedItem {
       .field("status", Schema.STRING_SCHEMA)
       .field("statusId", Schema.INT32_SCHEMA)
       .field("gameType", Schema.STRING_SCHEMA)
-      .field("division", Schema.STRING_SCHEMA) 
+      .field("league", Schema.STRING_SCHEMA) 
       .field("gameId", Schema.STRING_SCHEMA)
       .field("gameCode", Schema.STRING_SCHEMA)
       .field("lastPlay", Schema.STRING_SCHEMA)
