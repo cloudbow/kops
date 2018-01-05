@@ -13,12 +13,12 @@ spec:
   rules:
   - host: intsportscloud.slingbox.com
     http:
-      paths:
+      paths:     
       - path: /
         backend:
           serviceName: {{ .Release.Name }}-kubernetes-dashboard
           servicePort: 80
-      - path: /rest/*
+      - path: /api/*
         backend:
           serviceName: {{ .Release.Name }}-sc-rest-layer
           servicePort: 9080

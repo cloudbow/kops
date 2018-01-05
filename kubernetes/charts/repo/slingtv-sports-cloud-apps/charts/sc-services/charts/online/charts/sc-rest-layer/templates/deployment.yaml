@@ -28,4 +28,4 @@ spec:
         - name: ELASTIC_SEARCH_URL
           value: {{ .Release.Name }}-elasticsearch-client.default.svc.cluster.local
         - name: ELASTIC_SEARCH_PORT
-          value: 9200
+          value: "9200"
