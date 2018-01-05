@@ -173,7 +173,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.3
+            tag: spark-worker:0.0.1-alpha.5
             pullPolicy: IfNotPresent  
           deployment:
             resources:
@@ -248,7 +248,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.1
+        tag: sports-cloud-rest:0.0.1-alpha.2
         pullPolicy: IfNotPresent  
       deployment:
         containerPort: 9080
@@ -473,8 +473,8 @@ sc-jobs:
         resources:
           minCpu: 100m
           maxCpu: 100m
-          minMem: 128Mi
-          maxMem: 128Mi
+          minMem: 256Mi
+          maxMem: 256Mi
     image:
       tag: sc-job-scheduler:0.0.1-alpha.8
       pullPolicy: IfNotPresent
@@ -487,7 +487,7 @@ sc-jobs:
       - "download-schedules"
       type: ClusterIP
       restartPolicy: Never
-      schedule: "0/10 * * * *"
+      schedule: "40 5 * * *"
   connect-meta-batch-nfl:
     ingress: {}
     service: {}
@@ -509,7 +509,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -548,7 +548,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -565,7 +565,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "35 7 * * *"
+        schedule: "40 7 * * *"
   ncaaf:    
     connect-meta-batch-ncaaf:
       ingress: {}
@@ -587,7 +587,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -605,7 +605,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0 */3 * * *"
+        schedule: "0/59 * * * *"
     connect-content-match-ncaaf:
       ingress: {}
       service: {}
@@ -626,7 +626,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.3
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -639,6 +639,50 @@ sc-jobs:
         execArgs:
         - "content_match_ncaaf"
         - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "30 7 * * *"
+    connect-live-info-ncaaf:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.6
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "ncaaf"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/10 * * * *"
+    spark-live-info-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.impl.NcaafLiveDataMuncher
+        jobName: NcaafLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_ncaaf"
+        - "live_info"
       cronJob:
         command: 
         type: ClusterIP

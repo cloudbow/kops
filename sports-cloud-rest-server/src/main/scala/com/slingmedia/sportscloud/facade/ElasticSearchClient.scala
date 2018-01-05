@@ -39,7 +39,7 @@ object ElasticSearchClient {
 	def apply() = {
 		credentialsProvider.setCredentials(AuthScope.ANY,
         new UsernamePasswordCredentials("elastic", "changeme"))
-		val builder = RestClient.builder(new HttpHost(System.getProperty("indexingHost"), System.getProperty("indexingPort").toInt))
+		val builder = RestClient.builder(new HttpHost(System.getProperty("ELASTIC_SEARCH_URL"), System.getProperty("ELASTIC_SEARCH_PORT").toInt))
 		builder.setHttpClientConfigCallback(new RestClientConfigCallback())       
 	    val defaultHeaders = Array(new BasicHeader("User-Agent", "SCElasticSearch/v1.0").asInstanceOf[Header])
 		builder.setDefaultHeaders(defaultHeaders)

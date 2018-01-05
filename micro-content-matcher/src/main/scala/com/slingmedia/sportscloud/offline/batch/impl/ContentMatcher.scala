@@ -36,7 +36,7 @@ object ContentMatcher extends Serializable {
     CMHolder.log.debug("Args is $args")
     //"content_match", "game_schedule"
     new ContentMatcher().munch(args(0), args(1))
-
+      //new ContentMatcher().test(args(0), args(1))
   }
 }
 
@@ -257,7 +257,7 @@ class ContentMatcher extends Serializable with Muncher {
     //Fetch from thuuz and update 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    spark.sparkContext.addFile(s"http://$artifactUrl:9082/artifacts/slingtv/sports-cloud/thuuz.json")
+    spark.sparkContext.addFile(s"http://$artifactUrl/artifacts/slingtv/sports-cloud/thuuz.json")
     val thuuzGamesDF = spark.read.json(SparkFiles.get("thuuz.json"))
     val thuuzGamesDF1 = thuuzGamesDF.withColumn("gamesExp", explode(thuuzGamesDF.col("ratings"))).drop("ratings")
     val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameId")
@@ -270,7 +270,7 @@ class ContentMatcher extends Serializable with Muncher {
     //fetch summary json
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    spark.sparkContext.addFile(s"http://$artifactUrl:9082/artifacts/slingtv/sports-cloud/summary.json")
+    spark.sparkContext.addFile(s"http://$artifactUrl/artifacts/slingtv/sports-cloud/summary.json")
     val summaryJson = spark.read.json(SparkFiles.get("summary.json"))
     val subPackIds = summaryJson.select($"subscriptionpacks")
     val subPackIds2 = subPackIds.withColumn("subpacksExploded", explode($"subscriptionpacks")).drop("spIdsExploded");
@@ -303,7 +303,7 @@ class ContentMatcher extends Serializable with Muncher {
   val fetchProgramSchedules: (DataFrame, String) => Unit = (summaryJson6: DataFrame, artifactUrl:String) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    spark.sparkContext.addFile(s"http://$artifactUrl:9082/artifacts/slingtv/sports-cloud/schedules_plus_3")
+    spark.sparkContext.addFile(s"http://$artifactUrl/artifacts/slingtv/sports-cloud/schedules_plus_3")
     val linearFeedDF = spark.read.json(SparkFiles.get("schedules_plus_3"))
     val programsDF1 = linearFeedDF.select($"_self", $"programs")
     val programsDF2 = programsDF1.withColumn("programsExploded", explode(programsDF1.col("programs"))).drop("programs");
@@ -465,7 +465,7 @@ class ContentMatcher extends Serializable with Muncher {
     val programsJoin5 = spark.sql("select concat(channel_guid,'_',program_id,'_',gameId) as id , * from programsJoin4")
     val programsJoin6 = programsJoin5.orderBy($"channel_guid",$"program_id",$"selfTimeEpoch").repartition($"gameId").coalesce(4)
 
-    indexResults(outputCollName, programsJoin6)
+    indexResults("sc-game-schedule", outputCollName, programsJoin6)
 
   }
 
