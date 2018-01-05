@@ -12,26 +12,32 @@ import collection.mutable._
 object SportsDataFacade {
     private val log = LoggerFactory.getLogger("SportsDataFacade") 
 
-  	private val GAME_SCHEDULE_INDEX_ENTITY = "game_schedule"
-  	private val LIVE_INFO_INDEX_ENTITY="live_info";
+	private val GAME_SCHEDULE_INDEX_ENTITY = "game_schedule"
+	private val LIVE_INFO_INDEX_ENTITY="live_info";
 	private val TEAM_STANDINGS_INDEX_ENTITY="team_standings";
 	private val PLAYER_STATS_INDEX_ENTITY="player_stats";
 	private val SCORING_EVENTS_INDEX_ENTITY="scoring_events";
 
-	private val INDEX_CONTEXT="sports-cloud"
+	private val GAME_SCHEDULE_INDEX_CONTEXT="sc-game-schedule";
+	private val PLAYER_STATS_INDEX_CONTEXT="sc-player-stats";
+	private val TEAM_STANDINGS_INDEX_CONTEXT="sc-team-standings";
+	private val LIVE_INFO_INDEX_CONTEXT="sc-live-info";
+	private val SCORING_EVENTS_INDEX_CONTEXT="sc-scoring-events";
+
+
 	private val INDEX_VERB="_search"
-  	private val INDEX_HOST = if(System.getProperty("indexingHost") == null)  "localhost" else System.getProperty("indexingHost")
-	private val INDEX_PORT = if(System.getProperty("indexingPort")==null) "9200" else System.getProperty("indexingPort")
+  	private val INDEX_HOST = if(System.getProperty("ELASTIC_SEARCH_URL") == null)  "localhost" else System.getProperty("ELASTIC_SEARCH_URL")
+	private val INDEX_PORT = if(System.getProperty("ELASTIC_SEARCH_PORT")==null) "9200" else System.getProperty("ELASTIC_SEARCH_PORT")
 	
 	private val INDEX_HOST_SECONDAY = if(System.getProperty("indexingHostSec") == null)  "localhost" else System.getProperty("indexingHostSec")
 	private val INDEX_PORT_SECONDARY = if(System.getProperty("indexingPortSec")==null) "9200" else System.getProperty("indexingPortSec")
 
 
-	private val GAME_SCHEDULE_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+GAME_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
-  	private val PLAYER_STATS_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+PLAYER_STATS_INDEX_ENTITY+"/"+INDEX_VERB
-	private val TEAM_STANDINGS_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+TEAM_STANDINGS_INDEX_ENTITY+"/"+INDEX_VERB
-	private val LIVE_INFO_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+LIVE_INFO_INDEX_ENTITY+"/"+INDEX_VERB
-	private val SCORING_EVENTS_FETCH_BASE_URL = "/"+INDEX_CONTEXT+"/"+SCORING_EVENTS_INDEX_ENTITY+"/"+INDEX_VERB
+	private val GAME_SCHEDULE_FETCH_BASE_URL = "/"+GAME_SCHEDULE_INDEX_CONTEXT+"/"+GAME_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
+  	private val PLAYER_STATS_FETCH_BASE_URL = "/"+PLAYER_STATS_INDEX_CONTEXT+"/"+PLAYER_STATS_INDEX_ENTITY+"/"+INDEX_VERB
+	private val TEAM_STANDINGS_FETCH_BASE_URL = "/"+TEAM_STANDINGS_INDEX_CONTEXT+"/"+TEAM_STANDINGS_INDEX_ENTITY+"/"+INDEX_VERB
+	private val LIVE_INFO_FETCH_BASE_URL = "/"+LIVE_INFO_INDEX_CONTEXT+"/"+LIVE_INFO_INDEX_ENTITY+"/"+INDEX_VERB
+	private val SCORING_EVENTS_FETCH_BASE_URL = "/"+SCORING_EVENTS_INDEX_CONTEXT+"/"+SCORING_EVENTS_INDEX_ENTITY+"/"+INDEX_VERB
 
     private val elasticSearchClient  = ElasticSearchClient()
      
