@@ -54,9 +54,18 @@ trait ConverterBase {
         teamStandingsParserType=ParserType.MlbTeamStandingsParser
         playerStatsParserType=ParserType.MlbPlayerStatsParser
         boxScoreParserType=ParserType.MlbBoxScoreParser
-
         teamStandingsRoot="baseball-mlb-league-standings"
         playerStatsRoot="baseball-mlb-player-stats"
+      case LeagueEnum.NBA =>
+        teamStandings = ".*NBA_TEAM_STANDINGS\\.XML.*".r
+        playerStatsParserType=ParserType.NbaPlayerStatsParser
+        teamStandingsParserType=ParserType.NbaTeamStandingsParser
+        teamStandingsRoot="nba-conference-standings"
+      case LeagueEnum.NCAAB =>
+        teamStandings = ".*CBK_TEAM_STANDINGS\\.XML.*".r
+        playerStatsParserType=ParserType.NcaabPlayerStatsParser
+        teamStandingsParserType=ParserType.NcaabTeamStandingsParser
+        teamStandingsRoot="cbk-conference-standings"
 
 
       case _ => throw new UnsupportedOperationException()
@@ -160,6 +169,12 @@ trait ConverterBase {
       case LeagueEnum.NCAAF =>
         schedule=".*CFB_SCHEDULE.*\\.XML.*".r
         parserType=ParserType.NcaafScheduleParser
+      case LeagueEnum.NBA =>
+        schedule=".*NBA_SCHEDULE.*\\.XML.*".r
+        parserType=ParserType.NbaScheduleParser
+      case LeagueEnum.NCAAB =>
+        schedule=".*CBK_SCHEDULE.*\\.XML.*".r
+        parserType=ParserType.NcaabScheduleParser
       case LeagueEnum.MLB =>
         schedule=".*MLB_SCHEDULE\\.XML.*".r
         parserType=ParserType.MlbScheduleParser
