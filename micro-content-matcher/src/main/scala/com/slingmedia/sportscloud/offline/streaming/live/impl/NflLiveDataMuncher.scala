@@ -53,7 +53,7 @@ class NflLiveDataMuncher extends Serializable with LiveDataMuncher {
         :: StructField("status", StringType, true)
         :: StructField("statusId", IntegerType, true)
         :: StructField("gameType", StringType, true)
-        :: StructField("league", StringType, true)
+        :: StructField("division", StringType, true)
         :: StructField("gameId", StringType, true)
         :: StructField("gameCode", StringType, true)
         :: StructField("lastPlay", StringType, true)
