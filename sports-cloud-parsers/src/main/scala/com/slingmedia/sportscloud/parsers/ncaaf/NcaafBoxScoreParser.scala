@@ -1,15 +1,20 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.ncaaf
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
-import com.slingmedia.sportscloud.parsers.model.League
-import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
-import org.apache.kafka.connect.source.SourceRecord
-import org.slf4j.LoggerFactory
-
-import scala.collection.JavaConverters._
 import scala.xml.Elem
+import org.apache.kafka.connect.source.SourceRecord
+import com.slingmedia.sportscloud.parsers.model.League
+import scala.collection.JavaConverters._
+import org.apache.kafka.connect.data.Schema
+import org.apache.kafka.connect.data.Struct
+import org.apache.kafka.connect.data.SchemaBuilder
+import org.slf4j.LoggerFactory;
+import com.typesafe.scalalogging.slf4j.Logger
+ 
+import scala.collection.immutable.HashMap
+import scala.collection.immutable.Map
 
-class NflBoxScoreParser extends ParsedItem {
+class NcaafBoxScoreParser extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("NcaafBoxScoreParser")
   
@@ -28,7 +33,6 @@ class NflBoxScoreParser extends ParsedItem {
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
     log.trace("Parsing rows for boxscore")
     val leagueStr = (data \\ "league" \ "@alias").text
-    val league = League.withNameOpt(leagueStr.toUpperCase)
 
     //var mlbBoxScores = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     val rows = xmlRoot.map { rowData =>
@@ -61,7 +65,7 @@ class NflBoxScoreParser extends ParsedItem {
       val gameId = (rowData \\ "gamecode" \ "@global-id").text
       val gameCode = (rowData \\ "gamecode" \ "@code").text
       val gameType = (rowData \\ "gametype" \ "@type").text
-      val division = leagueStr
+      val division = (rowData \\ "league" \ "@league").text
       val inningNo = toInt((rowData \\ "gamestate" \ "@segment-number").text).getOrElse(0)
       
        val homeTeamlineScore = scala.collection.mutable.ListBuffer.empty[Int]
@@ -102,11 +106,11 @@ class NflBoxScoreParser extends ParsedItem {
               gameTimeSeconds = mins * 60 + secs;
           }
       
-          val gameseconds = toInt(period).getOrElse(0).toDouble * 15 * 60 - gameTimeSeconds
-          val total = (60 * 60).toDouble
+          val gameseconds = toInt(period).getOrElse(0).toDouble * 12 * 60 - gameTimeSeconds
+          val total = (48 * 60).toDouble
           position = if( gameseconds != 0)   { gameseconds / total * 100 }  else { 0.0 };
       
-          gameTimeSeconds = 15 * 60 - gameTimeSeconds
+          gameTimeSeconds = 12 * 60 - gameTimeSeconds
       
       } else {
 
@@ -144,13 +148,26 @@ class NflBoxScoreParser extends ParsedItem {
                           startQuarter-=1;
                       }
                   }
-                  if(startQuarter != endQuarter) {
-                      driveTitle = "%s%d:%02d - %s%d:%02d".format( quarterStrings(startQuarter), startMins, startSecs, quarterStrings(endQuarter), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                try {
+
+                  if (startQuarter != endQuarter) {
+                    driveTitle = "%s%d:%02d - %s%d:%02d".format(quarterStrings(startQuarter), startMins, startSecs,
+                      quarterStrings(endQuarter), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
                   } else {
-                      driveTitle = "%s%d:%02d - %d:%02d".format( quarterStrings(endQuarter), startMins, startSecs, toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                    driveTitle = "%s%d:%02d - %d:%02d".format(quarterStrings(endQuarter), startMins, startSecs,
+                      toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
                   }
+                } catch {
+                  case e: Exception => log.error("error ArrayIndexOutOfBoundsException ",e)
+                }
               } else {
-                  driveTitle = "%s%d:%02d".format( quarterStrings(toInt(quarterDrive).getOrElse(1) - 1), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                try {
+                  driveTitle = "%s%d:%02d".format(quarterStrings(toInt(quarterDrive).getOrElse(1) - 1), toInt(endMins).getOrElse(0), toInt(endSecs).getOrElse(0));
+                }
+                catch {
+                  case e: Exception => log.error("error ArrayIndexOutOfBoundsException ", e)
+
+                }
               }
              val drivesSummary1 = drivesSummary + ("quarter" -> s"$quarterDrive", "summaryText" -> s"$summaryText")
              val drivesSummary2 = drivesSummary1 + ("teamId" -> s"$teamId", "minutes" -> s"$min", "seconds" -> s"$seconds", "driveTitle" ->s"$driveTitle")
@@ -166,7 +183,7 @@ class NflBoxScoreParser extends ParsedItem {
       val gameStatus = (rowData \\ "gamestate" \ "@status").text
       val gameStatusId = toInt((rowData \\ "gamestate" \ "@status-id").text).getOrElse(0)
 
-      val message = NflBoxScoreData(homeTeamName,awayTeamName, division, month, date, day, year, hour, minute, utcHour,
+      val message = NcaafBoxScoreData(homeTeamName,awayTeamName, division, month, date, day, year, hour, minute, utcHour, 
           utcMinute,srcMonth, srcDate, srcDay, srcYear, srcHour, srcMinute, srcSecond, srcUtcHour, srcUtcMinute, 
           homeTeamExId, homeTeamAlias, awayTeamAlias, awayTeamExtId, gameId, gameCode, gameType, lastPlay, gameStatus, 
           gameStatusId, homeTeamlineScore.toList, awayTeamlineScore.toList, period, positionVal, timer, playType, drivesList.toList,
@@ -178,7 +195,7 @@ class NflBoxScoreParser extends ParsedItem {
 
   }
 
-  case class NflBoxScoreData(homeTeamName:String,awayTeamName:String ,  division:String , month: String, date: String, day: String,
+  case class NcaafBoxScoreData(homeTeamName:String,awayTeamName:String ,  division:String , month: String, date: String, day: String, 
       year: String, hour: String, minute: String, utcHour: String, utcMinute: String, srcMonth: String, srcDate: String, 
       srcDay: String, srcYear: String, srcHour: String, srcMinute: String, srcSecond: String, srcUtcHour: String, srcUtcMinute: String, 
       homeTeamExtId: String, homeTeamAlias: String, awayTeamAlias: String, awayTeamExtId: String, gameId: String, gameCode: String, 
@@ -207,7 +224,7 @@ class NflBoxScoreParser extends ParsedItem {
       .field("status", Schema.STRING_SCHEMA)
       .field("statusId", Schema.INT32_SCHEMA)
       .field("gameType", Schema.STRING_SCHEMA)
-      .field("league", Schema.STRING_SCHEMA)
+      .field("division", Schema.STRING_SCHEMA) 
       .field("gameId", Schema.STRING_SCHEMA)
       .field("gameCode", Schema.STRING_SCHEMA)
       .field("lastPlay", Schema.STRING_SCHEMA)
@@ -253,7 +270,7 @@ class NflBoxScoreParser extends ParsedItem {
       .put("status", gameStatus)
       .put("statusId", gameStatusId)
       .put("gameType", gameType)
-      .put("league", division)
+      .put("division", division)
       .put("gameId", gameId)
       .put("gameCode", gameCode)
       .put("lastPlay", lastPlay)

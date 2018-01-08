@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.ncaaf
 
 import com.eneco.trading.kafka.connect.ftp.source.SourceRecordConverter
 import org.apache.kafka.connect.source.SourceRecord

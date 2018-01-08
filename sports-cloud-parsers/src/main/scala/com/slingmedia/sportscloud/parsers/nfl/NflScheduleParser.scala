@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers
+package com.slingmedia.sportscloud.parsers.nfl
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}

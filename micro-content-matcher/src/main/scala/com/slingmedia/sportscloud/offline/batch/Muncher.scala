@@ -72,16 +72,15 @@ trait Muncher {
   }
   val timeEpochtoStrUDF = udf(timeEpochToStr(_: Long))
 
-  //get game seconds
-  val getGameSeconds: (Int, Int) => Int = (sourceSeconds: Int, gameStartSeconds: Int) => {
-    (sourceSeconds - gameStartSeconds)
-  }
 
-  val getGameSecondsUDF = udf(getGameSeconds(_: Int, _: Int))
-  
   val indexResults: (String, String,DataFrame) => Unit = ( index:String, outputCollName: String, input: DataFrame) => {
     val inputConverted = input.toJSON
     EsSpark.saveJsonToEs(inputConverted.rdd,s"$index/$outputCollName", Map("es.mapping.id" -> "id"))
   }
+  
+  val getReorderedStatusId: (Int => Int) = (statusId: Int) => {
+    if (statusId == 23) 2 else statusId
+  }
+  val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
 
 }

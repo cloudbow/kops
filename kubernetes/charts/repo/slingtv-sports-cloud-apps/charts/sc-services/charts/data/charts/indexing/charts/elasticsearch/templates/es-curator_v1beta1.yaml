@@ -1,7 +1,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: curator
+  name: {{ template "elasticsearch.fullname" . }}-es-curator
 spec:
   schedule: 1 0 * * *
   jobTemplate:
@@ -9,17 +9,17 @@ spec:
       template:
         spec:
           containers:
-          - name: curator
+          - name: {{ .Chart.Name }}-curator
             image: {{ .Values.deployment.curator.image.repository }}/{{ .Values.deployment.curator.image.tag }}
             args:
             - --config
             - /etc/config/config.yml
             - /etc/config/action_file.yml
             volumeMounts:
-              - name: config-volume
+              - name: {{ template "elasticsearch.fullname" . }}-config-volume
                 mountPath: /etc/config
           volumes:
-            - name: config-volume
+            - name: {{ template "elasticsearch.fullname" . }}-config-volume
               configMap:
-                name: curator-config
+                name: {{ template "elasticsearch.fullname" . }}-curator-config
           restartPolicy: OnFailure
