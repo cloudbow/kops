@@ -248,7 +248,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.2
+        tag: sports-cloud-rest:0.0.1-alpha.3
         pullPolicy: IfNotPresent  
       deployment:
         containerPort: 9080
@@ -566,6 +566,49 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "40 7 * * *"
+    connect-live-info-nfl:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.6
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "nfl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/10 * * * *"
+    spark-live-info-nfl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.impl.NflLiveDataMuncher
+        jobName: NflLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_nfl"
+        - "live_info"
+      Job:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
   ncaaf:    
     connect-meta-batch-ncaaf:
       ingress: {}
