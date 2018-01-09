@@ -33,7 +33,7 @@ spec:
       paths:
       - backend:
           serviceName: {{ .Release.Name }}-zeppelin
-          servicePort: 8080
+          servicePort: 80
   - host: intsc-spui1.slingbox.com
     http:
       paths:

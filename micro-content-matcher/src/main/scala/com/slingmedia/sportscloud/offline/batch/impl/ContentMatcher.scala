@@ -196,7 +196,14 @@ class ContentMatcher extends Serializable with Muncher {
 
     val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where("( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 ) AND ((program_title rlike regexp1) OR (program_title rlike regexp2) OR (program_title rlike regexp3) OR (program_title rlike regexp4) OR (program_title rlike regexp5) OR (program_title rlike regexp6))")
     CMHolder.log.trace("Matched with stats data");
-    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4","regexp5","regexp6", "subpack_int_id", "date")
+    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1",
+      "regexp2",
+      "regexp3",
+      "regexp4",
+      "regexp5",
+      "regexp6",
+      "subpack_int_id",
+      "date")
 
     val gameScheduleOrig = fetchMLBSchedule(inputKafkaTopic).coalesce(4)
     val allStatsNullFills = Map(
@@ -425,7 +432,12 @@ class ContentMatcher extends Serializable with Muncher {
       $"game-schedule.league" as "league",
       $"game-schedule.sport" as "sport",
       $"game-schedule.stadium.name" as "stadiumName",
-      concat(col("game-schedule.date.year"), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.month")), lit("-"), lit(getZeroPaddedUDF($"game-schedule.date.date")), lit("T"), lit(getZeroPaddedUDF($"game-schedule.time.hour")), lit(":"), col("game-schedule.time.minute"), lit(":00.00"), lit(getZeroPaddedUDF($"game-schedule.time.utc-hour")), lit(":"), col("game-schedule.time.utc-minute")) as "date")
+      concat(col("game-schedule.date.year"), lit("-"),
+        lit(zeroPadDateTimeUDF($"game-schedule.date.month")), lit("-"),
+        lit(zeroPadDateTimeUDF($"game-schedule.date.date")), lit("T"),
+        lit(zeroPadDateTimeUDF($"game-schedule.time.hour")), lit(":"),
+        lit(zeroPadDateTimeUDF($"game-schedule.time.minute")), lit(":00.00"),
+        lit(zeroPadTimeOffsetUDF($"game-schedule.time.utc-hour",$"game-schedule.time.utc-minute"))) as "date")
 
 
       //val leagueCheck = mlbScheduleDF3.first();
@@ -450,6 +462,7 @@ class ContentMatcher extends Serializable with Muncher {
     import spark.implicits._
     //join with thuuz to get gex score
     val thuuzGamesDF2 = spark.sql("select * from thuuzGames").toDF
+
     CMHolder.log.trace("Joining thuuzgames with stats data")
     val mlbScheduleDF33 = mlbScheduleDF32.join(thuuzGamesDF2, mlbScheduleDF32("gameId") === thuuzGamesDF2("statsGameId"), "left").drop("statsGameId")
     val mlbScheduleDF34 = mlbScheduleDF33.na.fill(0L, Seq("gexPredict"))

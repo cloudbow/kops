@@ -596,7 +596,7 @@ sc-jobs:
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.streaming.impl.NflLiveDataMuncher
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NflLiveDataMuncher
         jobName: NflLiveDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -717,7 +717,7 @@ sc-jobs:
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.streaming.impl.NcaafLiveDataMuncher
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NflLiveDataMuncher
         jobName: NcaafLiveDataMuncher
         driverMem: 2G
         executorMem: 2G

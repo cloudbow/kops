@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers.leagues.delegates
+package com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.impl.nfl
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import com.slingmedia.sportscloud.parsers.model.League

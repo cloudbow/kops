@@ -60,14 +60,13 @@ trait LiveDataMuncher extends Muncher {
       withColumn("srcTimeEpoch",
         timeStrToEpochUDF(concat(col("srcYear"),
           lit("-"),
-          lit(getZeroPaddedUDF($"srcMonth")),
+          lit(zeroPadDateTimeUDF($"srcMonth")),
           lit("-"),
-          lit(getZeroPaddedUDF($"srcDate")), lit("T"),
-          lit(getZeroPaddedUDF($"srcHour")), lit(":"),
-          lit(getZeroPaddedUDF($"srcMinute")), lit(":"),
-          lit(getZeroPaddedUDF($"srcSecond")), lit(".00"),
-          lit(getZeroPaddedUDF($"srcUtcHour")), lit(":"),
-          lit(getZeroPaddedUDF($"srcUtcMinute"))))).
+          lit(zeroPadDateTimeUDF($"srcDate")), lit("T"),
+          lit(zeroPadDateTimeUDF($"srcHour")), lit(":"),
+          lit(zeroPadDateTimeUDF($"srcMinute")), lit(":"),
+          lit(zeroPadDateTimeUDF($"srcSecond")), lit(".00"),
+          lit(zeroPadTimeOffsetUDF($"srcUtcHour",$"srcUtcMinute"))))).
       filter(col("gameId").isNotNull).
       withColumn("rStatusId", getReorderedStatusIdUDF($"statusId")).
       coalesce(4).
@@ -75,14 +74,13 @@ trait LiveDataMuncher extends Muncher {
       withColumn("date",
         concat(col("year"),
                 lit("-"),
-                lit(getZeroPaddedUDF($"month")),
+                lit(zeroPadDateTimeUDF($"month")),
                 lit("-"),
-                lit(getZeroPaddedUDF($"date")),
+                lit(zeroPadDateTimeUDF($"date")),
                 lit("T"),
-                lit(getZeroPaddedUDF($"hour")), lit(":"),
-                lit(getZeroPaddedUDF($"minute")), lit(":00.00"),
-                lit(getZeroPaddedUDF($"utcHour")), lit(":"),
-                lit(getZeroPaddedUDF($"utcMinute")))).
+                lit(zeroPadDateTimeUDF($"hour")), lit(":"),
+                lit(zeroPadDateTimeUDF($"minute")), lit(":00.00"),
+                lit(zeroPadTimeOffsetUDF($"utcHour",$"utcMinute")))).
       withColumn("batchTime", lit(batchTimeStamp)).
       withColumn("game_date_epoch", timeStrToEpochUDF($"date")).
       withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))

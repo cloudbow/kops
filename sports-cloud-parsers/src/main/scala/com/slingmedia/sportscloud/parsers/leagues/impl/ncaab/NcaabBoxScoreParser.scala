@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers.leagues.impl.nba
+package com.slingmedia.sportscloud.parsers.leagues.impl.ncaab
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 
@@ -12,9 +12,9 @@ import com.typesafe.scalalogging.slf4j.Logger
 
 
 
-class NbaBoxScoreParser extends ParsedItem {
+class NcaabBoxScoreParser extends ParsedItem {
 
-  private val log = LoggerFactory.getLogger("NbaBoxScoreParser")
+  private val log = LoggerFactory.getLogger("NcaabBoxScoreParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
     log.trace("Parsing rows for boxscore")
