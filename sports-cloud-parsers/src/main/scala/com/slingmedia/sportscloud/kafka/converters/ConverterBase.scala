@@ -27,9 +27,9 @@ trait ConverterBase {
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
 
-    var teamStandings:Regex = null
-    var playerStats:Regex = null
-    var finalBoxScores:Regex = null
+    var teamStandings:Regex = "(?!.*)".r
+    var playerStats:Regex = "(?!.*)".r
+    var finalBoxScores:Regex = "(?!.*)".r
 
     var teamStandingsParserType = ParserType.Default
     var playerStatsParserType = ParserType.Default
@@ -58,14 +58,19 @@ trait ConverterBase {
         playerStatsRoot="baseball-mlb-player-stats"
       case LeagueEnum.NBA =>
         teamStandings = ".*NBA_TEAM_STANDINGS\\.XML.*".r
+        playerStats = ".*NBA_PLAYER_STATS.*\\.XML.*".r
         playerStatsParserType=ParserType.NbaPlayerStatsParser
         teamStandingsParserType=ParserType.NbaTeamStandingsParser
         teamStandingsRoot="nba-conference-standings"
+        playerStatsRoot="nba-player-split"
       case LeagueEnum.NCAAB =>
         teamStandings = ".*CBK_TEAM_STANDINGS\\.XML.*".r
+        playerStats = ".*CBK_PLAYER_STATS.*\\.XML.*".r
         playerStatsParserType=ParserType.NcaabPlayerStatsParser
         teamStandingsParserType=ParserType.NcaabTeamStandingsParser
         teamStandingsRoot="cbk-conference-standings"
+        playerStatsRoot="cbk-player-stat"
+
 
 
       case _ => throw new UnsupportedOperationException()
@@ -74,6 +79,7 @@ trait ConverterBase {
     dataElem match {
       case Success(data) =>
         val fileName = in.key
+
         fileName match {
           case teamStandings(_*) =>
             if(teamStandingsParserType!=ParserType.Default) {
@@ -82,17 +88,9 @@ trait ConverterBase {
               Array[SourceRecord]().toList.asJava
             }
           case playerStats(_*) =>
-            if(playerStatsParserType!=ParserType.Default) {
-              Parsers(playerStatsParserType).generateRows(data, in, (data \\ playerStatsRoot))
-            } else {
-              Array[SourceRecord]().toList.asJava
-            }
+            Parsers(playerStatsParserType).generateRows(data, in, (data \\ playerStatsRoot))
           case finalBoxScores(_*) =>
-            if(boxScoreParserType!=ParserType.Default){
-              Parsers(boxScoreParserType).generateRows(data, in)
-            } else {
-              Array[SourceRecord]().toList.asJava
-            }
+            Parsers(boxScoreParserType).generateRows(data, in)
           case _ =>
             Array[SourceRecord]().toList.asJava
         }

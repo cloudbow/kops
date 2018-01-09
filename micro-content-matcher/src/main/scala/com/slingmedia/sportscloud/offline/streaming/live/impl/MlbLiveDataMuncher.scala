@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.offline.streaming.impl
+package com.slingmedia.sportscloud.offline.streaming.live.impl
 
 import org.slf4j.LoggerFactory
 import org.apache.spark.sql.functions.{ udf,lit,concat,md5,col }

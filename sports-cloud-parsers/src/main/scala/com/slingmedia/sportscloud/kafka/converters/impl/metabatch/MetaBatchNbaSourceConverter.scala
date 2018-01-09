@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.kafka.converters.impl
+package com.slingmedia.sportscloud.kafka.converters.impl.metabatch
 
 import com.slingmedia.sportscloud.kafka.converters.ConverterBase
 import com.slingmedia.sportscloud.parsers.model.League
@@ -15,7 +15,7 @@ import com.typesafe.scalalogging.slf4j.Logger
 import scala.xml.Elem
 import scala.util.{Try, Success, Failure}
 
-class MetaBatchNbaSourceConverter extends SourceRecordConverter  with ConverterBase {
+class NbaSourceConverter extends SourceRecordConverter  with ConverterBase {
   private val log = LoggerFactory.getLogger("MetaBatchNbaSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {

@@ -5,6 +5,7 @@ echo "Going to work on Docker image type $DOCKER_IMAGE_TYPE"
 case "$DOCKER_IMAGE_TYPE" in
         sports-cloud-rest)
         	cd /tmp
+        	rm -rf /tmp/sports-cloud-rest-server
 			cp -rf $BASE_PATH/../../sports-cloud-rest-server .
 			cd sports-cloud-rest-server
 			mvn clean package
@@ -15,6 +16,7 @@ case "$DOCKER_IMAGE_TYPE" in
             ;;
         sc-cp-connect)
 			cd /tmp
+			rm -rf /tmp/sports-cloud-parsers
 			cp -rf $BASE_PATH/../../sports-cloud-parsers  .
 			cd sports-cloud-parsers
 			### Add the eneco ftp jar to maven
@@ -32,6 +34,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			;;
 		spark-worker)
 			cd /tmp
+			rm -rf /tmp/micro-content-matcher
 			cp -rf $BASE_PATH/../../micro-content-matcher  .
 			cd micro-content-matcher
 			sbt clean assembly
@@ -40,6 +43,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			;;
 		spark-job)
 			cd /tmp
+			rm -rf /tmp/micro-content-matcher
 			cp -rf $BASE_PATH/../../micro-content-matcher  .
 			cd micro-content-matcher
 			sbt clean assembly
@@ -48,6 +52,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			;;
 		sc-job-scheduler)
 			cd /tmp
+			rm -rf /tmp/sports-cloud-k8s-schedulers
 			cp -rf $BASE_PATH/../../sports-cloud-k8s-schedulers  .
 			cd sports-cloud-k8s-schedulers
 			sbt clean assembly

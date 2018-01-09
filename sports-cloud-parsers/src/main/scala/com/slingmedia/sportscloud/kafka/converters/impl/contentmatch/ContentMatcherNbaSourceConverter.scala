@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.kafka.converters.impl
+package com.slingmedia.sportscloud.kafka.converters.impl.contentmatch
 
 import com.slingmedia.sportscloud.kafka.converters.ConverterBase
 import com.slingmedia.sportscloud.parsers.model.League
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import scala.xml.Elem
 import scala.util.{Try, Success, Failure}
 
-class ContentMatcherNbaSourceConverter extends SourceRecordConverter with ConverterBase {
+class NbaSourceConverter extends SourceRecordConverter with ConverterBase {
   private val log = LoggerFactory.getLogger("ContentMatcherNbaSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {

@@ -40,23 +40,47 @@ trait Muncher {
   }
   val timeStrToEpochUDF = udf(timeStrToEpoch(_: String))
 
-  val getZeroPaddedFunc: (String => String) = (timeStr: String) => {
-    if (timeStr == null) {
-      "0"
+  val isEmpty: (String => Boolean) = (x: String) => {
+    x == null || x.trim.isEmpty
+  }
+
+  val getZeroPadTimeOffsetFunc: (String, String) => String = (offHour: String, offMinute: String) => {
+    var defaultOffset="+00:00"
+    if (isEmpty(offHour) && isEmpty(offMinute)) {
+      defaultOffset
     } else {
-      val timeInInt = timeStr.toInt
-      if (timeInInt < 0) {
-        val absTime = Math.abs(timeInInt)
-        "-".concat(getZeroPaddedFunc(absTime.toString))
-      } else if (timeInInt < 10) {
-        "0".concat(timeInInt.toString)
-      } else {
-        timeStr
+      val offsetHourInt =if(isEmpty(offHour)) 0 else offHour.toInt
+      val offsetMinInt = if(isEmpty(offMinute)) 0 else offMinute.toInt
+      val offsetHourAbs  = Math.abs(offsetHourInt)
+      if (offsetHourInt < 0) {
+        defaultOffset="-"
+      }  else {
+        defaultOffset="+"
       }
+      defaultOffset.concat(zeroPadNum(offsetHourAbs)).concat(":").concat(zeroPadNum(offsetMinInt))
+    }
+  }
+  val zeroPadTimeOffsetUDF = udf(getZeroPadTimeOffsetFunc(_: String,_:String))
+
+
+  val zeroPadNum: (Int => String) = (num: Int) => {
+    if (num < 10) {
+      "0".concat(num.toString)
+    } else {
+      num.toString()
+    }
+  }
+
+  val getZeroPadDateTimeFunc: (String => String) = (timeStr: String) => {
+    if (isEmpty(timeStr)) {
+      "00"
+    } else {
+      val timeInt = if(isEmpty(timeStr)) 0 else timeStr.toInt
+      zeroPadNum(timeInt)
     }
   }
   
-  val getZeroPaddedUDF = udf(getZeroPaddedFunc(_: String))
+  val zeroPadDateTimeUDF = udf(getZeroPadDateTimeFunc(_: String))
 
     val timeEpochToStr: (Long => String) = (timeEpoch: Long) => {
     if (timeEpoch == 0) {

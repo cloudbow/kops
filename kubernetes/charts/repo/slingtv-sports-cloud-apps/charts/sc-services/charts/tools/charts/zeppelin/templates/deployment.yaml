@@ -52,7 +52,7 @@ spec:
         - name: APP_SPARK_ZOOKEEPER_EP
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
         volumeMounts:
-          - name: {{ template "zeppelin.fullname" . }}-note-store-claim
+          - name: {{ template "zeppelin.fullname" . }}-note-store
             mountPath: /opt/zeppelin/notebook
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
