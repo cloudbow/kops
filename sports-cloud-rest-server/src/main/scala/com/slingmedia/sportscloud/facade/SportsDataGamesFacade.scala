@@ -22,11 +22,11 @@ object SportsDataGamesFacade {
 
 
 	private val INDEX_VERB="_search"
-  	private val INDEX_HOST = if(System.getProperty("ELASTIC_SEARCH_URL") == null)  "localhost" else System.getProperty("ELASTIC_SEARCH_URL")
-	private val INDEX_PORT = if(System.getProperty("ELASTIC_SEARCH_PORT")==null) "9200" else System.getProperty("ELASTIC_SEARCH_PORT")
+  	private val INDEX_HOST = if(System.getenv("ELASTIC_SEARCH_URL") == null)  "localhost" else System.getenv("ELASTIC_SEARCH_URL")
+	private val INDEX_PORT = if(System.getenv("ELASTIC_SEARCH_PORT")==null) "9200" else System.getenv("ELASTIC_SEARCH_PORT")
 	
-	private val INDEX_HOST_SECONDAY = if(System.getProperty("indexingHostSec") == null)  "localhost" else System.getProperty("indexingHostSec")
-	private val INDEX_PORT_SECONDARY = if(System.getProperty("indexingPortSec")==null) "9200" else System.getProperty("indexingPortSec")
+	private val INDEX_HOST_SECONDAY = if(System.getenv("indexingHostSec") == null)  "localhost" else System.getenv("indexingHostSec")
+	private val INDEX_PORT_SECONDARY = if(System.getenv("indexingPortSec")==null) "9200" else System.getenv("indexingPortSec")
 
 
 	private val GAMES_CATEGORIES_FETCH_BASE_URL = "/"+GAME_SCHEDULE_INDEX_CONTEXT+"/"+GAMES_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
