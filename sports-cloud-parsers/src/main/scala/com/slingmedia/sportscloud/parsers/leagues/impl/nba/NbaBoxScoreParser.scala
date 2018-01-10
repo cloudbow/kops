@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers.mlb
+package com.slingmedia.sportscloud.parsers.leagues.impl.mlb
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import scala.xml.Elem
@@ -11,7 +11,7 @@ import org.apache.kafka.connect.data.SchemaBuilder
 import org.slf4j.LoggerFactory;
 import com.typesafe.scalalogging.slf4j.Logger
 
-class MlbBoxScoreParser extends ParsedItem {
+class NbaBoxScoreParser extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("BoxScoreParser")
 

@@ -1,9 +1,9 @@
-package com.slingmedia.sportscloud.parsers.ncaaf
+package com.slingmedia.sportscloud.parsers.leagues.impl.ncaaf
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import scala.xml.Elem
 import org.apache.kafka.connect.source.SourceRecord
-import com.slingmedia.sportscloud.parsers.model.League
+import com.slingmedia.sportscloud.parsers.model.{ League , TeamStandings }
 import scala.collection.JavaConverters._
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.Struct
@@ -37,44 +37,13 @@ class NcaafTeamStandingsParser extends ParsedItem {
                 val wins = toInt((teamStandings \\ "wins" \ "@number").text).getOrElse(0)
                 val losses = toInt((teamStandings \\ "losses" \ "@number").text).getOrElse(0)
                 val pct = toFloat((teamStandings \\ "winning-percentage" \ "@percentage").text).getOrElse(0f)
-                val message = NcaafLeagueStandings(alias, leagueStr, subLeague, division, teamCity, teamName, teamCode, wins, losses, pct)
+                val message = TeamStandings(alias, leagueStr, subLeague, division, teamCity, teamName, teamCode, wins, losses, pct)
                 teamStandingsRows += new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
             }
         }
       }
     }
     teamStandingsRows.toList.asJava
-
-  }
-
-  case class NcaafLeagueStandings(alias: String, league: String, subLeague: String, division: String, teamName: String, teamCity: String, teamCode: String, wins: Int, losses: Int, pct: Float) {
-
-    val teamStandingSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.TeamStandingSchema")
-      .field("alias", Schema.STRING_SCHEMA)
-      .field("league", Schema.STRING_SCHEMA)
-      .field("subLeague", Schema.STRING_SCHEMA)
-      .field("division", Schema.STRING_SCHEMA)
-      .field("teamName", Schema.STRING_SCHEMA)
-      .field("teamCity", Schema.STRING_SCHEMA)
-      .field("teamCode", Schema.STRING_SCHEMA)
-      .field("wins", Schema.INT32_SCHEMA)
-      .field("losses", Schema.INT32_SCHEMA)
-      .field("pct", Schema.FLOAT32_SCHEMA)
-      .build()
-    val teamStandingStruct: Struct = new Struct(teamStandingSchema)
-      .put("alias", alias)
-      .put("league", league)
-      .put("subLeague", subLeague)
-      .put("division", division)
-      .put("teamName", teamName)
-      .put("teamCity", teamCity)
-      .put("teamCode", teamCode)
-      .put("wins", wins)
-      .put("losses", losses)
-      .put("pct", pct)
-
-    val connectSchema: Schema = teamStandingSchema
-    def getStructure: Struct = teamStandingStruct
 
   }
 

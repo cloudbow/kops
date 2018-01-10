@@ -1,4 +1,4 @@
-package com.slingmedia.sportscloud.parsers.ncaaf
+package com.slingmedia.sportscloud.parsers.leagues.impl
 
 import com.eneco.trading.kafka.connect.ftp.source.SourceRecordConverter
 import org.apache.kafka.connect.source.SourceRecord
@@ -10,8 +10,8 @@ import com.slingmedia.sportscloud.parsers.factory.ParsedItem
 import org.slf4j.LoggerFactory;
 import com.typesafe.scalalogging.slf4j.Logger
 
-class NcaafScheduleParser extends ParsedItem {
-  private val log = LoggerFactory.getLogger("NcaafScheduleParser")
+class ScheduleParser extends ParsedItem {
+  private val log = LoggerFactory.getLogger("ScheduleParser")
 
   override def generateRows(data: Elem, in: SourceRecord, league: String, sport: String): java.util.List[SourceRecord] = {
     log.trace("Generating rows for schedule parsing")
@@ -45,14 +45,14 @@ class NcaafScheduleParser extends ParsedItem {
       val gameStatus = (rowData \\ "status" \ "@status").text
       val gameStatusId = toInt((rowData \\ "status" \ "@status-id").text).getOrElse(0)
 
-      val message = NcaafSchedule(league, sport, stadiumName, visitingTeamScore, homeTeamScore, homeStartingPitcher, awayStartingPitcher, awaySPExtId, homeSPExtId, homeTeamName,homeTeamAlias, homeTeamCity, homeTeamExtId, awayTeamName, awayTeamAlias , awayTeamCity, awayTeamExtId, month, date, day, year, hour, minute, utcHour, utcMinute, gameId, gameCode, gameType, gameStatus, gameStatusId)
+      val message = ProgramSchedule(league, sport, stadiumName, visitingTeamScore, homeTeamScore, homeStartingPitcher, awayStartingPitcher, awaySPExtId, homeSPExtId, homeTeamName,homeTeamAlias, homeTeamCity, homeTeamExtId, awayTeamName, awayTeamAlias , awayTeamCity, awayTeamExtId, month, date, day, year, hour, minute, utcHour, utcMinute, gameId, gameCode, gameType, gameStatus, gameStatusId)
       new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
     }
     log.trace("Generated rows")
     rows.toList.asJava
   }
 
-  case class NcaafSchedule(league: String, sport: String, stadiumName: String, visitingTeamScore: String, homeTeamScore: String, homeStartingPitcher: String, awayStartingPitcher: String, awaySPExtId: String, homeSPExtId: String, homeTeamName: String, homeTeamAlias:String,homeTeamCity: String, homeTeamExternalId: String, awayTeamName: String, awayTeamAlias:String, awayTeamCity: String, awayTeamExternalId: String, month: String, date: String, day: String, year: String, hour: String, minute: String, utcHour: String, utcMinute: String, gameId: String, gameCode: String, gameType: String, gameStatus: String, gameStatusId: Int) {
+  case class ProgramSchedule(league: String, sport: String, stadiumName: String, visitingTeamScore: String, homeTeamScore: String, homeStartingPitcher: String, awayStartingPitcher: String, awaySPExtId: String, homeSPExtId: String, homeTeamName: String, homeTeamAlias:String,homeTeamCity: String, homeTeamExternalId: String, awayTeamName: String, awayTeamAlias:String, awayTeamCity: String, awayTeamExternalId: String, month: String, date: String, day: String, year: String, hour: String, minute: String, utcHour: String, utcMinute: String, gameId: String, gameCode: String, gameType: String, gameStatus: String, gameStatusId: Int) {
     log.trace("preparing schema")
     val scoreSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Score").field("score", Schema.STRING_SCHEMA).build()
     val stadiumSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.Stadium").field("name", Schema.STRING_SCHEMA).build()
@@ -80,7 +80,7 @@ class NcaafScheduleParser extends ParsedItem {
       .field("date", dateSchema)
       .field("time", timeSchema)
       .build()
-    val gameScheduleSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.NcaafGameSchedule").field("game-schedule", gameScheduleItemSchema).build()
+    val gameScheduleSchema: Schema = SchemaBuilder.struct().name("c.s.s.s.BaseballGameSchedule").field("game-schedule", gameScheduleItemSchema).build()
 
     val connectSchema: Schema = gameScheduleSchema
 

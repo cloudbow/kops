@@ -37,46 +37,17 @@ object KafkaConnectContentMatchJob  {
 class KafkaConnectContentMatchJob {
   private val log = LoggerFactory.getLogger("KafkaConnectContentMatchJob")
   def execute(args: Array[String]) {
-    args(0) match {
-
-      case "ncaaf" =>
-        log.trace("Executing task : NCAAF KafkaConnectContentMatchJob")
-        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-          "content_match_ncaaf",
-          "5",
-          "15",
-          "unused",
-          "36000000",
-          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
-          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ncaaf/ftp-content-match-ncaaf.json",
-          "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect-ncaaf.log",
-          "ftp-content-match-ncaaf") !
-      case "nfl" =>
-        log.trace("Executing task : nfl KafkaConnectContentMatchJob")
-        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-          "content_match_nfl",
-          "5",
-          "15",
-          "unused",
-          "36000000",
-          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
-          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/nfl/ftp-content-match-nfl.json",
-          "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect-nfl.log",
-          "ftp-content-match-nfl") !
-      case "_" =>
-
-        log.trace("Executing task : KafkaConnectContentMatchJob")
-        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-          "content_match",
-          "5",
-          "15",
-          "unused",
-          "36000000",
-          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
-          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ftp-content-match.json",
-          "/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect.log",
-          "ftp-content-match") !
-    }
+    val league = args(0)
+    Seq(s"/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+      s"content_match_$league",
+      "5",
+      "15",
+      "unused",
+      "36000000",
+      "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-content-match.properties",
+      s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-content-match-$league.json",
+      s"/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect-$league.log",
+      s"ftp-content-match-$league") !
   }
 }
 
@@ -91,45 +62,18 @@ object KafkaConnectMetaBatchJob  {
 class KafkaConnectMetaBatchJob {
   private val log = LoggerFactory.getLogger("KafkaConnectMetaBatchJob")
    def execute(args: Array[String]) {
-     args(0) match {
+     val league = args(0)
+     Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+       s"meta_batch_$league",
+       "5",
+       "15",
+       "unused",
+       "36000000",
+       "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
+       s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-meta-batch-$league.json",
+       s"/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-$league.log",
+       s"ftp-meta-batch-$league") !
 
-       case "ncaaf" =>
-         log.trace("Executing task NCAAF: KafkaConnectMetaBatchJob")
-         Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-           "meta_batch_ncaaf",
-           "5",
-           "15",
-           "unused",
-           "36000000",
-           "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
-           "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ncaaf/ftp-meta-batch-ncaaf.json",
-           "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-ncaaf.log",
-           "ftp-meta-batch-ncaaf") !
-       case "nfl" =>
-         log.trace("Executing task nfl: KafkaConnectMetaBatchJob")
-         Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-           "meta_batch_nfl",
-           "5",
-           "15",
-           "unused",
-           "36000000",
-           "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
-           "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/nfl/ftp-meta-batch-nfl.json",
-           "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-nfl.log",
-           "ftp-meta-batch-nfl") !
-       case "_" =>
-         log.trace("Executing task : KafkaConnectMetaBatchJob")
-         Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-           "meta_batch",
-           "5",
-           "15",
-           "unused",
-           "36000000",
-           "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
-           "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ftp-meta-batch.json",
-           "/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect.log",
-           "ftp-meta-batch") !
-     }
     
   }
 }
@@ -144,45 +88,19 @@ object KafkaConnectLiveInfoJob  {
 class KafkaConnectLiveInfoJob {
   private val log = LoggerFactory.getLogger("KafkaConnectLiveInfoJob")
   def execute(args: Array[String]) {
-    args(0) match {
+    val league = args(0)
+    log.trace("Executing task: KafkaConnectLiveInfoJob")
+    Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+      s"live_info_$league",
+      "0",
+      "0",
+      "unused",
+      "1800000",
+      "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
+      s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-live-info-$league.json",
+      s"/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-$league.log",
+      s"ftp-live-info-$league") !
 
-      case "ncaaf" =>
-        log.trace("Executing task: KafkaConnectLiveInfoJob")
-        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-          "live_info_ncaaf",
-          "0",
-          "0",
-          "unused",
-          "1800000",
-          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
-          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ncaaf/ftp-live-info-ncaaf.json",
-          "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-ncaaf.log",
-          "ftp-live-info-ncaaf") !
-      case "nfl" =>
-        log.trace("Executing task: KafkaConnectLiveInfoJob for nfl")
-        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-          "live_info_nfl",
-          "0",
-          "0",
-          "unused",
-          "1800000",
-          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
-          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/nfl/ftp-live-info-nfl.json",
-          "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-nfl.log",
-          "ftp-live-info-nfl") !
-      case "_" =>
-        log.trace("Executing task: KafkaConnectLiveInfoJob")
-        Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-          "live_info",
-          "0",
-          "0",
-          "unused",
-          "1800000",
-          "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
-          "/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/ftp-live-info.json",
-          "/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect.log",
-          "ftp-live-scores") !
-    }
   }
 }
 

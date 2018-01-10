@@ -2,7 +2,7 @@
   "name": "ftp-meta-batch-nfl",
   "config": {
     "connector.class": "com.eneco.trading.kafka.connect.ftp.source.FtpSourceConnector",
-    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.MetaBatchNflSourceConverter",
+    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.metabatch.NflSourceConverter",
     "ftp.address": "ftp.stats.com",
     "ftp.user": "DishSportsO",
     "ftp.password": "D1sh3325",
