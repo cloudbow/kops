@@ -15,11 +15,11 @@ import com.typesafe.scalalogging.slf4j.Logger
 import scala.xml.Elem
 import scala.util.{Try, Success, Failure}
 
-class MlbSourceConverter extends SourceRecordConverter  with ConverterBase {
-  private val log = LoggerFactory.getLogger("MetaBatchMlbSourceConverter")
+class NbaSourceConverter extends SourceRecordConverter  with ConverterBase {
+  private val log = LoggerFactory.getLogger("MetaBatchNbaSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {
-    generateMetaInfoData(in,League("MLB", "baseball"))
+    generateMetaInfoData(in,League("NBA", "National Basketball Association"))
   }
 
   override def configure(props: util.Map[String, _]): Unit = {}

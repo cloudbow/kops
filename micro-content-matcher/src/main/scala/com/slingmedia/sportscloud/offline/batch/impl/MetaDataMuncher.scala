@@ -7,7 +7,7 @@ import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
 import org.apache.spark.sql.functions.{coalesce, col, collect_list, concat, explode, from_json, lit, max, min, udf}
 import java.time.Instant
 
-import com.slingmedia.sportscloud.offline.streaming.impl.{MlbLiveDataMuncher, NflLiveDataMuncher}
+import com.slingmedia.sportscloud.offline.streaming.live.impl.{MlbLiveDataMuncher, NflLiveDataMuncher}
 
 
 object LDMHolder extends Serializable {
