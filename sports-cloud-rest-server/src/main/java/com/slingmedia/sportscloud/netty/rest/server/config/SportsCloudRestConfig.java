@@ -24,19 +24,59 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.netty.rest.server.config;
 
+import java.util.Properties;
+
+/**
+ * Initializer for System properties
+ * 
+ * @author arung
+ * @version 1.0
+ * @since 1.0
+ */
 public class SportsCloudRestConfig {
 
-	private static String TARGET_HOST_TO_PROXY="";
+	/**
+	 * The maximum queue length for incoming connections. If a connection
+	 * indication arrives when the queue is full, then connection will be
+	 * refused.
+	 */
+	private static int SO_BACKLOG = 128;
 
-	public static String getTARGET_HOST_TO_PROXY() {
-		return TARGET_HOST_TO_PROXY;
+	private static double GAME_STOPTIME_OFFSET = 3.5 * 60 * 60;
+
+	/**
+	 * Initializes the system properties
+	 * 
+	 * @param propeties
+	 *            the system config parameters
+	 */
+	public static void initialize(Properties propeties) {
+		if (propeties != null && propeties.size() > 0) {
+			if (propeties.contains("SO_BACKLOG")) {
+				setSocketBacklog(Integer.parseInt(propeties.getProperty("SO_BACKLOG")));
+			}
+
+			if (propeties.contains("GAME_STOPTIME_OFFSET")) {
+				setGameStopTimeOffset(Double.parseDouble(propeties.getProperty("GAME_STOPTIME_OFFSET")));
+			}
+
+		}
 	}
 
-	public static void setTARGET_HOST_TO_PROXY(String tARGET_HOST_TO_PROXY) {
-		TARGET_HOST_TO_PROXY = tARGET_HOST_TO_PROXY;
+	public static int getSocketBacklog() {
+		return SO_BACKLOG;
 	}
 
-	
-	
-	
+	public static void setSocketBacklog(int socketBacklog) {
+		SO_BACKLOG = socketBacklog;
+	}
+
+	public static double getGameStopTimeOffset() {
+		return GAME_STOPTIME_OFFSET;
+	}
+
+	public static void setGameStopTimeOffset(double gameStopTimeOffset) {
+		GAME_STOPTIME_OFFSET = gameStopTimeOffset;
+	}
+
 }

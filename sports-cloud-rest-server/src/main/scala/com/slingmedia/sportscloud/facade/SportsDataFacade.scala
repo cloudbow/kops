@@ -1,3 +1,27 @@
+/*
+ * SportsDataFacade.scala
+ * @author arung
+ **********************************************************************
+
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
+
+All rights are reserved.  Reproduction in whole or in part is prohibited
+without the written consent of the copyright owner.
+
+Sling Media, Inc. reserves the right to make changes without notice at any time.
+
+Sling Media, Inc. makes no warranty, expressed, implied or statutory, including
+but not limited to any implied warranty of merchantability of fitness for any
+particular purpose, or that the use will not infringe any third party patent,
+copyright or trademark.
+
+Sling Media, Inc. must not be liable for any loss or damage arising from its
+use.
+
+This Copyright notice may not be removed or modified without prior
+written consent of Sling Media, Inc.
+
+ ***********************************************************************/
 package com.slingmedia.sportscloud.facade
 
 import com.slingmedia.sportscloud.netty.rest.model.{ActiveTeamGame, Role}
@@ -8,7 +32,13 @@ import org.slf4j.LoggerFactory;
 
 import collection.mutable._
 
-
+/**
+ * Performs search queries for Sports web-view
+ * 
+ * @author arung
+ * @version 1.0
+ * @since 1.0
+ */
 object SportsDataFacade {
     private val log = LoggerFactory.getLogger("SportsDataFacade") 
 
@@ -41,7 +71,12 @@ object SportsDataFacade {
 
     private val elasticSearchClient  = ElasticSearchClient()
      
- 	
+ 	/**
+	  * Fetches live score events for game
+	  *
+	  * @param gameId the game id
+	  * @return the result in JSON format
+	  */
   	def getAllScoringEventsForGame(gameId:String): JsonElement = {
   		
   		val searchTemplate =  s""" {
@@ -57,6 +92,12 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getScoringEventsURLBase(), Map[String, String](),searchTemplate)		  	
   	}
   	
+  	/**
+	  * Fetches leagues for active game
+	  *
+	  * @param activeGame the active game
+	  * @return the result in JSON format
+	  */
   	def getMainLeaguesForActiveGame(activeGame:ActiveTeamGame): JsonElement = {
   		val searchTemplate =  s"""{
 		  "size": 0,
@@ -82,6 +123,12 @@ object SportsDataFacade {
   	
   	}
   	
+  	/**
+	  * Fetches sub leagues grouped for league
+	  *
+	  * @param subLeague the sub league
+	  * @return the result in JSON format
+	  */
   	def getSubLeagues(subLeague: String):JsonElement = {
   		val searchTemplate =  s"""{
 		  "size": 0,
@@ -116,6 +163,12 @@ object SportsDataFacade {
   	
   	}
   	
+  	/**
+	  * Fetches player stats for player id
+	  *
+	  * @param playerId the player id
+	  * @return the result in JSON format
+	  */
   	def getPlayerStatsById(playerId:String): JsonElement = {
   		val searchTemplate =  s""" { 
 			  "size"  : 10,
@@ -129,6 +182,12 @@ object SportsDataFacade {
   	}
 
   	
+  	/**
+	  * Fetches live game info for given game id
+	  *
+	  * @param gameId the game id
+	  * @return the result in JSON format
+	  */
   	def getLiveGameById(gameId:String): JsonElement = {
   		val searchTemplate =  s""" { 
   		 		"size"  : 10,
@@ -140,6 +199,14 @@ object SportsDataFacade {
   				  	
   	}
   	
+  	/**
+	  * Fetches all live games for given date range
+	  *
+	  * @param startDate the start date
+	  * @param endDate the end date
+	  * @param sizeToReturn the limit for results
+	  * @return the result in JSON format
+	  */
   	def getAllLiveGamesInDateRange(startDate:Long, endDate:Long, sizeToReturn: Int): JsonElement = {
   		val searchTemplate =  s"""{ 
 		  "size": $sizeToReturn,
@@ -162,6 +229,12 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getLiveInfoURLBase(), Map[String, String](),searchTemplate)		  		  	
   	}
   	
+  	/**
+	  * Fetches live info for active team
+	  *
+	  * @param activeGame the active game
+	  * @return the result in JSON format
+	  */
   	def getLiveInfoForActiveTeam(activeGame: ActiveTeamGame ): JsonElement = {
   		val searchTemplate =  s"""{
 		  "size": 10,
@@ -196,6 +269,12 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getLiveInfoURLBase(), Map[String, String](),searchTemplate)		  		  	 				  	
   	}
   	
+  	/**
+	  * Fetches game schedule for specific game
+	  *
+	  * @param gameId the game id
+	  * @return the result in JSON format
+	  */
   	def getGameScheduleByGameCode(gameId: String): JsonElement = {
   		val searchTemplate =  s"""{ 
 		    "size" : 10,
@@ -206,6 +285,13 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)	  	
   	}
   	
+  	/**
+	  * Fetches game schedules for given date range
+	  *
+	  * @param startDate the start date
+	  * @param startDate the end date
+	  * @return the result in JSON format
+	  */
   	def getGameScheduleDataForHomeScreen(startDate:Long,endDate:Long): JsonElement = {
   		val searchTemplate =  s"""{
 		  "size": 0,
@@ -267,6 +353,13 @@ object SportsDataFacade {
 		}*/
 
   	
+  	/**
+	  * Fetches game schedules for media card
+	  *
+	  * @param gameRole the active team game
+	  * @param teamId the team id
+	  * @return the result in JSON format
+	  */
   	def getGameSchedulesForMediaCard(gameRole:ActiveTeamGame,teamId:String):JsonElement = {
   	  	val prevSixMonth = Instant.now().getEpochSecond()-Math.round(6*30*24*60*60);
   		val searchTemplate =  s"""{
@@ -325,6 +418,12 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate) 			  	
   	}
   	
+  	/**
+	  * Fetches game schedules for active team
+	  *
+	  * @param teamId the team id
+	  * @return the result in JSON format
+	  */
   	def getNearestGameScheduleForActiveTeam(teamId:String): JsonElement = {
   		val searchTemplate =  s"""{
 		  "size": 10,
@@ -359,26 +458,40 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getGameScheduleURLBase(), Map[String, String](),searchTemplate)			  	
   	}
   	
+  	/**
+	  * Returns elastic search url for game schedules
+	  */
   	def getGameScheduleURLBase():StringBuilder  = {
   		new StringBuilder(GAME_SCHEDULE_FETCH_BASE_URL)
   	}
   	
+  	/**
+	  * Returns elastic search url for player statistics
+	  */
   	def getPlayerStatsURLBase():StringBuilder  = {
   		new StringBuilder(PLAYER_STATS_FETCH_BASE_URL)
   	}
   	
+  	/**
+	  * Returns elastic search url for team standings
+	  */
   	def getTeamStandingsURLBase():StringBuilder  = {
   		new StringBuilder(TEAM_STANDINGS_FETCH_BASE_URL)
   	}
   	
+  	/**
+	  * Returns elastic search url for live info
+	  */
   	def getLiveInfoURLBase():StringBuilder  = {
   		new StringBuilder(LIVE_INFO_FETCH_BASE_URL)
   	}
   	
+  	/**
+	  * Returns elastic search url for live score events
+	  */
   	def getScoringEventsURLBase():StringBuilder  = {
   		new StringBuilder(SCORING_EVENTS_FETCH_BASE_URL)
   	}
   	
-
-  	
+  		
 }
