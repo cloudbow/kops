@@ -2,11 +2,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "spark-live-info-ncaaf.fullname" . }}
+  name: {{ template "spark-live-info-nba.fullname" . }}
 spec:
   template:
     metadata:
-      name: {{ template "spark-live-info-ncaaf.fullname" . }}
+      name: {{ template "spark-live-info-nba.fullname" . }}
     spec:
       containers:
       - name: {{ .Chart.Name }}
