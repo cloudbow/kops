@@ -3,7 +3,7 @@
  * @author arung
  **********************************************************************
 
-             Copyright (c) 2004 - 2014 by Sling Media, Inc.
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
 
 All rights are reserved.  Reproduction in whole or in part is prohibited
 without the written consent of the copyright owner.
@@ -24,6 +24,7 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.netty.rest.server.handlers;
 
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -63,25 +64,28 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
 /**
- * The Class SportsCloudRestDecoder.
- *
+ * Handles REST services and dispatches the request details to Delegate services
+ * 
  * @author arung
+ * @version 1.0
+ * @since 1.0
  */
 public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttpRequest> {
 
 	/** The Constant LOGGER. */
 	public static final Logger LOGGER = LoggerFactory.getLogger(SportsCloudRestDecoder.class);
 
+	/** Delegate Service for Home screen response model */
 	private SportsCloudHomeScreenDelegate sportsCloudHomeScreenDelegate = new SportsCloudHomeScreenDelegate();
+
+	/** Delegate Service for Media card response model */
 	private SportsCloudMCDelegate sportsCloudMCDelegate = new SportsCloudMCDelegate();
 
+	/** Handler service for Sling TV Sports screen */
 	private SportsCloudRestGamesHandler sportsCloudRestGamesHandler = new SportsCloudRestGamesHandler();
 
+	/** The Date formatter for the date format YYYY-MM-dd Z */
 	private DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("YYYY-MM-dd Z").withLocale(Locale.US);
-
-	SportsCloudRestDecoder() {
-
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -102,7 +106,6 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
 			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-			
 
 			String uri = request.uri();
 
@@ -128,11 +131,11 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 				finalResponse = prepareGameScheduleDataForHomeScreen(finalResponse, startDate, endDate, subpackIds);
 			}
 			if (uri.startsWith("/api/slingtv/airtv/v1/game")) {
-				
+
 				QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 				Map<String, List<String>> params = queryStringDecoder.parameters();
-				
-				finalResponse=sportsCloudRestGamesHandler.handle(request.headers().getAsString("Host"),uri,params);
+
+				finalResponse = sportsCloudRestGamesHandler.handle(request.headers().getAsString("Host"), uri, params);
 
 			} else if (m.find()) {
 				try {
@@ -158,7 +161,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			} else {
 				response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
 			}
-			byte[] bytes = finalResponse.getBytes();
+			byte[] bytes = finalResponse.getBytes(Charset.defaultCharset());
 			response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
 
 			// response.headers().set(HttpHeaders.Names.CONNECTION,
@@ -178,6 +181,13 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 		}
 	}
 
+	/**
+	 * Prepares set of subscription packs from request parameters
+	 * 
+	 * @param params
+	 *            the request parameters
+	 * @return the set of subscription packs
+	 */
 	private Set<String> getSubPackIdsFromParam(Map<String, List<String>> params) {
 		List<String> subPackIdsParam = params.get("sub_pack_ids");
 		List<String> legacySubPackIds = params.get("legacy_sub_pack_ids");
@@ -192,6 +202,20 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 		return finalSubpackIds;
 	}
 
+	/**
+	 * Delegates to Media card service for preparing Response model for Sports
+	 * media card.
+	 * 
+	 * @param gameScheduleId
+	 *            the game schedule id
+	 * @param teamId
+	 *            the team id
+	 * @param subpackIds
+	 *            the subscription packs
+	 * @param league
+	 *            the league
+	 * @return the JSON response for Media card
+	 */
 	private String prepareMCData(String gameScheduleId, String teamId, Set<String> subpackIds, String league) {
 		String finalResponse;
 		JsonObject gameFinderDrillDownJson = new JsonObject();
@@ -205,7 +229,7 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 				LOGGER.error("Error occurred in parsing json", e);
 			}
 
-		} else if (gameScheduleId == null) {
+		} else {
 
 			if (teamId != null) {
 				JsonElement teamIdResponse = SportsDataFacade$.MODULE$.getNearestGameScheduleForActiveTeam(teamId);
@@ -229,6 +253,20 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 		return finalResponse;
 	}
 
+	/**
+	 * Delegates to Home screen service for preparing Response model for Sports
+	 * Home screen.
+	 * 
+	 * @param finalResponse
+	 *            the JSON response object
+	 * @param startDate
+	 *            the schedule start date
+	 * @param endDate
+	 *            the schedule end date
+	 * @param subpackIds
+	 *            the subscription packs
+	 * @return the JSON response for Sports Home screen
+	 */
 	private String prepareGameScheduleDataForHomeScreen(String finalResponse, long startDate, long endDate,
 			Set<String> subpackIds) {
 

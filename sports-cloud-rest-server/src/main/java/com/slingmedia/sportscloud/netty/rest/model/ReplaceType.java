@@ -3,7 +3,7 @@
  * @author arung
  **********************************************************************
 
-             Copyright (c) 2004 - 2014 by Sling Media, Inc.
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
 
 All rights are reserved.  Reproduction in whole or in part is prohibited
 without the written consent of the copyright owner.
@@ -24,6 +24,13 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.netty.rest.model;
 
+/**
+ * Constants for Replace Type.
+ * 
+ * @author Jayachand.Konduru
+ * @version 1.0
+ * @since 1.0
+ */
 public enum ReplaceType {
 BLIND_REPLACE, PREDICATE_REPLACE
 }
