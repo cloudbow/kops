@@ -1,0 +1,1 @@
+MLB - Live Info. Spark Job consuming data from topic "live_info_mlb" and ingesting to Elastic search.
