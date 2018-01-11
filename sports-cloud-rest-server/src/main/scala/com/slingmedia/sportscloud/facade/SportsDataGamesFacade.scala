@@ -72,7 +72,7 @@ object SportsDataGamesFacade {
 	  * Fetches game categories for given date range
 	  *
 	  * @param startDate the start date
-	  * @param startDate the end date
+	  * @param endDate the end date
 	  * @return the result in JSON format
 	  */
   	def getGamesCategoriesDataForHomeScreen(startDate:Long,endDate:Long): JsonElement = {
@@ -111,7 +111,7 @@ object SportsDataGamesFacade {
 	  * Fetches game schedules for given date range and category
 	  *
 	  * @param startDate the start date
-	  * @param startDate the end date
+	  * @param endDate the end date
 	  * @param gameCategory the game category
 	  * @return the result in JSON format
 	  */
