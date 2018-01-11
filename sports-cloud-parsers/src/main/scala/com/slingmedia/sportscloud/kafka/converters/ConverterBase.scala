@@ -135,6 +135,20 @@ trait ConverterBase {
         liveScoreRoot= "cfb-score"
         boxScoreRoot="cfb-boxscore"
         parserType=ParserType.MlbBoxScoreParser
+      case LeagueEnum.NBA =>
+        boxScore = ".*NBA.*_BOXSCORE.*\\.XML.*".r
+        liveData = ".*NBA.*_LIVE.*\\.XML.*".r
+        finalBoxScore = ".*NBA.*FINALBOX.*\\.XML.*".r
+        liveScoreRoot= "nba-score"
+        boxScoreRoot="nba-boxscore"
+        parserType=ParserType.NbaBoxScoreParser
+      case LeagueEnum.NCAAB =>
+        boxScore = ".*CBK.*_BOXSCORE.*\\.XML.*".r
+        liveData = ".*CBK.*_LIVE.*\\.XML.*".r
+        finalBoxScore = ".*CBK.*FINALBOX.*\\.XML.*".r
+        liveScoreRoot= "cbk-score"
+        boxScoreRoot="cbk-boxscore"
+        parserType=ParserType.NcaabBoxScoreParser
       case _ => throw new UnsupportedOperationException()
     }
     dataElem match {

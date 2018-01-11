@@ -1,7 +1,7 @@
 package com.slingmedia.sportscloud.parsers.leagues.impl.ncaaf
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
-import com.slingmedia.sportscloud.parsers.leagues.delegates.NflBoxScoreParserDelegate
+import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.impl.nfl.NflBoxScoreParserDelegate
 import scala.xml.Elem
 import org.apache.kafka.connect.source.SourceRecord
 import com.slingmedia.sportscloud.parsers.model.League

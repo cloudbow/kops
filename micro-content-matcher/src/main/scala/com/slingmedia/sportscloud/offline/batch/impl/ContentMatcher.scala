@@ -196,7 +196,14 @@ class ContentMatcher extends Serializable with Muncher {
 
     val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where("( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 ) AND ((program_title rlike regexp1) OR (program_title rlike regexp2) OR (program_title rlike regexp3) OR (program_title rlike regexp4) OR (program_title rlike regexp5) OR (program_title rlike regexp6))")
     CMHolder.log.trace("Matched with stats data");
-    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1", "regexp2", "regexp3", "regexp4","regexp5","regexp6", "subpack_int_id", "date")
+    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1",
+      "regexp2",
+      "regexp3",
+      "regexp4",
+      "regexp5",
+      "regexp6",
+      "subpack_int_id",
+      "date")
 
     val gameScheduleOrig = fetchMLBSchedule(inputKafkaTopic).coalesce(4)
     val allStatsNullFills = Map(
