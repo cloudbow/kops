@@ -51,7 +51,14 @@ class NbaBoxScoreParserDelegate extends ParsedItem {
         homeScore,
         awayScore
       )
-      new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
+      new SourceRecord(in.sourcePartition,
+        in.sourceOffset,
+        in.topic,
+        0,
+        in.keySchema,
+        in.key,
+        message.connectSchema,
+        message.getStructure)
     }
     rows.toList.asJava
   }

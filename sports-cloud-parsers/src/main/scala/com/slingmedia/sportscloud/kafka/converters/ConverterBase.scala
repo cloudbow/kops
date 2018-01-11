@@ -125,15 +125,15 @@ trait ConverterBase {
         boxScore = ".*CFB.*_BOXSCORE.*\\.XML.*".r
         liveData = ".*CFB.*_LIVE.*\\.XML.*".r
         finalBoxScore = ".*CFB.*FINALBOX.*\\.XML.*".r
-        liveScoreRoot= "baseball-mlb-score"
-        boxScoreRoot="baseball-mlb-boxscore"
+        liveScoreRoot= "cfb-score"
+        boxScoreRoot="cfb-boxscore"
         parserType=ParserType.NcaafBoxScoreParser
       case LeagueEnum.MLB =>
         boxScore = ".*MLB.*_BOXSCORE.*\\.XML.*".r
         liveData = ".*MLB.*_LIVE.*\\.XML.*".r
         finalBoxScore = ".*MLB.*FINALBOX.*\\.XML.*".r
-        liveScoreRoot= "cfb-score"
-        boxScoreRoot="cfb-boxscore"
+        liveScoreRoot= "baseball-mlb-score"
+        boxScoreRoot="baseball-mlb-boxscore"
         parserType=ParserType.MlbBoxScoreParser
       case LeagueEnum.NBA =>
         boxScore = ".*NBA.*_BOXSCORE.*\\.XML.*".r
@@ -169,6 +169,7 @@ trait ConverterBase {
   }
 
   def generateContentMatchData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
+    log.info("Converting source for content match info")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
 

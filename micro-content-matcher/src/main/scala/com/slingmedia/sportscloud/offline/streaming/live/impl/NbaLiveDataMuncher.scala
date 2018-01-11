@@ -3,6 +3,7 @@ package com.slingmedia.sportscloud.offline.streaming.live.impl
 import org.slf4j.LoggerFactory
 import org.apache.spark.sql.functions.{ udf,lit,concat,md5 }
 import scala.util.{ Try, Success, Failure }
+import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.types.{ StructType,StructField,IntegerType,ArrayType,DoubleType, StringType }
 import org.apache.spark.sql.{ SparkSession, DataFrame }
 import com.slingmedia.sportscloud.offline.streaming.live.LiveDataMuncher
@@ -24,48 +25,18 @@ class NbaLiveDataMuncher extends Serializable with LiveDataMuncher {
 
 
   override def getSchema():StructType = {
-
-    StructType(
-        StructField("srcMonth",StringType,true)
-        :: StructField("srcDate",StringType,true)
-        :: StructField("srcDay",StringType,true)
-        :: StructField("srcYear",StringType,true)
-        :: StructField("srcHour",StringType,true)
-        :: StructField("srcMinute",StringType,true)
-        :: StructField("srcSecond",StringType,true)
-        :: StructField("srcUtcHour",StringType,true)
-        :: StructField("srcUtcMinute",StringType,true)
-        :: StructField("month",StringType,true)
-        :: StructField("date",StringType,true)
-        :: StructField("day",StringType,true)
-        :: StructField("year",StringType,true)
-        :: StructField("hour",StringType,true)
-        :: StructField("minute",StringType,true)
-        :: StructField("utcHour",StringType,true)
-        :: StructField("utcMinute",StringType,true)
-        :: StructField("homeTeamExtId",StringType,true)
-        :: StructField("homeTeamAlias",StringType,true)
-        :: StructField("homeTeamName",StringType,true)
-        :: StructField("awayTeamAlias",StringType,true)
-        :: StructField("awayTeamExtId",StringType,true)
-        :: StructField("awayTeamName",StringType,true)
-        :: StructField("gameId",StringType,true)
-        :: StructField("gameCode",StringType,true)
-        :: StructField("gameType",StringType,true)
-        :: StructField("status",StringType,true)
-        :: StructField("statusId",IntegerType,true)
-        :: StructField("league",StringType,true)
-        :: StructField("lastPlay",StringType,true)
-        :: StructField("homeTeamlineScore", ArrayType(IntegerType), true)
-        :: StructField("awayTeamlineScore", ArrayType(IntegerType), true)
-        :: StructField("homeScore", IntegerType, true)
-        :: StructField("awayScore", IntegerType, true)
-        :: Nil)
+    var finalSchema = commonStructFields()
+    finalSchema += StructField("homeTeamlineScore", ArrayType(IntegerType), true)
+    finalSchema += StructField("awayTeamlineScore", ArrayType(IntegerType), true)
+    finalSchema += StructField("homeScore", IntegerType, true)
+    finalSchema += StructField("awayScore", IntegerType, true)
+    StructType(finalSchema.toList)
   }
 
-  override def addLeagueSpecificData(df: DataFrame): Unit = {
+  override def addLeagueSpecificData(df: DataFrame): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+    df
   }
 
 

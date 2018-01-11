@@ -21,6 +21,7 @@ import java.time.Instant
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.types.DoubleType
 
+import scala.collection.mutable.ListBuffer
 
 import scala.util.parsing.json._
 import org.apache.spark.sql.types.DataType
@@ -30,6 +31,8 @@ object LDMHolder extends Serializable {
   @transient lazy val log = LoggerFactory.getLogger("LiveDataMuncher")
 }
 
+
+
 trait LiveDataMuncher extends Muncher {
 
   def getSchema(): StructType = {StructType(
@@ -38,10 +41,45 @@ trait LiveDataMuncher extends Muncher {
     LDMHolder.log.debug("Using consumer groupId:"+getClass().getName())
     getClass().getName()
   }
-  def addLeagueSpecificData(df: DataFrame): Unit = {}
+  def addLeagueSpecificData(df: DataFrame): DataFrame = {
+    val spark = SparkSession.builder().getOrCreate()
+    val df = spark.createDataFrame(Seq())
+    df
+  }
   def showSelected(df: DataFrame):Unit = {}
   def createScoringEventsAndIndex(df: DataFrame):Unit = {}
-
+  def commonStructFields(): ListBuffer[StructField] = {
+    ListBuffer(StructField("srcMonth",StringType,true) ,
+      StructField("srcDate",StringType,true) ,
+      StructField("srcDay",StringType,true) ,
+      StructField("srcYear",StringType,true) ,
+      StructField("srcHour",StringType,true) ,
+      StructField("srcMinute",StringType,true) ,
+      StructField("srcSecond",StringType,true) ,
+      StructField("srcUtcHour",StringType,true) ,
+      StructField("srcUtcMinute",StringType,true) ,
+      StructField("month",StringType,true) ,
+      StructField("date",StringType,true) ,
+      StructField("day",StringType,true) ,
+      StructField("year",StringType,true) ,
+      StructField("hour",StringType,true) ,
+      StructField("minute",StringType,true) ,
+      StructField("utcHour",StringType,true) ,
+      StructField("utcMinute",StringType,true) ,
+      StructField("homeTeamExtId",StringType,true) ,
+      StructField("homeTeamAlias",StringType,true) ,
+      StructField("homeTeamName",StringType,true) ,
+      StructField("awayTeamAlias",StringType,true) ,
+      StructField("awayTeamExtId",StringType,true) ,
+      StructField("awayTeamName",StringType,true) ,
+      StructField("gameId",StringType,true) ,
+      StructField("gameCode",StringType,true) ,
+      StructField("gameType",StringType,true) ,
+      StructField("status",StringType,true) ,
+      StructField("statusId",IntegerType,true) ,
+      StructField("league",StringType,true) ,
+      StructField("lastPlay",StringType,true))
+  }
   val mergeLiveInfo: (DataFrame) => Unit = ( kafkaLiveInfoT1DF1: DataFrame) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
@@ -85,11 +123,11 @@ trait LiveDataMuncher extends Muncher {
       withColumn("game_date_epoch", timeStrToEpochUDF($"date")).
       withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
 
-    addLeagueSpecificData(kafkaLiveInfoT4DF2)
+    val kafkaLiveInfoT4DF3 = addLeagueSpecificData(kafkaLiveInfoT4DF2)
 
 
 
-    val kafkaLiveInfoT10DF3 = kafkaLiveInfoT4DF2.
+    val kafkaLiveInfoT10DF3 = kafkaLiveInfoT4DF3.
       orderBy($"gameId", $"rStatusId", $"srcTimeEpoch").
       repartition($"gameId").
       coalesce(4)
@@ -97,8 +135,14 @@ trait LiveDataMuncher extends Muncher {
 
     showSelected(kafkaLiveInfoT10DF3)
 
-    createScoringEventsAndIndex(kafkaLiveInfoT4DF2)
+    val scoringEventsRes = Try(createScoringEventsAndIndex(kafkaLiveInfoT4DF3))
 
+    scoringEventsRes match {
+      case Success(data) =>
+        LDMHolder.log.info("Successfully indexed")
+      case Failure(e) =>
+        LDMHolder.log.error("Error occurred in live_info indexing ", e)
+    }
   }
 
   override def stream(inputKafkaTopic: String, outputCollName: String): Unit = {

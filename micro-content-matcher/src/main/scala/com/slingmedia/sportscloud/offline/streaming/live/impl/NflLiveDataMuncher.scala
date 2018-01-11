@@ -31,56 +31,27 @@ class NflLiveDataMuncher extends Serializable with LiveDataMuncher {
 
 
   override def getSchema():StructType = {
-
-    StructType(
-      StructField("srcMonth", StringType, true)
-        :: StructField("srcDate", StringType, true)
-        :: StructField("srcDay", StringType, true)
-        :: StructField("srcYear", StringType, true)
-        :: StructField("srcHour", StringType, true)
-        :: StructField("srcMinute", StringType, true)
-        :: StructField("srcSecond", StringType, true)
-        :: StructField("srcUtcHour", StringType, true)
-        :: StructField("srcUtcMinute", StringType, true)
-        :: StructField("month", StringType, true)
-        :: StructField("date", StringType, true)
-        :: StructField("day", StringType, true)
-        :: StructField("year", StringType, true)
-        :: StructField("hour", StringType, true)
-        :: StructField("minute", StringType, true)
-        :: StructField("utcHour", StringType, true)
-        :: StructField("utcMinute", StringType, true)
-        :: StructField("status", StringType, true)
-        :: StructField("statusId", IntegerType, true)
-        :: StructField("gameType", StringType, true)
-        :: StructField("division", StringType, true)
-        :: StructField("gameId", StringType, true)
-        :: StructField("gameCode", StringType, true)
-        :: StructField("lastPlay", StringType, true)
-        :: StructField("homeTeamName", StringType, true)
-        :: StructField("homeTeamAlias", StringType, true)
-        :: StructField("homeTeamExtId", StringType, true)
-        :: StructField("awayTeamName", StringType, true)
-        :: StructField("awayTeamAlias", StringType, true)
-        :: StructField("awayTeamExtId", StringType, true)
-        :: StructField("homeTeamlineScore", ArrayType(IntegerType), true)
-        :: StructField("awayTeamlineScore", ArrayType(IntegerType), true)
-        :: StructField("period", StringType, true)
-        :: StructField("position", DoubleType, true)
-        :: StructField("timer", StringType, true)
-        :: StructField("playType", StringType, true)
-        :: StructField("drives", ArrayType(StringType), true)
-        :: StructField("gameTimeSeconds", IntegerType, true)
-        :: StructField("inningNo", IntegerType, true)
-        :: StructField("awayScore", IntegerType, true)
-        :: StructField("homeScore", IntegerType, true)
-        :: Nil)
+    var finalSchema = commonStructFields()
+    finalSchema += StructField("division", StringType, true)
+    finalSchema += StructField("homeTeamlineScore", ArrayType(IntegerType), true)
+    finalSchema += StructField("awayTeamlineScore", ArrayType(IntegerType), true)
+    finalSchema += StructField("period", StringType, true)
+    finalSchema += StructField("position", DoubleType, true)
+    finalSchema += StructField("timer", StringType, true)
+    finalSchema += StructField("playType", StringType, true)
+    finalSchema += StructField("drives", ArrayType(StringType), true)
+    finalSchema += StructField("gameTimeSeconds", IntegerType, true)
+    finalSchema += StructField("inningNo", IntegerType, true)
+    finalSchema += StructField("homeScore", IntegerType, true)
+    finalSchema += StructField("awayScore", IntegerType, true)
+    StructType(finalSchema.toList)
   }
   
-  override def addLeagueSpecificData(df: DataFrame): Unit = {
+  override def addLeagueSpecificData(df: DataFrame): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    df.withColumn("seconds", getGameSecondsUDF($"srcTimeEpoch",$"game_date_epoch"))
+    val df2 = df.withColumn("seconds", getGameSecondsUDF($"srcTimeEpoch",$"game_date_epoch"))
+    df2
   }
 
 
