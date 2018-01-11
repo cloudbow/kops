@@ -248,7 +248,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.5
+        tag: sports-cloud-rest:0.0.1-alpha.6
         pullPolicy: IfNotPresent  
       deployment:
         containerPort: 9080

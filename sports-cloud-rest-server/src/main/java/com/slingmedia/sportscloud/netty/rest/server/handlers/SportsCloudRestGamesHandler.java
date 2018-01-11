@@ -465,7 +465,13 @@ public class SportsCloudRestGamesHandler {
 					String categoryNameForLogo = "";
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
-					} else {
+					} else if (category.equalsIgnoreCase("NCAAB")) {
+						categoryNameForLogo = "basketball";
+					}
+					else if (category.equalsIgnoreCase("NBA")) {
+						categoryNameForLogo = "basketball";
+					}
+					else {
 						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 					thumbnail.setmUrl(
@@ -628,7 +634,13 @@ public class SportsCloudRestGamesHandler {
 					String categoryNameForLogo = "";
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
-					} else {
+					} else if (category.equalsIgnoreCase("NCAAB")) {
+						categoryNameForLogo = "basketball";
+					}
+					else if (category.equalsIgnoreCase("NBA")) {
+						categoryNameForLogo = "basketball";
+					}
+					else {
 						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 
