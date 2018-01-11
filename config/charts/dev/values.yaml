@@ -614,7 +614,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.99a
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -630,7 +630,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.99a
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -676,7 +676,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.99a
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -684,7 +684,7 @@ sc-jobs:
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
-        - "ncaaf"
+        - "mlb"
         type: ClusterIP
         restartPolicy: Never
         schedule: "0/2 * * * *"

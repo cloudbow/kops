@@ -35,7 +35,8 @@ import com.slingmedia.sportscloud.parsers.DefaultParser
 object Parsers {
   def apply(parserType: ParserType) = {
     parserType match {
-      case ParserType.NflScheduleParser | ParserType.NcaafScheduleParser | ParserType.NbaScheduleParser | ParserType.NcaabScheduleParser  =>
+      case ParserType.NflScheduleParser | ParserType.NcaafScheduleParser | ParserType.NbaScheduleParser
+           | ParserType.NcaabScheduleParser | ParserType.MlbScheduleParser  =>
         new ScheduleParser()
       case ParserType.MlbTeamStandingsParser =>
         new MlbTeamStandingsParser()
