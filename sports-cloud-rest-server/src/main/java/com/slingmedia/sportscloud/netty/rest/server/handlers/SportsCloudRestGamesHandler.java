@@ -134,7 +134,11 @@ public class SportsCloudRestGamesHandler {
 			break;
 
 		case "NBA":
-			newCategory = "Basketball";
+			newCategory = "NBA Basketball";
+			break;
+			
+		case "NCAAB":
+			newCategory = "College Basketball";
 			break;
 
 		case "SOCCER":
