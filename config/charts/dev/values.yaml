@@ -608,7 +608,7 @@ sc-jobs:
       Job:
         command: 
         type: ClusterIP
-        restartPolicy: Never
+        restartPolicy: OnFailure
   mlb:    
     connect-meta-batch-mlb:
       ingress: {}
@@ -752,7 +752,7 @@ sc-jobs:
       Job:
         command: 
         type: ClusterIP
-        restartPolicy: Never
+        restartPolicy: OnFailure
   ncaaf:    
     connect-meta-batch-ncaaf:
       ingress: {}
@@ -873,7 +873,7 @@ sc-jobs:
       cronJob:
         command: 
         type: ClusterIP
-        restartPolicy: Never
+        restartPolicy: OnFailure
         schedule: "30 7 * * *"
   nba:
     connect-content-match-nba:
@@ -1018,7 +1018,7 @@ sc-jobs:
       cronJob:
         command: 
         type: ClusterIP
-        restartPolicy: Never
+        restartPolicy: OnFailure
         schedule: "30 7 * * *"
   ncaab:
     connect-content-match-ncaab:
@@ -1163,5 +1163,5 @@ sc-jobs:
       cronJob:
         command: 
         type: ClusterIP
-        restartPolicy: Never
+        restartPolicy: OnFailure
         schedule: "30 7 * * *"
