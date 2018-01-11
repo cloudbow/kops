@@ -38,7 +38,11 @@ trait LiveDataMuncher extends Muncher {
     LDMHolder.log.debug("Using consumer groupId:"+getClass().getName())
     getClass().getName()
   }
-  def addLeagueSpecificData(df: DataFrame): Unit = {}
+  def addLeagueSpecificData(df: DataFrame): DataFrame = {
+    val spark = SparkSession.builder().getOrCreate()
+    val df = spark.createDataFrame(Seq())
+    df
+  }
   def showSelected(df: DataFrame):Unit = {}
   def createScoringEventsAndIndex(df: DataFrame):Unit = {}
 
@@ -85,11 +89,11 @@ trait LiveDataMuncher extends Muncher {
       withColumn("game_date_epoch", timeStrToEpochUDF($"date")).
       withColumn("gameDate", timeEpochtoStrUDF($"game_date_epoch"))
 
-    addLeagueSpecificData(kafkaLiveInfoT4DF2)
+    val kafkaLiveInfoT4DF3 = addLeagueSpecificData(kafkaLiveInfoT4DF2)
 
 
 
-    val kafkaLiveInfoT10DF3 = kafkaLiveInfoT4DF2.
+    val kafkaLiveInfoT10DF3 = kafkaLiveInfoT4DF3.
       orderBy($"gameId", $"rStatusId", $"srcTimeEpoch").
       repartition($"gameId").
       coalesce(4)
@@ -97,7 +101,7 @@ trait LiveDataMuncher extends Muncher {
 
     showSelected(kafkaLiveInfoT10DF3)
 
-    createScoringEventsAndIndex(kafkaLiveInfoT4DF2)
+    createScoringEventsAndIndex(kafkaLiveInfoT4DF3)
 
   }
 

@@ -77,10 +77,11 @@ class NflLiveDataMuncher extends Serializable with LiveDataMuncher {
         :: Nil)
   }
   
-  override def addLeagueSpecificData(df: DataFrame): Unit = {
+  override def addLeagueSpecificData(df: DataFrame): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    df.withColumn("seconds", getGameSecondsUDF($"srcTimeEpoch",$"game_date_epoch"))
+    val df2 = df.withColumn("seconds", getGameSecondsUDF($"srcTimeEpoch",$"game_date_epoch"))
+    df2
   }
 
 

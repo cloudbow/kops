@@ -142,7 +142,7 @@ class MlbLiveDataMuncher extends Serializable with LiveDataMuncher {
         :: Nil)
   }
 
-  override def addLeagueSpecificData(df: DataFrame): Unit = {
+  override def addLeagueSpecificData(df: DataFrame): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val kafkaLiveInfoT5DF2 = df.
@@ -164,6 +164,7 @@ class MlbLiveDataMuncher extends Serializable with LiveDataMuncher {
       orderBy($"gameId", $"rStatusId", $"srcTimeEpoch").
       repartition($"gameId").
       coalesce(4)
+    kafkaLiveInfoT10DF3
   }
 
 

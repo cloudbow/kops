@@ -63,9 +63,10 @@ class NbaLiveDataMuncher extends Serializable with LiveDataMuncher {
         :: Nil)
   }
 
-  override def addLeagueSpecificData(df: DataFrame): Unit = {
+  override def addLeagueSpecificData(df: DataFrame): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+    df
   }
 
 
