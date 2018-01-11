@@ -3,7 +3,7 @@
  * @author arung
  **********************************************************************
 
-             Copyright (c) 2004 - 2014 by Sling Media, Inc.
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
 
 All rights are reserved.  Reproduction in whole or in part is prohibited
 without the written consent of the copyright owner.
@@ -31,20 +31,28 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 
-
-
+/**
+ * Channel initializer for Sports cloud service layers
+ * 
+ * @author arung
+ * @version 1.0
+ * @since 1.0
+ */
 public class SportsCloudServerInitializer extends ChannelInitializer<Channel> {
 
-    /* (non-Javadoc)
-     * @see io.netty.channel.ChannelInitializer#initChannel(io.netty.channel.Channel)
-     */
-    @Override
-    protected void initChannel(final Channel channel) throws Exception {
-        final ChannelPipeline pipeline = channel.pipeline();
-        pipeline.addLast("codec", new HttpServerCodec());
-        pipeline.addLast("inflator", new HttpContentDecompressor());
-        pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024));      
-        pipeline.addLast("handler", new SportsCloudRestDecoder());
-    }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * io.netty.channel.ChannelInitializer#initChannel(io.netty.channel.Channel)
+	 */
+	@Override
+	protected void initChannel(final Channel channel) throws Exception {
+		final ChannelPipeline pipeline = channel.pipeline();
+		pipeline.addLast("codec", new HttpServerCodec());
+		pipeline.addLast("inflator", new HttpContentDecompressor());
+		pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024));
+		pipeline.addLast("handler", new SportsCloudRestDecoder());
+	}
 
 }
