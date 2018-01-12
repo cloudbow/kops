@@ -127,11 +127,6 @@ object SportsDataGamesFacade {
 			  ],
 			  "query": {
 			    "bool": {
-			      "must_not": {
-			        "term": {
-			          "startTimeEpoch": 0
-			        }
-			      },
 			      "filter": {
 			        "bool": {
 			          "must": [
