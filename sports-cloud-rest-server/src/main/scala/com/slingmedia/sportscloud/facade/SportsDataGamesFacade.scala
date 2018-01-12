@@ -1,3 +1,27 @@
+/*
+ * SportsDataGamesFacade.scala
+ * @author jayachandra
+ **********************************************************************
+
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
+
+All rights are reserved.  Reproduction in whole or in part is prohibited
+without the written consent of the copyright owner.
+
+Sling Media, Inc. reserves the right to make changes without notice at any time.
+
+Sling Media, Inc. makes no warranty, expressed, implied or statutory, including
+but not limited to any implied warranty of merchantability of fitness for any
+particular purpose, or that the use will not infringe any third party patent,
+copyright or trademark.
+
+Sling Media, Inc. must not be liable for any loss or damage arising from its
+use.
+
+This Copyright notice may not be removed or modified without prior
+written consent of Sling Media, Inc.
+
+ ***********************************************************************/
 package com.slingmedia.sportscloud.facade
 
 import com.slingmedia.sportscloud.netty.rest.model.{ActiveTeamGame, Role}
@@ -8,7 +32,13 @@ import org.slf4j.LoggerFactory;
 
 import collection.mutable._
 
-
+/**
+ * Performs search queries for Sling TV sports 
+ * 
+ * @author jayachandra
+ * @version 1.0
+ * @since 1.0
+ */
 object SportsDataGamesFacade {
     private val log = LoggerFactory.getLogger("SportsDataGamesFacade") 
 
@@ -38,6 +68,13 @@ object SportsDataGamesFacade {
     private val elasticSearchClient  = ElasticSearchClient()
      
  	
+ 	/**
+	  * Fetches game categories for given date range
+	  *
+	  * @param startDate the start date
+	  * @param endDate the end date
+	  * @return the result in JSON format
+	  */
   	def getGamesCategoriesDataForHomeScreen(startDate:Long,endDate:Long): JsonElement = {
   		val searchTemplate =  s"""{
 			  "size": 0,
@@ -70,6 +107,14 @@ object SportsDataGamesFacade {
 		elasticSearchClient.search("POST",getGamesCategoriesURLBase(), Map[String, String](),searchTemplate)	  	
   	}
   	
+  	/**
+	  * Fetches game schedules for given date range and category
+	  *
+	  * @param startDate the start date
+	  * @param endDate the end date
+	  * @param gameCategory the game category
+	  * @return the result in JSON format
+	  */
   	def getGameScheduleDataForCategoryForHomeScreen(startDate:Long,endDate:Long, gameCategory: String): JsonElement = {
   		val searchTemplate =  s"""{
 			  "size": 0,
@@ -82,11 +127,6 @@ object SportsDataGamesFacade {
 			  ],
 			  "query": {
 			    "bool": {
-			      "must_not": {
-			        "term": {
-			          "startTimeEpoch": 0
-			        }
-			      },
 			      "filter": {
 			        "bool": {
 			          "must": [
@@ -136,6 +176,12 @@ object SportsDataGamesFacade {
   	}
   	
   	
+  	/**
+	  * Fetches game schedule for specific game
+	  *
+	  * @param gameId the game id
+	  * @return the result in JSON format
+	  */
   def getGameScheduleByGameCode(gameId: String): JsonElement = {
   		val searchTemplate =  s"""{
 			  "size": 0,
@@ -180,6 +226,12 @@ object SportsDataGamesFacade {
 		elasticSearchClient.search("POST",getGamesScheduleForCategoryURLBase(), Map[String, String](),searchTemplate)	  	
   	}
   	
+  	/**
+	  * Fetches live info for specific game
+	  *
+	  * @param gameId the game id
+	  * @return the result in JSON format
+	  */
   	def getLiveGameById(gameId:String): JsonElement = {
   		val searchTemplate =  s""" {
 		    "size" : 0,
@@ -215,16 +267,25 @@ object SportsDataGamesFacade {
   				  	
   	}
   	
+  	/**
+	  * Returns elastic search url for categories
+	  */
   	def getGamesCategoriesURLBase():StringBuilder  = {
   		new StringBuilder(GAMES_CATEGORIES_FETCH_BASE_URL)
   		
 	}
 	
+	/**
+	  * Returns elastic search url for game schedules
+	  */
 	def getGamesScheduleForCategoryURLBase():StringBuilder  = {
   		new StringBuilder(GAMES_SCHEDULE_CATEGORY_FETCH_BASE_URL)
   		
 	}
 	
+	/**
+	  * Returns elastic search url for live info
+	  */
 	def getLiveInfoURLBase():StringBuilder  = {
   		new StringBuilder(LIVE_INFO_FETCH_BASE_URL)
   	}
