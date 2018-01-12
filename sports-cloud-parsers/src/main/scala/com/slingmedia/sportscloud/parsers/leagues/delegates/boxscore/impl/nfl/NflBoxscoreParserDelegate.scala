@@ -1,12 +1,14 @@
 package com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.impl.nfl
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
+import com.slingmedia.sportscloud.parsers.model.League
 import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreDataExtractor
 import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreStructGenerator
 import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreSchemaGenerator
-import com.slingmedia.sportscloud.parsers.model.League
+
 import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
 import org.apache.kafka.connect.source.SourceRecord
+
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -14,7 +16,7 @@ import scala.xml.Elem
 
 class NflBoxScoreParserDelegate extends ParsedItem{
 
-  private val log = LoggerFactory.getLogger("NcaafBoxScoreParser")
+  private val log = LoggerFactory.getLogger("NflBoxScoreParserDelegate")
 
   val quarterStrings = Array("1st Quarter ", "2nd Quarter ", "3rd Quarter ", "4th Quarter ", "Overtime ",
     "2nd Overtime ", "3rd Overtime ", "4th Overtime ", "5th Overtime ", "6th Overtime ");
