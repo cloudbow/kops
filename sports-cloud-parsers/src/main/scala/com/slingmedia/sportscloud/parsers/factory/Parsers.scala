@@ -5,6 +5,8 @@ import com.slingmedia.sportscloud.parsers.leagues.impl.ncaab.{ NcaabTeamStanding
 import com.slingmedia.sportscloud.parsers.leagues.impl.mlb.{ MlbBoxScoreParser, MlbTeamStandingsParser}
 import com.slingmedia.sportscloud.parsers.leagues.impl.nfl.{ NflTeamStandingsParser,NflBoxScoreParser }
 import com.slingmedia.sportscloud.parsers.leagues.impl.ncaaf.{ NcaafTeamStandingsParser, NcaafBoxScoreParser }
+import com.slingmedia.sportscloud.parsers.leagues.impl.nhl.{ NhlTeamStandingsParser, NhlBoxScoreParser }
+
 import com.slingmedia.sportscloud.parsers.{ DefaultParser }
 
 object ParserType extends Enumeration {
@@ -13,6 +15,10 @@ object ParserType extends Enumeration {
   MlbBoxScoreParser,
   MlbPlayerStatsParser,
   MlbTeamStandingsParser,
+  NhlBoxScoreParser,
+  NhlPlayerStatsParser,
+  NhlTeamStandingsParser,
+  NhlScheduleParser,
   NflScheduleParser,
   NflBoxScoreParser,
   NflTeamStandingsParser,
@@ -37,8 +43,12 @@ import com.slingmedia.sportscloud.parsers.DefaultParser
 object Parsers {
   def apply(parserType: ParserType) = {
     parserType match {
-      case ParserType.NflScheduleParser | ParserType.NcaafScheduleParser | ParserType.NbaScheduleParser
-           | ParserType.NcaabScheduleParser | ParserType.MlbScheduleParser  =>
+      case ParserType.NflScheduleParser
+           | ParserType.NcaafScheduleParser
+           | ParserType.NbaScheduleParser
+           | ParserType.NcaabScheduleParser
+           | ParserType.MlbScheduleParser
+           | ParserType.NhlScheduleParser  =>
         new ScheduleParser()
       case ParserType.MlbTeamStandingsParser =>
         new MlbTeamStandingsParser()
@@ -56,7 +66,12 @@ object Parsers {
         new NbaBoxScoreParser()
       case ParserType.NcaabBoxScoreParser =>
         new NcaabBoxScoreParser()
-      case ParserType.MlbPlayerStatsParser | ParserType.NbaPlayerStatsParser | ParserType.NcaabPlayerStatsParser =>
+      case ParserType.NhlBoxScoreParser =>
+        new NhlBoxScoreParser()
+      case ParserType.MlbPlayerStatsParser
+           | ParserType.NbaPlayerStatsParser
+           | ParserType.NcaabPlayerStatsParser
+           | ParserType.NhlPlayerStatsParser =>
         new PlayerStatsParser()
       case ParserType.NbaTeamStandingsParser =>
         new NbaTeamStandingsParser()

@@ -70,6 +70,13 @@ trait ConverterBase {
         teamStandingsParserType=ParserType.NcaabTeamStandingsParser
         teamStandingsRoot="cbk-conference-standings"
         playerStatsRoot="cbk-player-stat"
+      case LeagueEnum.NHL =>
+        teamStandings = ".*NHL_TEAM_STANDINGS\\.XML.*".r
+        playerStats = ".*NHL_PLAYER_STATS.*\\.XML.*".r
+        playerStatsParserType=ParserType.NhlPlayerStatsParser
+        teamStandingsParserType=ParserType.NhlTeamStandingsParser
+        teamStandingsRoot="hockey-nhl-standings"
+        playerStatsRoot="nhl-player-split-goalie"
 
 
 
@@ -149,6 +156,13 @@ trait ConverterBase {
         liveScoreRoot= "cbk-score"
         boxScoreRoot="cbk-boxscore"
         parserType=ParserType.NcaabBoxScoreParser
+      case LeagueEnum.NHL =>
+        boxScore = ".*NHL.*_BOXSCORE.*\\.XML.*".r
+        liveData = ".*NHL.*_LIVE.*\\.XML.*".r
+        finalBoxScore = ".*NHL.*FINALBOX.*\\.XML.*".r
+        liveScoreRoot= "nhl-score"
+        boxScoreRoot="nhl-boxscore"
+        parserType=ParserType.NhlBoxScoreParser
       case _ => throw new UnsupportedOperationException()
     }
     dataElem match {
@@ -191,6 +205,9 @@ trait ConverterBase {
       case LeagueEnum.MLB =>
         schedule=".*MLB_SCHEDULE\\.XML.*".r
         parserType=ParserType.MlbScheduleParser
+      case LeagueEnum.NHL =>
+        schedule=".*NHL_SCHEDULE\\.XML.*".r
+        parserType=ParserType.NhlScheduleParser
       case _ => throw new UnsupportedOperationException()
     }
 

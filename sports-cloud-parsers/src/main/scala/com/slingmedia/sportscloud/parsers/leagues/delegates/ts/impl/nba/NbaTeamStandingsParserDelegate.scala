@@ -26,7 +26,7 @@ class NbaTeamStandingsParserDelegate extends ParsedItem {
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
     var teamStandingsRows = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     xmlRoot.map { leagueStandings =>
-      val subLeague = (leagueStandings \ "@league").text
+      val subLeague = (leagueStandings \ "@conference").text
       val mlbDivisionStandingsRows = (leagueStandings \\ "nba-division-standings").map {
         mlbDivisionStandings =>
           val division = (mlbDivisionStandings \ "@division").text

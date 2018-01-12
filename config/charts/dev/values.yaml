@@ -1165,3 +1165,148 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "30 7 * * *"
+  nhl:
+    connect-content-match-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "nhl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/15 * * * *"
+    connect-meta-batch-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "nhl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/15 * * * *"
+    connect-live-info-nhl:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "nhl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/3 * * * *"
+    spark-meta-batch-ts-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NhlTeamStandingsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "TEAMSTANDINGS"
+        - "meta_batch_nhl"
+        - "team_standings"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-meta-batch-pstats-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NhlPlayerStatsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "PLAYERSTATS"
+        - "meta_batch_nhl"
+        - "player_stats"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-content-match-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
+        jobName: NhlContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_nhl"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "40 7 * * *"
+    spark-live-info-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NbaLiveDataMuncher
+        jobName: NhlLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_nhl"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "30 7 * * *"
