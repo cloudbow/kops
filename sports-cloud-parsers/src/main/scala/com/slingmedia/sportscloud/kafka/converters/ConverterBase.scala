@@ -23,7 +23,7 @@ trait ConverterBase {
   }
 
   def generateMetaInfoData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
-    log.trace("Converting source for metabatch")
+    log.info("Converting source for metabatch")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
 
@@ -99,6 +99,7 @@ trait ConverterBase {
           case finalBoxScores(_*) =>
             Parsers(boxScoreParserType).generateRows(data, in)
           case _ =>
+            log.info(s"Not matching the fileName $fileName")
             Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
@@ -111,7 +112,7 @@ trait ConverterBase {
 
   def generateLiveInfoData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
 
-    log.trace("Converting source for livegame info for NFL")
+    log.info("Converting source for livegame info for NFL")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
     var boxScore:Regex = null
@@ -174,6 +175,7 @@ trait ConverterBase {
           case liveData(_*) =>
             Parsers(parserType).generateRows(data, in, (data \\ liveScoreRoot))
           case _ =>
+            log.info(s"Not matching the fileName $fileName")
             Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
@@ -219,6 +221,7 @@ trait ConverterBase {
           case schedule(_*) =>
             Parsers(parserType).generateRows(data, in, league.name, league.fullName)
           case _ =>
+            log.info(s"Not matching the fileName $fileName")
             Array[SourceRecord]().toList.asJava
         }
       //case _ =>
