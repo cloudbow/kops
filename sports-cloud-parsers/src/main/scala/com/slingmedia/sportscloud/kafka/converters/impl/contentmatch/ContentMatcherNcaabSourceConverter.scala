@@ -17,6 +17,7 @@ class NcaabSourceConverter extends SourceRecordConverter with ConverterBase {
   private val log = LoggerFactory.getLogger("ContentMatcherNcaabSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {
+    log.info("Running NcaabSourceConverter")
     generateContentMatchData(in,League("NCAAB", "College Basketball"))
   }
 

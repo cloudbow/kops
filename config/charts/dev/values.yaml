@@ -202,13 +202,15 @@ sc-services:
             deployment:
               containerPort: 9092
               env:
-                KAFKA_HEAP_OPTS:  "-Xmx512M -Xms512M"
+                KAFKA_HEAP_OPTS:  "-Xmx1536M -Xms512M"
                 KAFKA_OPTS: "-Dlogging.level=INFO"
               terminationGracePeriodSeconds: 300
               replicas: 3
               resources:
                 minCpu: "0.5"
-                minMem: "1Gi"
+                minMem: "1G"
+                maxCpu: "0.5"
+                maxMem: "2G"
               volumes:
                 hostPath: /data/apps/sports-cloud/kafka/data
           ## The kafka connect deployment and service
@@ -453,12 +455,19 @@ sc-jobs:
   summary-download-job:
     ingress: {}
     service: {}
+    deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 256Mi
+          maxMem: 512Mi
     image:
       tag: sc-job-scheduler:0.0.1-alpha.10
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
         cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
+        JAVA_OPTS: "-Xmx512M"
     cronJob:
       args: 
       - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
@@ -474,13 +483,14 @@ sc-jobs:
           minCpu: 100m
           maxCpu: 100m
           minMem: 256Mi
-          maxMem: 256Mi
+          maxMem: 512Mi
     image:
       tag: sc-job-scheduler:0.0.1-alpha.10
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
         cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
+        JAVA_OPTS: "-Xmx512M"
     cronJob:
       args: 
       - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
@@ -728,7 +738,7 @@ sc-jobs:
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
-        - "nfl"
+        - "mlb"
         type: ClusterIP
         restartPolicy: Never
         schedule: "0/3 * * * *"

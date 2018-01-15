@@ -9,7 +9,7 @@ object LeagueEnum {
   val NCAAF= League("NCAAF","College Football League")
   val NBA = League("NBA","National Basketball Association")
   val NCAAB = League("NCAAB", "College Basketball")
-  val NHL = League("NHL", "National Basketball League")
+  val NHL = League("NHL", "National Hockey League")
   val SOCCER = League("SOCCER", "American Football")
 
 }

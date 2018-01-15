@@ -17,6 +17,7 @@ class NflSourceConverter extends SourceRecordConverter with ConverterBase{
   private val log = LoggerFactory.getLogger("ContentMatcherNflSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {
+    log.info("Running NflSourceConverter")
     generateContentMatchData(in,League("NFL", "National Football League"))
   }
 

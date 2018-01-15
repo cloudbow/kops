@@ -17,7 +17,7 @@ class NhlSourceConverter extends SourceRecordConverter  with ConverterBase {
   private val log = LoggerFactory.getLogger("MetaBatchNhlSourceConverter")
 
   override def convert(in: SourceRecord): java.util.List[SourceRecord] = {
-    generateMetaInfoData(in,League("NHL", "National Basketball League"))
+    generateMetaInfoData(in,League("NHL", "National Hockey League"))
   }
 
   override def configure(props: util.Map[String, _]): Unit = {}
