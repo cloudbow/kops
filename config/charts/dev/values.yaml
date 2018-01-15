@@ -173,7 +173,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.5
+            tag: spark-worker:0.0.1-alpha.6
             pullPolicy: IfNotPresent  
           deployment:
             resources:
@@ -609,6 +609,29 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
+    spark-batch-live-score-nfl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NflBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NFLLIVEINFO"
+        - "live_info_nfl"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0 8 * * *"
   mlb:    
     connect-meta-batch-mlb:
       ingress: {}
@@ -753,6 +776,29 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
+    spark-batch-live-score-mlb:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: MlbBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "LIVEINFO"
+        - "live_info_mlb"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "5 8 * * *"
   ncaaf:    
     connect-meta-batch-ncaaf:
       ingress: {}
@@ -875,6 +921,29 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: OnFailure
         schedule: "30 7 * * *"
+    spark-batch-live-score-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaafBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NCAAFLIVEINFO"
+        - "live_info_ncaaf"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "3 8 * * *"
   nba:
     connect-content-match-nba:
       ingress: {}
@@ -1020,6 +1089,29 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: OnFailure
         schedule: "30 7 * * *"
+    spark-batch-live-score-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.11
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NbaBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NBALIVEINFO"
+        - "live_info_nba"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "5 8 * * *"
   ncaab:
     connect-content-match-ncaab:
       ingress: {}
@@ -1165,3 +1257,26 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: OnFailure
         schedule: "30 7 * * *"
+    spark-batch-live-score-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.11
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaabBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NCAABLIVEINFO"
+        - "live_info_ncaab"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "5 8 * * *"
