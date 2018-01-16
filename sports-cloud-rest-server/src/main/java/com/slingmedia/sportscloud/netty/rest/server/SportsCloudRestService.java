@@ -3,7 +3,7 @@
  * @author arung
  **********************************************************************
 
-             Copyright (c) 2004 - 2014 by Sling Media, Inc.
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
 
 All rights are reserved.  Reproduction in whole or in part is prohibited
 without the written consent of the copyright owner.
@@ -37,25 +37,30 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+
 /**
- * The Class SportsCloudRestService.
+ * Startup service of the REST server
+ * 
+ * @author arung
+ * @version 1.0
+ * @since 1.0
  */
-public class SportsCloudRestService extends AbstractSportsCloudRestDelegate{
+public class SportsCloudRestService extends AbstractSportsCloudRestDelegate {
 
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LoggerFactory.getLogger(SportsCloudRestService.class);
 
 	/** The Constant DEFAULT_BOSS_THREADS. */
 	private static final int DEFAULT_BOSS_THREADS = 10;
-	
+
 	/** The Constant DEFAULT_WORKER_THREADS. */
 	private static final int DEFAULT_WORKER_THREADS = 20;
-	
+
 	/** The is secure. */
 	public static boolean IS_SECURE = false;
 
-	private static final SportsCloudRestService JSON_PROXY_SERVER = new SportsCloudRestService();
-
+	/** Initializer of the Rest server */
+	private static final SportsCloudRestService REST_SERVER = new SportsCloudRestService();
 
 	private SportsCloudRestService() {
 		LOGGER.info("Iam initialized");
@@ -64,22 +69,26 @@ public class SportsCloudRestService extends AbstractSportsCloudRestDelegate{
 	/**
 	 * The main method.
 	 *
-	 * @param args the arguments
+	 * @param args
+	 *            the arguments
 	 */
 	public static void main(final String[] args) {
-				
+
 		SportsCloudRestService.LOGGER.trace("-- INIT--");
 		if (args.length < 2) {
 			SportsCloudRestService.LOGGER.info("Unable to start server . Please provide server name");
 			System.exit(1);
 		}
-		SportsCloudRestConfig.setTARGET_HOST_TO_PROXY(System.getProperty("target-host-to-proxy"));
-		//ContentMatchFacade$.MODULE$.init("mongodb://sportapi2:Eo8ahsiera@cqhlsdb02.sling.com:2701/eventstorage");
+
+		// Initializes the System properties
+		SportsCloudRestConfig.initialize(System.getProperties());
+
 		ExternalHttpClient$.MODULE$.init();
 		if (args.length > 3) {
 			SportsCloudRestService.IS_SECURE = Boolean.parseBoolean(args[3]);
 		}
-		// assign boss and worker threads
+
+		// Assign boss and worker threads
 		int bossThreads = SportsCloudRestService.DEFAULT_BOSS_THREADS;
 		int workerThreads = SportsCloudRestService.DEFAULT_WORKER_THREADS;
 		if (args.length > 3) {
@@ -89,16 +98,20 @@ public class SportsCloudRestService extends AbstractSportsCloudRestDelegate{
 		final String server = args[0];
 		final int port = Integer.parseInt(args[1]);
 
-		SportsCloudRestService.JSON_PROXY_SERVER.createServer(server, port, bossThreads, workerThreads);
+		SportsCloudRestService.REST_SERVER.createServer(server, port, bossThreads, workerThreads);
 	}
 
 	/**
 	 * Creates the server.
 	 *
-	 * @param server the server
-	 * @param port the port
-	 * @param bossThreads the boss threads
-	 * @param workerThreads the worker threads
+	 * @param server
+	 *            the server
+	 * @param port
+	 *            the port
+	 * @param bossThreads
+	 *            the boss threads
+	 * @param workerThreads
+	 *            the worker threads
 	 */
 	private void createServer(final String server, final int port, final int bossThreads, final int workerThreads) {
 
@@ -110,25 +123,28 @@ public class SportsCloudRestService extends AbstractSportsCloudRestDelegate{
 
 			bossGroup = new NioEventLoopGroup();
 			workerGroup = new NioEventLoopGroup();
-			//@formatter:off
-            batchBootstrap
-            	.group(bossGroup, workerGroup)
-            	.channel(NioServerSocketChannel.class)
-            	.childHandler(new SportsCloudServerInitializer())
-            	.option(ChannelOption.SO_BACKLOG, 128);
-            //@formatter:on
+			// @formatter:off
+			batchBootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+					.childHandler(new SportsCloudServerInitializer())
+					.option(ChannelOption.SO_BACKLOG, SportsCloudRestConfig.getSocketBacklog());
+			// @formatter:on
 			ChannelFuture f = null;
 			try {
 				f = batchBootstrap.bind(port).sync();
 			} catch (final InterruptedException e) {
-				LOGGER.error("Interrupted ..",e );
+				LOGGER.error("Interrupted ..", e);
 			}
 			SportsCloudRestService.LOGGER.info("STARTED JSON PROXY SERVER SUCCESSFULLY");
 			f.channel().closeFuture().syncUninterruptibly();
 
 		} finally {
-			bossGroup.shutdownGracefully();
-			workerGroup.shutdownGracefully();
+			if (bossGroup != null) {
+				bossGroup.shutdownGracefully();
+			}
+			if (workerGroup != null) {
+				workerGroup.shutdownGracefully();
+			}
+
 		}
 
 	}

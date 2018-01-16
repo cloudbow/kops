@@ -173,7 +173,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.5
+            tag: spark-worker:0.0.1-alpha.6
             pullPolicy: IfNotPresent  
           deployment:
             resources:
@@ -232,7 +232,7 @@ sc-services:
                 CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                 CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
                 CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
-                KAFKA_HEAP_OPTS: "-Xmx512M"
+                KAFKA_HEAP_OPTS: "-Xmx1024M"
                 CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                 CONNECT_OFFSET_STORAGE_TOPIC: "connect-sc-offsets"
                 CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
@@ -240,6 +240,9 @@ sc-services:
             deployment:
               containerPort: 8083
               replicas: 3   
+              resources:
+                maxMem: "1.5G"
+                minMem: "512M"
             service:
               name: kafka-connect
               type: NodePort
@@ -248,7 +251,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.3
+        tag: sports-cloud-rest:0.0.1-alpha.7
         pullPolicy: IfNotPresent  
       deployment:
         containerPort: 9080
@@ -596,7 +599,7 @@ sc-jobs:
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.streaming.impl.NflLiveDataMuncher
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NflLiveDataMuncher
         jobName: NflLiveDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -608,7 +611,30 @@ sc-jobs:
       Job:
         command: 
         type: ClusterIP
+        restartPolicy: OnFailure
+    spark-batch-live-score-nfl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NflBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NFLLIVEINFO"
+        - "live_info_nfl"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
         restartPolicy: Never
+        schedule: "0 8 * * *"
   mlb:    
     connect-meta-batch-mlb:
       ingress: {}
@@ -676,7 +702,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.99a
+        tag: sc-job-scheduler:0.0.1-alpha.99b
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -740,7 +766,7 @@ sc-jobs:
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.streaming.impl.MlbLiveDataMuncher
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.MlbLiveDataMuncher
         jobName: MlbLiveDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -752,7 +778,30 @@ sc-jobs:
       Job:
         command: 
         type: ClusterIP
+        restartPolicy: OnFailure
+    spark-batch-live-score-mlb:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: MlbBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "LIVEINFO"
+        - "live_info_mlb"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
         restartPolicy: Never
+        schedule: "5 8 * * *"
   ncaaf:    
     connect-meta-batch-ncaaf:
       ingress: {}
@@ -861,7 +910,7 @@ sc-jobs:
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.streaming.impl.NcaafLiveDataMuncher
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NflLiveDataMuncher
         jobName: NcaafLiveDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -873,5 +922,364 @@ sc-jobs:
       cronJob:
         command: 
         type: ClusterIP
-        restartPolicy: Never
+        restartPolicy: OnFailure
         schedule: "30 7 * * *"
+    spark-batch-live-score-ncaaf:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaafBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NCAAFLIVEINFO"
+        - "live_info_ncaaf"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "3 8 * * *"
+  nba:
+    connect-content-match-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "nba"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/2 * * * *"
+    connect-meta-batch-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.9
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "nba"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/50 * * * *"
+    connect-live-info-nba:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.9
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "nba"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/10 * * * *"
+    spark-meta-batch-ts-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NbaTeamStandingsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "TEAMSTANDINGS"
+        - "meta_batch_nba"
+        - "team_standings"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-meta-batch-pstats-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NbaPlayerStatsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "PLAYERSTATS"
+        - "meta_batch_nba"
+        - "player_stats"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-content-match-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
+        jobName: NbaContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_nba"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "40 7 * * *"
+    spark-live-info-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NbaLiveDataMuncher
+        jobName: NbaLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_nba"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: OnFailure
+        schedule: "30 7 * * *"
+    spark-batch-live-score-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.11
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NbaBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NBALIVEINFO"
+        - "live_info_nba"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "5 8 * * *"
+  ncaab:
+    connect-content-match-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "ncaab"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/2 * * * *"
+    connect-meta-batch-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.9
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "ncaab"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/50 * * * *"
+    connect-live-info-ncaab:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.9
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "ncaab"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/10 * * * *"
+    spark-meta-batch-ts-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaabTeamStandingsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "TEAMSTANDINGS"
+        - "meta_batch_ncaab"
+        - "team_standings"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-meta-batch-pstats-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaabPlayerStatsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "PLAYERSTATS"
+        - "meta_batch_ncaab"
+        - "player_stats"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-content-match-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
+        jobName: NcaabContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_ncaab"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "40 7 * * *"
+    spark-live-info-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NbaLiveDataMuncher
+        jobName: NcaabLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_ncaab"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: OnFailure
+        schedule: "30 7 * * *"
+    spark-batch-live-score-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.11
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NcaabBoxScore
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "NCAABLIVEINFO"
+        - "live_info_ncaab"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "5 8 * * *"

@@ -1,30 +1,69 @@
+/*
+ * TileAsset.java
+ * @author jayachandra
+ **********************************************************************
+
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
+
+All rights are reserved.  Reproduction in whole or in part is prohibited
+without the written consent of the copyright owner.
+
+Sling Media, Inc. reserves the right to make changes without notice at any time.
+
+Sling Media, Inc. makes no warranty, expressed, implied or statutory, including
+but not limited to any implied warranty of merchantability of fitness for any
+particular purpose, or that the use will not infringe any third party patent,
+copyright or trademark.
+
+Sling Media, Inc. must not be liable for any loss or damage arising from its
+use.
+
+This Copyright notice may not be removed or modified without prior
+written consent of Sling Media, Inc.
+
+ ***********************************************************************/
 package com.slingmedia.sportscloud.netty.client.model;
 
 import java.util.List;
 
-import org.joda.time.DateTime;
-
+/**
+ * Game details for Sports Tile.
+ * 
+ * @author Jayachand.Konduru
+ * @version 1.0
+ * @since 1.0
+ */
 public class TileAsset implements Cloneable {
 
-	String id; // content id
+	/** Sling TV CMS external id for watch */
+	private String id;
 
-	String type; // always “show”
+	/** Always "sportV2" */
+	private String type;
 
-	String title; // game name
+	/** Game name */
+	private String title;
 
-	List<String> ratings; // US MPAA rating, US TV content rating, if available
+	/** US MPAA rating, US TV content rating, if available */
+	private List<String> ratings;
 
-	String _href; // Media card URL
+	/** Media card URL */
+	private String _href;
 
-	Thumbnail thumbnail; // Game thumbnail
+	/** Game thumbnail */
+	private Thumbnail thumbnail;
 
-	int duration; // Game duration, in seconds
+	/** Game duration, in seconds */
+	private int duration; //
 
-	String start_time; // Game start timestamp
+	/** Game start timestamp */
+	private String start_time;
 
-	String stop_time; // Game end timestamp
+	/** Game end timestamp */
+	private String stop_time;
 
-	Channel channel; // Channel information
+	/** Channel information */
+	private Channel channel;
 
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();

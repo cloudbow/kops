@@ -3,7 +3,7 @@
  * @author jayachandra
  **********************************************************************
 
-             Copyright (c) 2004 - 2014 by Sling Media, Inc.
+             Copyright (c) 2004 - 2018 by Sling Media, Inc.
 
 All rights are reserved.  Reproduction in whole or in part is prohibited
 without the written consent of the copyright owner.
@@ -24,23 +24,16 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.netty.rest.server.handlers;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.client.utils.URIBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -50,13 +43,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import com.slingmedia.sportscloud.facade.*;
 import com.slingmedia.sportscloud.netty.client.model.Channel;
 import com.slingmedia.sportscloud.netty.client.model.GameStats;
 import com.slingmedia.sportscloud.netty.client.model.MediaCard;
@@ -69,44 +59,68 @@ import com.slingmedia.sportscloud.netty.client.model.SportsTileAsset;
 import com.slingmedia.sportscloud.netty.client.model.Thumbnail;
 import com.slingmedia.sportscloud.netty.client.model.ThuuzStats;
 import com.slingmedia.sportscloud.netty.client.model.TileAsset;
-import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudHomeScreenDelegate;
+import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudGamesDelegate;
 
 /**
- * The Class SportsCloudRestGamesHandler.
+ * Handler service for Sling TV Sports screen
  *
  * @author jayachandra
+ * @version 1.0
+ * @since 1.0
  */
 public class SportsCloudRestGamesHandler {
 
 	/** The Constant LOGGER. */
 	public static final Logger LOGGER = LoggerFactory.getLogger(SportsCloudRestGamesHandler.class);
 
+	/** The Regular expression for Categories URL */
 	private static final String REGEX_CATEGORIES_URL = "^/api/slingtv/airtv/v1/games\\?(.+)";
 
+	/** The Regular expression for games URL */
 	private static final String REGEX_GAMES_URL = "^/api/slingtv/airtv/v1/games/(.[^/]+)\\?(.+)";
 
+	/** The Regular expression for media card URL */
 	private static final String REGEX_MC_URL = "^/api/slingtv/airtv/v1/game/(.[^/]+)/(.[^/]+)/(.[^/]+)";
 
+	/** The URL pattern for categories */
 	private static final Pattern REGEX_CATEGORIES_URL_PATTERN = Pattern.compile(REGEX_CATEGORIES_URL);
 
+	/** The URL pattern for games */
 	private static final Pattern REGEX_GAMES_URL_PATTERN = Pattern.compile(REGEX_GAMES_URL);
 
+	/** The URL pattern for media card */
 	private static final Pattern REGEX_MC_URL_PATTERN = Pattern.compile(REGEX_MC_URL);
 
+	/** Provides APIs for finding key value for given JSON path */
 	private static Configuration jsonPathConf = Configuration.defaultConfiguration();
 
+	/** The Date formatter for the date format YYYY-MM-dd Z */
 	private DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("YYYY-MM-dd Z").withLocale(Locale.US);
 
-	private SportsCloudHomeScreenDelegate sportsCloudHomeScreenDelegate = new SportsCloudHomeScreenDelegate();
+	/** Delegate Service for Sling TV Sports */
+	private SportsCloudGamesDelegate sportsCloudGamesDelegate = new SportsCloudGamesDelegate();
 
+	/**
+	 * Rest service names
+	 * 
+	 * @author jayachandra
+	 *
+	 */
 	private enum RestName {
 		CATEGORIES, GAMES, MC, NONE
 	}
 
-	private String getNewCategoryName(String category) {
+	/**
+	 * Returns the Sports Category name for given league
+	 * 
+	 * @param league
+	 *            the Sports league name
+	 * @return the Sports category for given league
+	 */
+	private String getNewCategoryName(String league) {
 		String newCategory = "";
 
-		switch (category) {
+		switch (league) {
 		case "MLB":
 			newCategory = "Baseball";
 			break;
@@ -119,6 +133,22 @@ public class SportsCloudRestGamesHandler {
 			newCategory = "Football";
 			break;
 
+		case "NBA":
+			newCategory = "NBA Basketball";
+			break;
+			
+		case "NCAAB":
+			newCategory = "College Basketball";
+			break;
+
+		case "SOCCER":
+			newCategory = "Soccer";
+			break;
+
+		case "NHL":
+			newCategory = "Hockey";
+			break;
+
 		default:
 			newCategory = "other";
 			break;
@@ -128,6 +158,17 @@ public class SportsCloudRestGamesHandler {
 		return newCategory;
 	}
 
+	/**
+	 * Handles Sling TV REST services
+	 * 
+	 * @param host
+	 *            the server host
+	 * @param uri
+	 *            the REST uri
+	 * @param params
+	 *            the URL parameters
+	 * @return the JSON Response model for Sling TV REST services
+	 */
 	public String handle(String host, String uri, Map<String, List<String>> params) {
 		String finalResponse = null;
 
@@ -146,7 +187,7 @@ public class SportsCloudRestGamesHandler {
 			if (gameMatcher.find()) {
 				gameCategory = gameMatcher.group(1);
 			} else {
-				gameCategory = null;
+				gameCategory = "-";
 			}
 			finalResponse = handleGames(host, params, gameCategory);
 			break;
@@ -157,8 +198,8 @@ public class SportsCloudRestGamesHandler {
 				gameCategory = mcMatcher.group(1);
 				gameId = mcMatcher.group(2);
 			} else {
-				gameCategory = null;
-				gameId = null;
+				gameCategory = "-";
+				gameId = "-";
 
 			}
 			finalResponse = handleGameMediaCard(params, gameCategory, gameId, host);
@@ -172,6 +213,15 @@ public class SportsCloudRestGamesHandler {
 		return finalResponse;
 	}
 
+	/**
+	 * Handles Request and Response for Categories
+	 * 
+	 * @param serverHost
+	 *            the server host
+	 * @param params
+	 *            the URL parameters
+	 * @return the JSON Response for Categories
+	 */
 	private String handleCategories(String serverHost, Map<String, List<String>> params) {
 		String finalResponse = null;
 
@@ -186,7 +236,8 @@ public class SportsCloudRestGamesHandler {
 					.getMillis() / 1000;
 		}
 
-		finalResponse = prepareGamesCategoriesDataForHomeScreen(finalResponse, startDate, endDate);
+		finalResponse = sportsCloudGamesDelegate.prepareGamesCategoriesDataForHomeScreen(finalResponse, startDate,
+				endDate);
 
 		String output = transformToClientFormatForCategories(finalResponse, params.get("tz").get(0),
 				params.get("startDate").get(0), params.get("endDate").get(0), serverHost);
@@ -194,6 +245,17 @@ public class SportsCloudRestGamesHandler {
 		return output;
 	}
 
+	/**
+	 * Handles Request and Response for games list
+	 * 
+	 * @param serverHost
+	 *            the server host
+	 * @param params
+	 *            the URL parameters
+	 * @param gameCategory
+	 *            the game category
+	 * @return the JSON Response for Categories
+	 */
 	private String handleGames(String serverHost, Map<String, List<String>> params, String gameCategory) {
 		String finalResponse = null;
 
@@ -208,8 +270,8 @@ public class SportsCloudRestGamesHandler {
 					.getMillis() / 1000;
 		}
 
-		finalResponse = prepareGameScheduleDataForCategoryForHomeScreen(finalResponse, startDate, endDate,
-				gameCategory);
+		finalResponse = sportsCloudGamesDelegate.prepareGameScheduleDataForCategoryForHomeScreen(finalResponse,
+				startDate, endDate, gameCategory);
 
 		String output = transformToClientFormatForGames(finalResponse, gameCategory, params.get("tz").get(0),
 				params.get("startDate").get(0), params.get("endDate").get(0), serverHost);
@@ -217,19 +279,49 @@ public class SportsCloudRestGamesHandler {
 		return output;
 	}
 
+	/**
+	 * Handles Request and Response for game media card
+	 * 
+	 * @param params
+	 *            the URL parameters
+	 * @param gameCategory
+	 *            the game category
+	 * @param gameId
+	 *            the game id
+	 * @param serverHost
+	 *            the server host
+	 * @return the JSON Response for media card
+	 */
 	private String handleGameMediaCard(Map<String, List<String>> params, String gameCategory, String gameId,
 			String serverHost) {
 		String finalResponse = null;
 
-		finalResponse = prepareJsonResponseMCForGame(gameId, gameCategory, new HashSet<String>());
+		finalResponse = sportsCloudGamesDelegate.prepareJsonResponseMCForGame(gameId, gameCategory,
+				new HashSet<String>());
 		String output = transformToClientFormatForMediaCard(finalResponse, gameCategory, serverHost);
 		return output;
 	}
 
+	/**
+	 * Validates the URI
+	 * 
+	 * @param uri
+	 *            the uri
+	 * @param pattern
+	 *            the uri pattern
+	 * @return the true for valid uri and false for invalid uri
+	 */
 	private Boolean isValid(String uri, Pattern pattern) {
 		return pattern.matcher(uri).matches();
 	}
 
+	/**
+	 * Validates the URL is supported or not
+	 * 
+	 * @param uri
+	 *            the URI
+	 * @return the valid REST service name
+	 */
 	private RestName isValidUrl(String uri) {
 		RestName restName = null;
 
@@ -246,6 +338,12 @@ public class SportsCloudRestGamesHandler {
 		return restName;
 	}
 
+	/**
+	 * The main method for testing individual methods
+	 * 
+	 * @param args
+	 *            the main arguments
+	 */
 	public static void main(String[] args) {
 		SportsCloudRestGamesHandler handler = new SportsCloudRestGamesHandler();
 		handler.handle("localhost", "/api/slingtv/airtv/v1/games?tz=-0700&from=2017-11-07&to=2017-11-11", null);
@@ -263,261 +361,25 @@ public class SportsCloudRestGamesHandler {
 
 	}
 
-	private String prepareGamesCategoriesDataForHomeScreen(String finalResponse, long startDate, long endDate) {
-
-		JsonElement gameSchedulesJson = SportsDataGamesFacade$.MODULE$.getGamesCategoriesDataForHomeScreen(startDate,
-				endDate);
-		finalResponse = sportsCloudHomeScreenDelegate.prepareJsonResponseForCategories(finalResponse, startDate,
-				endDate, new HashSet<String>(), gameSchedulesJson);
-
-		return finalResponse;
-	}
-
-	private String prepareGameScheduleDataForCategoryForHomeScreen(String finalResponse, long startDate, long endDate,
-			String gameCategory) {
-
-		JsonElement gameSchedulesJson = SportsDataGamesFacade$.MODULE$
-				.getGameScheduleDataForCategoryForHomeScreen(startDate, endDate, gameCategory.toUpperCase());
-
-		finalResponse = sportsCloudHomeScreenDelegate.prepareJsonResponseForHomeScreen(finalResponse, startDate,
-				endDate, new HashSet<String>(), gameSchedulesJson);
-		return finalResponse;
-	}
-
-	private String prepareJsonResponseMCForGame(String gameScheduleId, String league, Set<String> subpackIds) {
-		String finalResponse = "{}";
-
-		Map<String, JsonObject> liveResponseJson = getLiveGamesById(gameScheduleId);
-		JsonArray homeScreenGameScheduleGroup = getGameForGameId(gameScheduleId);
-
-		JsonArray allGames = new JsonArray();
-		try {
-
-			JsonObject mainObj = new JsonObject();
-			JsonObject solrDoc = null;
-			// get a list of subpackage ids
-
-			// JsonArray homeScreenGameScheduleGroup =
-			// groupedDocSrc.getAsJsonObject().get("top_game_home_hits").getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
-			solrDoc = sportsCloudHomeScreenDelegate.getSubscribedOrFirstGameSchedule(subpackIds, mainObj,
-					homeScreenGameScheduleGroup);
-			JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
-			String gameId = solrDoc.get("gameId").getAsString();
-
-			sportsCloudHomeScreenDelegate.updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
-			mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
-			mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
-			mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
-			mainObj.add("id", new JsonPrimitive(gameScheduleJson.get("gameId").getAsString()));
-			mainObj.add("sport", new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
-			mainObj.add("league", new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
-			sportsCloudHomeScreenDelegate.addGameScheduleDates(mainObj, gameScheduleJson);
-
-			// Thuuz rating
-			mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
-
-			// Sling TV ratings
-			if (gameScheduleJson.has("ratings")) {
-				mainObj.add("ratings", gameScheduleJson.get("ratings").getAsJsonArray());
-			}
-
-			String teaser = "-";
-			if (gameScheduleJson.has("preGameTeaser")) {
-				teaser = gameScheduleJson.get("preGameTeaser").getAsString();
-			}
-			mainObj.add("teaser", new JsonPrimitive(teaser));
-			JsonObject homeTeam = new JsonObject();
-			JsonObject awayTeam = new JsonObject();
-			JsonObject homeTeamRecord = new JsonObject();
-			JsonObject awayTeamRecord = new JsonObject();
-
-			mainObj.add("homeTeam", homeTeam);
-			homeTeam.add("name", new JsonPrimitive(gameScheduleJson.get("homeTeamName").getAsString()));
-			String homeTeamAlias = "-";
-			if (solrDoc.has("homeTeamAlias")) {
-				homeTeamAlias = solrDoc.get("homeTeamAlias").getAsString();
-				homeTeam.add("alias", new JsonPrimitive(homeTeamAlias));
-			}
-
-			// Added for city
-			String homeTeamCity = "-";
-			if (solrDoc.has("homeTeamCity")) {
-				homeTeamCity = solrDoc.get("homeTeamCity").getAsString();
-				homeTeam.add("city", new JsonPrimitive(homeTeamCity));
-			}
-
-			homeTeam.add("img", new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
-			homeTeam.add("id", new JsonPrimitive(gameScheduleJson.get("homeTeamExternalId").getAsString()));
-			mainObj.add("awayTeam", awayTeam);
-			awayTeam.add("name", new JsonPrimitive(gameScheduleJson.get("awayTeamName").getAsString()));
-			String awayTeamAlias = "-";
-			if (solrDoc.has("awayTeamAlias")) {
-				awayTeamAlias = solrDoc.get("awayTeamAlias").getAsString();
-				awayTeam.add("alias", new JsonPrimitive(awayTeamAlias));
-			}
-			// Added for city
-			String awayTeamCity = "-";
-			if (solrDoc.has("awayTeamCity")) {
-				awayTeamCity = solrDoc.get("awayTeamCity").getAsString();
-				awayTeam.add("city", new JsonPrimitive(awayTeamCity));
-			}
-
-			awayTeam.add("img", new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
-			awayTeam.add("id", new JsonPrimitive(gameScheduleJson.get("awayTeamExternalId").getAsString()));
-
-			// todo
-			homeTeamRecord.add("wins", new JsonPrimitive(0l));
-			// todo
-			homeTeamRecord.add("losses", new JsonPrimitive(0l));
-			// todo
-			homeTeamRecord.add("ties", new JsonPrimitive(0l));
-
-			// todo
-			awayTeamRecord.add("wins", new JsonPrimitive(0l));
-			// todo
-			awayTeamRecord.add("losses", new JsonPrimitive(0l));
-			// todo
-			awayTeamRecord.add("ties", new JsonPrimitive(0l));
-
-			homeTeam.add("teamRecord", homeTeamRecord);
-			awayTeam.add("teamRecord", awayTeamRecord);
-			JsonArray contentIds = sportsCloudHomeScreenDelegate.createContentIds(homeScreenGameScheduleGroup);
-			JsonObject contentIdChannelGuidMap = sportsCloudHomeScreenDelegate
-					.createContentIdAssetInfoMap(homeScreenGameScheduleGroup);
-			mainObj.add("cIdToAsstInfo", contentIdChannelGuidMap);
-			mainObj.add("contentId", contentIds);
-
-			String callsign = "-";
-			if (gameScheduleJson.has("callsign")) {
-				callsign = gameScheduleJson.get("callsign").getAsString();
-			}
-			mainObj.add("callsign", new JsonPrimitive(callsign));
-
-			JsonArray subPackageTitles = new JsonArray();
-			if (gameScheduleJson.has("subpack_titles")) {
-				subPackageTitles = gameScheduleJson.get("subpack_titles").getAsJsonArray();
-			}
-			mainObj.add("subPackTitles", subPackageTitles);
-			JsonObject statsObj = new JsonObject();
-			JsonObject statsHomeTeam = new JsonObject();
-			JsonObject statsAwayTeam = new JsonObject();
-			JsonArray homeScoreArray = new JsonArray();
-			JsonArray awayScoreArray = new JsonArray();
-			statsHomeTeam.add("scoreDetails", homeScoreArray);
-			statsAwayTeam.add("scoreDetails", awayScoreArray);
-			statsObj.add("homeTeam", statsHomeTeam);
-			statsObj.add("awayTeam", statsAwayTeam);
-			allGames.add(mainObj);
-		} catch (Exception e) {
-			LOGGER.error("Error occurred in parsing json", e);
-		} finally {
-			finalResponse = allGames.toString();
-		}
-
-		return finalResponse;
-	}
-
-	/*
-	 * private String prepareMCData(String gameScheduleId, String league) {
-	 * String finalResponse = "{}"; JsonObject gameFinderDrillDownJson = new
-	 * JsonObject(); JsonObject mc = new JsonObject();
+	/**
+	 * Transforms the JSON to Sling TV specific response for categories
 	 * 
-	 * if (gameScheduleId != null) {
-	 * 
-	 * try { JsonArray currGameDocs = getGameForGameId(gameScheduleId); //
-	 * System.out.println("game_info:" + currGameDocs.toString());
-	 * mc.add("game_info", currGameDocs);
-	 * 
-	 * JsonArray liveGameInfoRespJsonArr = getLiveGamesById(gameScheduleId); //
-	 * System.out.println("live_info:" + currGameDocs.toString());
-	 * mc.add("live_info", liveGameInfoRespJsonArr);
-	 * 
-	 * gameFinderDrillDownJson.add("mc", mc);
-	 * 
-	 * finalResponse = gameFinderDrillDownJson.toString();
-	 * 
-	 * } catch (Exception e) { LOGGER.error("Error occurred in parsing json",
-	 * e); }
-	 * 
-	 * } else if (gameScheduleId == null) {
-	 * 
-	 * finalResponse = "{}"; // System.out.println("game_info:" +
-	 * finalResponse);
-	 * 
-	 * }
-	 * 
-	 * return finalResponse; }
+	 * @param finalResponse
+	 *            the source JSON string
+	 * @param tz
+	 *            the time zone
+	 * @param startDate
+	 *            the schedule start date
+	 * @param endDate
+	 *            the schedule end date
+	 * @param serverHost
+	 *            the server host
+	 * @return the JSON response for categories
 	 */
-
-	private Map<String, JsonObject> getLiveGamesById(String gameId) {
-
-		if (LOGGER.isTraceEnabled()) {
-			LOGGER.trace(String.format("Getting date for %s", gameId));
-		}
-		JsonArray currGameDocs = null;
-		JsonElement currentGameRespJson = SportsDataGamesFacade$.MODULE$.getLiveGameById(gameId);
-
-		JsonArray groupedDocs = currentGameRespJson.getAsJsonObject().get("aggregations").getAsJsonObject()
-				.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
-
-		// get game live info
-		JsonObject liveInfo = null;
-		if (groupedDocs != null && groupedDocs.size() > 0) {
-			liveInfo = groupedDocs.get(0).getAsJsonObject();
-		}
-
-		if (liveInfo != null && liveInfo.size() > 0) {
-			currGameDocs = liveInfo.get("live_info").getAsJsonObject().get("hits").getAsJsonObject().get("hits")
-					.getAsJsonArray();
-		} else {
-			currGameDocs = new JsonArray();
-		}
-
-		Map<String, JsonObject> liveJsonObjects = new HashMap<>();
-		currGameDocs.forEach(it -> {
-			JsonObject liveJsonObject = it.getAsJsonObject().get("_source").getAsJsonObject();
-			liveJsonObjects.put(liveJsonObject.get("gameId").getAsString(), liveJsonObject);
-
-		});
-
-		// System.out.println(currGameDocs.toString());
-
-		return liveJsonObjects;
-
-	}
-
-	private JsonArray getGameForGameId(String gameId) {
-		if (LOGGER.isTraceEnabled()) {
-			LOGGER.trace(String.format("Getting date for %s", gameId));
-		}
-		JsonArray currGameDocs = null;
-		JsonElement currentGameRespJson = SportsDataGamesFacade$.MODULE$.getGameScheduleByGameCode(gameId);
-
-		JsonArray groupedDocs = currentGameRespJson.getAsJsonObject().get("aggregations").getAsJsonObject()
-				.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
-
-		// get game info
-		JsonObject gameInfo = groupedDocs.get(0).getAsJsonObject();
-
-		if (gameInfo != null) {
-			currGameDocs = gameInfo.get("game_info").getAsJsonObject().get("hits").getAsJsonObject().get("hits")
-					.getAsJsonArray();
-		} else {
-			currGameDocs = new JsonArray();
-		}
-
-		// System.out.println(currGameDocs.toString());
-
-		return currGameDocs;
-	}
-
 	private String transformToClientFormatForCategories(String finalResponse, String tz, String startDate,
 			String endDate, String serverHost) {
 		String output = "{}";
 		List<Ribbon> ribbons = new ArrayList<Ribbon>();
-
-		Ribbons ribbonsObj = new Ribbons();
-		ribbonsObj.setRibbons(ribbons);
 
 		List<String> categories = JsonPath.using(jsonPathConf).parse(finalResponse).read("$.games_categories[*]");
 
@@ -552,6 +414,23 @@ public class SportsCloudRestGamesHandler {
 		return output;
 	}
 
+	/**
+	 * Transforms the JSON to Sling TV specific response for games list
+	 * 
+	 * @param finalResponse
+	 *            the source JSON string
+	 * @param category
+	 *            the sports category
+	 * @param tz
+	 *            the time zone
+	 * @param startDate
+	 *            the schedule start date
+	 * @param endDate
+	 *            the schedule end date
+	 * @param serverHost
+	 *            the server host
+	 * @return the JSON response for games list
+	 */
 	private String transformToClientFormatForGames(String finalResponse, String category, String tz, String startDate,
 			String endDate, String serverHost) {
 		String output = "{}";
@@ -586,7 +465,13 @@ public class SportsCloudRestGamesHandler {
 					String categoryNameForLogo = "";
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
-					} else {
+					} else if (category.equalsIgnoreCase("NCAAB")) {
+						categoryNameForLogo = "basketball";
+					}
+					else if (category.equalsIgnoreCase("NBA")) {
+						categoryNameForLogo = "basketball";
+					}
+					else {
 						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 					thumbnail.setmUrl(
@@ -715,6 +600,17 @@ public class SportsCloudRestGamesHandler {
 		return output;
 	}
 
+	/**
+	 * Transforms the JSON to Sling TV specific response for game media card
+	 * 
+	 * @param finalResponse
+	 *            the source JSON string
+	 * @param category
+	 *            the category
+	 * @param serverHost
+	 *            the server host
+	 * @return the JSON response for media card
+	 */
 	private String transformToClientFormatForMediaCard(String finalResponse, String category, String serverHost) {
 		String output = "{}";
 		MediaCard mediaCard = null;
@@ -738,7 +634,13 @@ public class SportsCloudRestGamesHandler {
 					String categoryNameForLogo = "";
 					if (category.equalsIgnoreCase("NCAAF")) {
 						categoryNameForLogo = "football";
-					} else {
+					} else if (category.equalsIgnoreCase("NCAAB")) {
+						categoryNameForLogo = "basketball";
+					}
+					else if (category.equalsIgnoreCase("NBA")) {
+						categoryNameForLogo = "basketball";
+					}
+					else {
 						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 
@@ -812,8 +714,9 @@ public class SportsCloudRestGamesHandler {
 					gamestats.setNstats(nstats);
 					mc.setGamestats(gamestats);
 					List<String> contentIds = (List<String>) map.get("contentId");
-					//For slingtv native, update externel_id (assetGuid) as contentId.
-					
+					// For slingtv native, update externel_id (assetGuid) as
+					// contentId.
+
 					List<String> assetGuids = new ArrayList<String>();
 
 					Map<String, Object> cIdToAsstInfo = (Map<String, Object>) map.get("cIdToAsstInfo");
