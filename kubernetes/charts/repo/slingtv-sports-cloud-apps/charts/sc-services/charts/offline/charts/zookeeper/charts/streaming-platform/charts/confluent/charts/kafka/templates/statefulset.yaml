@@ -46,6 +46,9 @@ spec:
         image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
+          limits:  
+            cpu: {{ .Values.deployment.resources.maxCpu }}
+            memory: {{ .Values.deployment.resources.maxMem }}
           requests:
             memory: {{ .Values.deployment.resources.minMem }}
             cpu: {{ .Values.deployment.resources.minCpu }}

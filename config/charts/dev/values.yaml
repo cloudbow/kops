@@ -202,13 +202,15 @@ sc-services:
             deployment:
               containerPort: 9092
               env:
-                KAFKA_HEAP_OPTS:  "-Xmx512M -Xms512M"
+                KAFKA_HEAP_OPTS:  "-Xmx1536M -Xms512M"
                 KAFKA_OPTS: "-Dlogging.level=INFO"
               terminationGracePeriodSeconds: 300
               replicas: 3
               resources:
                 minCpu: "0.5"
-                minMem: "1Gi"
+                minMem: "1G"
+                maxCpu: "0.5"
+                maxMem: "2G"
               volumes:
                 hostPath: /data/apps/sports-cloud/kafka/data
           ## The kafka connect deployment and service
