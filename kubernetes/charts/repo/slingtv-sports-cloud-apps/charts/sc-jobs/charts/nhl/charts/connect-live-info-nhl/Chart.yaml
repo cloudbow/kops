@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Live Info
+name: connect-live-info-nhl
+version: 0.1.0

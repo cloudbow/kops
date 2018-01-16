@@ -438,7 +438,7 @@ sc-jobs:
     ingress: {}
     service: {}
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.7
+      tag: sc-job-scheduler:0.0.1-alpha.10
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
@@ -449,16 +449,23 @@ sc-jobs:
       - "download-thuuz"
       type: ClusterIP
       restartPolicy: Never
-      schedule: "0 */3 * * *"
+      schedule: "0 */5 * * *"
   summary-download-job:
     ingress: {}
     service: {}
+    deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 256Mi
+          maxMem: 512Mi
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.7
+      tag: sc-job-scheduler:0.0.1-alpha.10
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
         cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
+        JAVA_OPTS: "-Xmx512M"
     cronJob:
       args: 
       - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
@@ -474,13 +481,14 @@ sc-jobs:
           minCpu: 100m
           maxCpu: 100m
           minMem: 256Mi
-          maxMem: 256Mi
+          maxMem: 512Mi
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.8
+      tag: sc-job-scheduler:0.0.1-alpha.10
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
         cmsSummaryUrl: "cms/publish3/domain/summary/1.json"
+        JAVA_OPTS: "-Xmx512M"
     cronJob:
       args: 
       - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
@@ -493,7 +501,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -504,7 +512,7 @@ sc-jobs:
         - "nfl"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/50 * * * *"
+        schedule: "0/15 * * * *"
     spark-meta-batch-nfl:
       ingress: {}
       service: {}
@@ -532,7 +540,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -543,7 +551,7 @@ sc-jobs:
         - "nfl"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/55 * * * *"
+        schedule: "0/15 * * * *"
     spark-content-match-nfl:
       ingress: {}
       service: {}
@@ -576,7 +584,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -587,7 +595,7 @@ sc-jobs:
         - "nfl"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/10 * * * *"
+        schedule: "0/3 * * * *"
     spark-live-info-nfl:
       ingress: {}
       service: {}
@@ -614,7 +622,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.99a
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -625,7 +633,7 @@ sc-jobs:
         - "mlb"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/2 * * * *"
+        schedule: "0/15 * * * *"
     spark-meta-batch-ts-mlb:
       ingress: {}
       service: {}
@@ -676,7 +684,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.99b
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -687,7 +695,7 @@ sc-jobs:
         - "mlb"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/2 * * * *"
+        schedule: "0/15 * * * *"
     spark-content-match-mlb:
       ingress: {}
       service: {}
@@ -720,7 +728,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -728,10 +736,10 @@ sc-jobs:
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
-        - "nfl"
+        - "mlb"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/10 * * * *"
+        schedule: "0/3 * * * *"
     spark-live-info-mlb:
       ingress: {}
       service: {}
@@ -758,7 +766,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -769,7 +777,7 @@ sc-jobs:
         - "ncaaf"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/50 * * * *"
+        schedule: "0/15 * * * *"
     spark-meta-batch-ncaaf:
       ingress: {}
       service: {}
@@ -797,7 +805,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -808,7 +816,7 @@ sc-jobs:
         - "ncaaf"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/59 * * * *"
+        schedule: "0/15 * * * *"
     spark-content-match-ncaaf:
       ingress: {}
       service: {}
@@ -841,7 +849,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.6
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -852,7 +860,7 @@ sc-jobs:
         - "ncaaf"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/10 * * * *"
+        schedule: "0/3 * * * *"
     spark-live-info-ncaaf:
       ingress: {}
       service: {}
@@ -891,12 +899,12 @@ sc-jobs:
         - "nba"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/2 * * * *"
+        schedule: "0/15 * * * *"
     connect-meta-batch-nba:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.9
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -907,7 +915,7 @@ sc-jobs:
         - "nba"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/50 * * * *"
+        schedule: "0/15 * * * *"
     connect-live-info-nba:
       ingress: {}
       service: {}
@@ -918,7 +926,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.9
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -929,7 +937,7 @@ sc-jobs:
         - "nba"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/10 * * * *"
+        schedule: "0/3 * * * *"
     spark-meta-batch-ts-nba:
       ingress: {}
       service: {}
@@ -1036,12 +1044,12 @@ sc-jobs:
         - "ncaab"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/2 * * * *"
+        schedule: "0/15 * * * *"
     connect-meta-batch-ncaab:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.9
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1052,7 +1060,7 @@ sc-jobs:
         - "ncaab"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/50 * * * *"
+        schedule: "0/15 * * * *"
     connect-live-info-ncaab:
       ingress: {}
       service: {}
@@ -1063,7 +1071,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.9
+        tag: sc-job-scheduler:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1074,7 +1082,7 @@ sc-jobs:
         - "ncaab"
         type: ClusterIP
         restartPolicy: Never
-        schedule: "0/10 * * * *"
+        schedule: "0/3 * * * *"
     spark-meta-batch-ts-ncaab:
       ingress: {}
       service: {}
@@ -1164,4 +1172,149 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
+        schedule: "30 7 * * *"
+  nhl:
+    connect-content-match-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "nhl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/15 * * * *"
+    connect-meta-batch-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "nhl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/15 * * * *"
+    connect-live-info-nhl:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "nhl"
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/3 * * * *"
+    spark-meta-batch-ts-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NhlTeamStandingsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "TEAMSTANDINGS"
+        - "meta_batch_nhl"
+        - "team_standings"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-meta-batch-pstats-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        jobName: NhlPlayerStatsMetaDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "PLAYERSTATS"
+        - "meta_batch_nhl"
+        - "player_stats"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "0/59 * * * *"
+    spark-content-match-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
+        jobName: NhlContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_nhl"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "40 7 * * *"
+    spark-live-info-nhl:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.NbaLiveDataMuncher
+        jobName: NhlLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_nhl"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
         schedule: "30 7 * * *"

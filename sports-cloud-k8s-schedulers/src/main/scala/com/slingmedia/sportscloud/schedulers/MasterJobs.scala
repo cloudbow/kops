@@ -119,7 +119,7 @@ class DownloadSchedulesJob {
 	 def execute() {
     log.trace("Executing task : DownloadSchedulesJob")
 		val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
-		new URL(s"curl http://$artifactServer/artifacts/slingtv/summary.json") #> new File("/tmp/summary.json") ! ;
+		s"curl http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" #> new File("/tmp/summary.json") ! ;
 
 		"cat /dev/null" #> new File("/tmp/schedules_plus_3") ! ;
 		getFileContents("/tmp/summary.json").foreach( it => {
