@@ -1,16 +1,19 @@
 package com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.impl.nba
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
+import com.slingmedia.sportscloud.parsers.model.League
 import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreDataExtractor
 import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreStructGenerator
 import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreSchemaGenerator
+
 import scala.xml.{Elem,NodeSeq}
-import org.apache.kafka.connect.source.SourceRecord
-import com.slingmedia.sportscloud.parsers.model.League
 import scala.collection.JavaConverters._
+
+import org.apache.kafka.connect.source.SourceRecord
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.Struct
 import org.apache.kafka.connect.data.SchemaBuilder
+
 import org.slf4j.LoggerFactory;
 import com.typesafe.scalalogging.slf4j.Logger
 
@@ -44,19 +47,26 @@ class NbaBoxScoreParserDelegate extends ParsedItem {
         homeScore = homeTeamlineScore.reduceLeft[Int](_ + _)
       }
 
-      val message = BoxScoreData(
+      val message = NbaBoxScoreData(
         commonFields,
         homeTeamlineScore.toList,
         awayTeamlineScore.toList,
         homeScore,
         awayScore
       )
-      new SourceRecord(in.sourcePartition, in.sourceOffset, in.topic, 0, in.keySchema, in.key, message.connectSchema, message.getStructure)
+      new SourceRecord(in.sourcePartition,
+        in.sourceOffset,
+        in.topic,
+        0,
+        in.keySchema,
+        in.key,
+        message.connectSchema,
+        message.getStructure)
     }
     rows.toList.asJava
   }
 
-  case class BoxScoreData(commonFields: BoxScoreDataExtractor,
+  case class NbaBoxScoreData(commonFields: BoxScoreDataExtractor,
                           homeTeamlineScore:List[Int],
                           awayTeamlineScore: List[Int],
                           homeScore: Int,

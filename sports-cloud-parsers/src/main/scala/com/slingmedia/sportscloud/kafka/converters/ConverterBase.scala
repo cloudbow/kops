@@ -23,7 +23,7 @@ trait ConverterBase {
   }
 
   def generateMetaInfoData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
-    log.trace("Converting source for metabatch")
+    log.info("Converting source for metabatch")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
 
@@ -70,6 +70,13 @@ trait ConverterBase {
         teamStandingsParserType=ParserType.NcaabTeamStandingsParser
         teamStandingsRoot="cbk-conference-standings"
         playerStatsRoot="cbk-player-stat"
+      case LeagueEnum.NHL =>
+        teamStandings = ".*NHL_TEAM_STANDINGS\\.XML.*".r
+        playerStats = ".*NHL_PLAYER_STATS.*\\.XML.*".r
+        playerStatsParserType=ParserType.NhlPlayerStatsParser
+        teamStandingsParserType=ParserType.NhlTeamStandingsParser
+        teamStandingsRoot="hockey-nhl-standings"
+        playerStatsRoot="nhl-player-split-goalie"
 
 
 
@@ -92,6 +99,7 @@ trait ConverterBase {
           case finalBoxScores(_*) =>
             Parsers(boxScoreParserType).generateRows(data, in)
           case _ =>
+            log.info(s"Not matching the fileName $fileName")
             Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
@@ -104,7 +112,7 @@ trait ConverterBase {
 
   def generateLiveInfoData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
 
-    log.trace("Converting source for livegame info for NFL")
+    log.info("Converting source for livegame info for NFL")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
     var boxScore:Regex = null
@@ -125,15 +133,15 @@ trait ConverterBase {
         boxScore = ".*CFB.*_BOXSCORE.*\\.XML.*".r
         liveData = ".*CFB.*_LIVE.*\\.XML.*".r
         finalBoxScore = ".*CFB.*FINALBOX.*\\.XML.*".r
-        liveScoreRoot= "baseball-mlb-score"
-        boxScoreRoot="baseball-mlb-boxscore"
+        liveScoreRoot= "cfb-score"
+        boxScoreRoot="cfb-boxscore"
         parserType=ParserType.NcaafBoxScoreParser
       case LeagueEnum.MLB =>
         boxScore = ".*MLB.*_BOXSCORE.*\\.XML.*".r
         liveData = ".*MLB.*_LIVE.*\\.XML.*".r
         finalBoxScore = ".*MLB.*FINALBOX.*\\.XML.*".r
-        liveScoreRoot= "cfb-score"
-        boxScoreRoot="cfb-boxscore"
+        liveScoreRoot= "baseball-mlb-score"
+        boxScoreRoot="baseball-mlb-boxscore"
         parserType=ParserType.MlbBoxScoreParser
       case LeagueEnum.NBA =>
         boxScore = ".*NBA.*_BOXSCORE.*\\.XML.*".r
@@ -149,6 +157,13 @@ trait ConverterBase {
         liveScoreRoot= "cbk-score"
         boxScoreRoot="cbk-boxscore"
         parserType=ParserType.NcaabBoxScoreParser
+      case LeagueEnum.NHL =>
+        boxScore = ".*NHL.*_BOXSCORE.*\\.XML.*".r
+        liveData = ".*NHL.*_LIVE.*\\.XML.*".r
+        finalBoxScore = ".*NHL.*FINALBOX.*\\.XML.*".r
+        liveScoreRoot= "nhl-score"
+        boxScoreRoot="nhl-boxscore"
+        parserType=ParserType.NhlBoxScoreParser
       case _ => throw new UnsupportedOperationException()
     }
     dataElem match {
@@ -160,6 +175,7 @@ trait ConverterBase {
           case liveData(_*) =>
             Parsers(parserType).generateRows(data, in, (data \\ liveScoreRoot))
           case _ =>
+            log.info(s"Not matching the fileName $fileName")
             Array[SourceRecord]().toList.asJava
         }
       case Failure(e) =>
@@ -169,6 +185,7 @@ trait ConverterBase {
   }
 
   def generateContentMatchData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
+    log.info("Converting source for content match info")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
 
@@ -190,6 +207,9 @@ trait ConverterBase {
       case LeagueEnum.MLB =>
         schedule=".*MLB_SCHEDULE\\.XML.*".r
         parserType=ParserType.MlbScheduleParser
+      case LeagueEnum.NHL =>
+        schedule=".*NHL_SCHEDULE\\.XML.*".r
+        parserType=ParserType.NhlScheduleParser
       case _ => throw new UnsupportedOperationException()
     }
 
@@ -201,6 +221,7 @@ trait ConverterBase {
           case schedule(_*) =>
             Parsers(parserType).generateRows(data, in, league.name, league.fullName)
           case _ =>
+            log.info(s"Not matching the fileName $fileName")
             Array[SourceRecord]().toList.asJava
         }
       //case _ =>
