@@ -232,7 +232,7 @@ sc-services:
                 CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                 CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
                 CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
-                KAFKA_HEAP_OPTS: "-Xmx512M"
+                KAFKA_HEAP_OPTS: "-Xmx1024M"
                 CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                 CONNECT_OFFSET_STORAGE_TOPIC: "connect-sc-offsets"
                 CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
@@ -240,6 +240,9 @@ sc-services:
             deployment:
               containerPort: 8083
               replicas: 3   
+              resources:
+                maxMem: "1.5G"
+                minMem: "512M"
             service:
               name: kafka-connect
               type: NodePort
