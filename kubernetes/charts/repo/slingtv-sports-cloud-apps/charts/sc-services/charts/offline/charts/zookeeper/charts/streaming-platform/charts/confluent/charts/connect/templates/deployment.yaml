@@ -37,3 +37,8 @@ spec:
               fieldPath: status.podIP
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
+        resources:
+          limits:  
+            memory: {{ .Values.deployment.resources.maxMem }}
+          requests:
+            memory: {{ .Values.deployment.resources.minMem }}
