@@ -25,7 +25,16 @@ spec:
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         env:
+        {{- range $key, $value := .Values.image.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
         - name: ELASTIC_SEARCH_URL
           value: {{ .Release.Name }}-elasticsearch-client.default.svc.cluster.local
         - name: ELASTIC_SEARCH_PORT
           value: "9200"
+        resources:
+          limits:  
+            memory: {{ .Values.deployment.resources.maxMem }}
+          requests:
+            memory: {{ .Values.deployment.resources.minMem }}

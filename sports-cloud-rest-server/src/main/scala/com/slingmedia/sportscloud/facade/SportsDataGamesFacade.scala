@@ -80,11 +80,6 @@ object SportsDataGamesFacade {
 			  "size": 0,
 			  "query": {
 			    "bool": {
-			      "must_not": {
-			        "term": {
-			          "startTimeEpoch": 0
-			        }
-			      },
 			      "filter": {
 			        "range": {
 			          "game_date_epoch": {
@@ -187,11 +182,6 @@ object SportsDataGamesFacade {
 			  "size": 0,
 			  "query": {
 			    "bool": {
-			      "must_not": {
-			        "term": {
-			          "startTimeEpoch": 0
-			        }
-			      },
 			      "must": {
 			        "term": {
 			          "gameId.keyword": "$gameId"
