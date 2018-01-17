@@ -21,13 +21,15 @@ class NhlBoxScoreParserDelegate extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("NhlBoxScoreParserDelegate")
 
-  override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-    log.trace("Parsing rows for boxscore")
+  override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq ): java.util.List[SourceRecord] = {
+    log.info(s"Parsing rows for boxscore for nhl")
     val leagueStr = (data \\ "league" \ "@alias").text
 
     var mlbBoxScores = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     val rows = xmlRoot.map { rowData =>
       val commonFields = new BoxScoreDataExtractor(data,rowData)
+      val gameId = (rowData \\ "gamecode" \ "@global-code").text
+      commonFields.gameId=gameId
       val homeTeamlineScore = scala.collection.mutable.ListBuffer.empty[Int]
       (rowData \\ "home-team" \\ "linescore" \\ "period").map { quarter =>
         homeTeamlineScore += toInt((quarter \\ "@score").text).getOrElse(0)
@@ -67,11 +69,11 @@ class NhlBoxScoreParserDelegate extends ParsedItem {
   }
 
   case class NbaBoxScoreData(commonFields: BoxScoreDataExtractor,
-                             homeTeamlineScore:List[Int],
-                             awayTeamlineScore: List[Int],
-                             homeScore: Int,
-                             awayScore: Int
-                            ) {
+                          homeTeamlineScore:List[Int],
+                          awayTeamlineScore: List[Int],
+                          homeScore: Int,
+                          awayScore: Int
+                         ) {
     val boxScoreSchemaInited = SchemaBuilder.struct().name("c.s.s.s.Game")
     val boxScoreCommonSchema = BoxScoreSchemaGenerator(boxScoreSchemaInited)
     val boxScoreSchema: Schema = boxScoreSchemaInited

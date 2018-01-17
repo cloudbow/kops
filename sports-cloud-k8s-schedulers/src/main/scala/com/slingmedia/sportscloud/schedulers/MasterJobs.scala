@@ -165,8 +165,8 @@ class DownloadSchedulesJob {
       		});
 				val jsonArray:JsonArray = JsonPath.read[com.google.gson.JsonArray](filteredChannels,"$.[*].channel_guid")
         var randomNum = scala.util.Random
-        var higher = 300
-        var lower = 1
+        var higher = 1000
+        var lower = 500
 
 				val  iterator:Iterator[JsonElement] = jsonArray.iterator.asScala
 				while(iterator.hasNext) {
@@ -181,7 +181,7 @@ class DownloadSchedulesJob {
 							val fullUrl = s"http://$cmsHost.cdn.cms.movetv.com/cms/api/linear_feed/channels/v1/$channel_guid/" + formattedDate
 							log.trace(s"Full url is $fullUrl")
 							Thread sleep  randomNum.nextInt(higher - lower) + lower
-							(s"curl $fullUrl" #>> new File("/tmp/schedules_plus_3")).!
+							(s"curl --retry 8  $fullUrl" #>> new File("/tmp/schedules_plus_3")).!
 							(s"echo "  #>> new File("/tmp/schedules_plus_3")).! ;
 						}
 					}
@@ -213,7 +213,7 @@ class DownloadThuuzJob  {
 	def execute() {
     val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
     log.trace("Executing task : ThuuzJob")	  
-		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/tmp/thuuz.json") ! ;
+		"curl --retry 8 http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/tmp/thuuz.json") ! ;
 		s"curl --upload-file /tmp/thuuz.json http://$artifactServer/artifacts/slingtv/sports-cloud/thuuz.json" !
   }
 }
@@ -232,7 +232,7 @@ class  DownloadSummaryJob {
 		val cmsHost =  System.getenv("cmsHost")
 		val cmsSummaryUrl = System.getenv("cmsSummaryUrl")
     val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
-		s"curl http://$cmsHost.cdn.cms.movetv.com/$cmsSummaryUrl" #> new File("/tmp/summary.json") ! ;
+		s"curl --retry 8 http://$cmsHost.cdn.cms.movetv.com/$cmsSummaryUrl" #> new File("/tmp/summary.json") ! ;
 		s"curl --upload-file /tmp/summary.json http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" !
 	}
 

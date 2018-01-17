@@ -31,7 +31,7 @@ class NflBoxScoreParserDelegate extends ParsedItem{
   }
 
    def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq, quarterTime:Int, gameDuration:Int): java.util.List[SourceRecord] = {
-    log.trace("Parsing rows for boxscore")
+    log.info("Parsing rows for nfl boxscore")
     val leagueStr = (data \\ "league" \ "@alias").text
 
     //var mlbBoxScores = scala.collection.mutable.ListBuffer.empty[SourceRecord]

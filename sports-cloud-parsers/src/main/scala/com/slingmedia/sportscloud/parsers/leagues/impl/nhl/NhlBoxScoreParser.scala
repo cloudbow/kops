@@ -14,10 +14,10 @@ import com.typesafe.scalalogging.slf4j.Logger
 
 class NhlBoxScoreParser extends ParsedItem {
 
-  private val log = LoggerFactory.getLogger("NbaBoxScoreParser")
+  private val log = LoggerFactory.getLogger("NhlBoxScoreParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-    log.trace("Parsing rows for boxscore")
+    log.info("Running NhlBoxScoreParser")
     new NhlBoxScoreParserDelegate().generateRows(data,in,xmlRoot)
   }
 

@@ -17,7 +17,7 @@ class DefaultScheduleParserDelegate extends ParsedItem {
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
   override def generateRows(data: Elem, in: SourceRecord, league: String, sport: String): java.util.List[SourceRecord] = {
-    log.info("Generating rows for schedule parsing")
+    log.info(s"Parsing rows for schedule parsing for league $league sport $sport")
     val rows = (data \\ "game-schedule").map { rowData =>
       val commonFields = new ScheduleDataExtractor(data,rowData, league, sport)
       val message = ProgramSchedule(commonFields)

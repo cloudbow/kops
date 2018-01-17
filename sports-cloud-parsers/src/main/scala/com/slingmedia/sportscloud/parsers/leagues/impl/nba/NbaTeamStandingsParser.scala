@@ -21,7 +21,8 @@ class NbaTeamStandingsParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("NbaTeamStandingsParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-   new NbaTeamStandingsParserDelegate().generateRows(data,in,xmlRoot)
+    log.info("Running NbaTeamStandingsParser")
+    new NbaTeamStandingsParserDelegate().generateRows(data,in,xmlRoot)
   }
 
 }

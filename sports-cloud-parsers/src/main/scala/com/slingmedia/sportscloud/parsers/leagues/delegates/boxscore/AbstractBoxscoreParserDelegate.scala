@@ -40,7 +40,7 @@ class BoxScoreDataExtractor(data:Elem, rowData: Node) extends ParsedItem {
   val awayTeamExtId = (rowData \\ "visiting-team" \\ "team-code" \ "@global-id").text
   val awayTeamName =  (rowData \\ "visiting-team" \\ "team-name" \ "@name").text
 
-  val gameId = (rowData \\ "gamecode" \ "@global-id").text
+  var gameId = (rowData \\ "gamecode" \ "@global-id").text
   val gameCode = (rowData \\ "gamecode" \ "@code").text
   val gameType = (rowData \\ "gametype" \ "@type").text
   val gameStatus = (rowData \\ "gamestate" \ "@status").text
