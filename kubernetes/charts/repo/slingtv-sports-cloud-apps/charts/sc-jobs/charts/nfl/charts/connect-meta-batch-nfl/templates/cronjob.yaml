@@ -25,3 +25,4 @@ spec:
             - name: CONNECT_EP
               value: "{{ .Release.Name }}-connect.default.svc.cluster.local:8083" 
           restartPolicy: {{ .Values.cronJob.restartPolicy }}
+  concurrencyPolicy: {{ .Values.cronJob.concurrencyPolicy }}

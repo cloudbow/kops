@@ -39,7 +39,8 @@ trait LiveDataMuncher extends Muncher {
     StructField("unknown", StringType, true)::Nil)}
   def getKafkaConsumerGroupId(): String = {
     LDMHolder.log.debug("Using consumer groupId:"+getClass().getName())
-    getClass().getName()
+    //Make this unique since a class can be used by multiple people
+    getClass().getName().concat("-").concat(String.valueOf(hashCode()))
   }
   def addLeagueSpecificData(df: DataFrame): DataFrame = {
     val spark = SparkSession.builder().getOrCreate()
