@@ -11,6 +11,7 @@ import scala.util.{ Try, Success, Failure }
 
 import java.time.{ ZonedDateTime, OffsetDateTime, ZoneOffset, Instant, ZoneId }
 import java.time.format.DateTimeFormatter
+import java.net.{URL, HttpURLConnection}
 
 import org.elasticsearch.spark.rdd.EsSpark                        
 
@@ -82,7 +83,7 @@ trait Muncher {
   
   val zeroPadDateTimeUDF = udf(getZeroPadDateTimeFunc(_: String))
 
-    val timeEpochToStr: (Long => String) = (timeEpoch: Long) => {
+  val timeEpochToStr: (Long => String) = (timeEpoch: Long) => {
     if (timeEpoch == 0) {
       "1972-05-20T17:33:18Z"
     } else {
@@ -106,5 +107,20 @@ trait Muncher {
     if (statusId == 23) 2 else statusId
   }
   val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
+
+  def get(url: String,
+          connectTimeout: Int = 5000,
+          readTimeout: Int = 5000,
+          requestMethod: String = "GET") =
+  {
+    val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
+    connection.setConnectTimeout(connectTimeout)
+    connection.setReadTimeout(readTimeout)
+    connection.setRequestMethod(requestMethod)
+    val inputStream = connection.getInputStream
+    val content = scala.io.Source.fromInputStream(inputStream).mkString
+    if (inputStream != null) inputStream.close
+    content
+  }
 
 }
