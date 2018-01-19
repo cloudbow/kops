@@ -216,7 +216,7 @@ sc-services:
           ## The kafka connect deployment and service
           connect:
             image:
-              tag: sc-cp-connect:0.0.1-alpha.3
+              tag: sc-cp-connect:0.0.1-alpha.4
               env:
                 CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
                 CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
@@ -344,7 +344,7 @@ sc-services:
         serviceAccountName: default
     zeppelin:
       image:
-        tag: zeppelin:0.0.1-alpha.1
+        tag: zeppelin:0.0.1-alpha.6
         pullPolicy: IfNotPresent
         env:
           SPARK_HOME: /opt/spark
@@ -1316,6 +1316,29 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "5 8 * * *"
+  soccer:
+    spark-content-match-soccer:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.10
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.batch.impl.leagues.SoccerContentMatcher
+        jobName: SoccerContentDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "content_match_soccer"
+        - "game_schedule"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "40 7 * * *"
   nhl:
     connect-content-match-nhl:
       ingress: {}
