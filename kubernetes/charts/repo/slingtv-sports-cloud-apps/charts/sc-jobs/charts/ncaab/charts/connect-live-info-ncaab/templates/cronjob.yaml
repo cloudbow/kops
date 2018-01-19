@@ -32,3 +32,5 @@ spec:
                 memory: {{ .Values.deployment.resources.minMem }}
           terminationGracePeriodSeconds: 10
           restartPolicy: {{ .Values.cronJob.restartPolicy }}
+  concurrencyPolicy: {{ .Values.cronJob.concurrencyPolicy }}
+

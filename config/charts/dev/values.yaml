@@ -270,11 +270,11 @@ sc-services:
         internalPort: 9080
     artifact-server:
       image:
-        tag: artifact-server:0.0.1-alpha.2
+        tag: artifact-server:0.0.1-alpha.1
         pullPolicy: IfNotPresent 
       deployment:
         containerPort: 9082
-        replicas: 1   
+        replicas: 1 
         resources:
           maxMem: "256M"
           minMem: "100M"
@@ -525,6 +525,7 @@ sc-jobs:
         - "nfl"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     spark-meta-batch-nfl:
       ingress: {}
@@ -564,6 +565,7 @@ sc-jobs:
         - "nfl"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     spark-content-match-nfl:
       ingress: {}
@@ -608,6 +610,7 @@ sc-jobs:
         - "nfl"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/3 * * * *"
     spark-live-info-nfl:
       ingress: {}
@@ -669,12 +672,13 @@ sc-jobs:
         - "mlb"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     spark-meta-batch-ts-mlb:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.99a
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -731,6 +735,7 @@ sc-jobs:
         - "mlb"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     spark-content-match-mlb:
       ingress: {}
@@ -775,6 +780,7 @@ sc-jobs:
         - "mlb"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/3 * * * *"
     spark-live-info-mlb:
       ingress: {}
@@ -836,6 +842,7 @@ sc-jobs:
         - "ncaaf"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     spark-meta-batch-ncaaf:
       ingress: {}
@@ -875,6 +882,7 @@ sc-jobs:
         - "ncaaf"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     spark-content-match-ncaaf:
       ingress: {}
@@ -919,6 +927,7 @@ sc-jobs:
         - "ncaaf"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/3 * * * *"
     spark-live-info-ncaaf:
       ingress: {}
@@ -981,6 +990,7 @@ sc-jobs:
         - "nba"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     connect-meta-batch-nba:
       ingress: {}
@@ -997,6 +1007,7 @@ sc-jobs:
         - "nba"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     connect-live-info-nba:
       ingress: {}
@@ -1019,6 +1030,7 @@ sc-jobs:
         - "nba"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/3 * * * *"
     spark-meta-batch-ts-nba:
       ingress: {}
@@ -1114,7 +1126,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.11
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1149,6 +1161,7 @@ sc-jobs:
         - "ncaab"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     connect-meta-batch-ncaab:
       ingress: {}
@@ -1165,6 +1178,7 @@ sc-jobs:
         - "ncaab"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     connect-live-info-ncaab:
       ingress: {}
@@ -1187,6 +1201,7 @@ sc-jobs:
         - "ncaab"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/3 * * * *"
     spark-meta-batch-ts-ncaab:
       ingress: {}
@@ -1282,7 +1297,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.11
+        tag: spark-job:0.0.1-alpha.10
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1317,6 +1332,7 @@ sc-jobs:
         - "nhl"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     connect-meta-batch-nhl:
       ingress: {}
@@ -1333,6 +1349,7 @@ sc-jobs:
         - "nhl"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/15 * * * *"
     connect-live-info-nhl:
       ingress: {}
@@ -1355,6 +1372,7 @@ sc-jobs:
         - "nhl"
         type: ClusterIP
         restartPolicy: Never
+        concurrencyPolicy: Forbid
         schedule: "0/3 * * * *"
     spark-meta-batch-ts-nhl:
       ingress: {}

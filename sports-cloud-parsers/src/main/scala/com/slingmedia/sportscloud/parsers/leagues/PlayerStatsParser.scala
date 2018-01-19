@@ -12,10 +12,10 @@ import com.typesafe.scalalogging.slf4j.Logger
 import scala.xml.NodeSeq
 
 class PlayerStatsParser extends ParsedItem {
-  private val log = LoggerFactory.getLogger("ScheduleParser")
+  private val log = LoggerFactory.getLogger("PlayerStatsParser")
 
   override def generateRows(data: Elem, in: SourceRecord,xmlRoot:NodeSeq): java.util.List[SourceRecord] = {
-    log.trace("Generating rows for schedule parsing")
+    log.info("Running PlayerStatsParser")
     val rows = xmlRoot.map { rowData =>
       val playerExternalId = (rowData \\ "player-code" \ "@global-id").text
       val playerWins = toInt((rowData  \\ "wins" \ "@number").text).getOrElse(0)

@@ -16,7 +16,7 @@ class ScheduleParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
   override def generateRows(data: Elem, in: SourceRecord, league: String, sport: String): java.util.List[SourceRecord] = {
-    log.info("Generating rows for schedule parsing")
+    log.info("Running ScheduleParser")
     new DefaultScheduleParserDelegate().generateRows(data,in,league,sport)
   }
 

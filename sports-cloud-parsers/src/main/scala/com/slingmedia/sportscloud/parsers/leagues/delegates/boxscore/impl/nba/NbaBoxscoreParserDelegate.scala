@@ -21,20 +21,20 @@ class NbaBoxScoreParserDelegate extends ParsedItem {
 
   private val log = LoggerFactory.getLogger("NbaBoxScoreParserDelegate")
 
-  override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-    log.trace("Parsing rows for boxscore")
+  def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq, gameTimeDivision:String ): java.util.List[SourceRecord] = {
+    log.info(s"Parsing rows for  boxscore with gameTimeDivision $gameTimeDivision")
     val leagueStr = (data \\ "league" \ "@alias").text
 
     var mlbBoxScores = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     val rows = xmlRoot.map { rowData =>
       val commonFields = new BoxScoreDataExtractor(data,rowData)
       val homeTeamlineScore = scala.collection.mutable.ListBuffer.empty[Int]
-      (rowData \\ "home-team" \\ "linescore" \\ "quarter").map { quarter =>
+      (rowData \\ "home-team" \\ "linescore" \\ gameTimeDivision).map { quarter =>
         homeTeamlineScore += toInt((quarter \\ "@score").text).getOrElse(0)
       }
 
       val awayTeamlineScore = scala.collection.mutable.ListBuffer.empty[Int]
-      (rowData \\ "visiting-team" \\ "linescore" \\ "quarter").map { quarter =>
+      (rowData \\ "visiting-team" \\ "linescore" \\ gameTimeDivision).map { quarter =>
         awayTeamlineScore += toInt((quarter \\ "@score").text).getOrElse(0)
       }
       var awayScore = 0;

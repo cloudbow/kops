@@ -112,7 +112,7 @@ trait ConverterBase {
 
   def generateLiveInfoData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
 
-    log.info("Converting source for livegame info for NFL")
+    log.info("Converting source for livegame info")
     val line = new String(in.value.asInstanceOf[Array[Byte]])
     val dataElem: Try[Elem] = loadXML(line)
     var boxScore:Regex = null

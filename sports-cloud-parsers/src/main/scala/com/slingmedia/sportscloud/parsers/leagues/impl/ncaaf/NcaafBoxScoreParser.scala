@@ -20,6 +20,7 @@ class NcaafBoxScoreParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("NcaafBoxScoreParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
+    log.info("Running NcaafBoxScoreParser")
     new NflBoxScoreParserDelegate().generateRows(data,in,xmlRoot,12,48)
   }
 

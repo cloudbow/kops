@@ -19,7 +19,8 @@ class NcaabTeamStandingsParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("ScheduleParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-   new NcaabTeamStandingsParserDelegate().generateRows(data,in,xmlRoot)
+    log.info("Running NcaabTeamStandingsParser")
+    new NcaabTeamStandingsParserDelegate().generateRows(data,in,xmlRoot)
 
   }
 

@@ -20,7 +20,7 @@ class MlbBoxScoreParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("BoxScoreParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
-    log.trace("Parsing rows for boxscore")
+    log.info("Running MlbBoxScoreParser")
     new MlbBoxScoreParserDelegate().generateRows(data,in,xmlRoot)
   }
 
