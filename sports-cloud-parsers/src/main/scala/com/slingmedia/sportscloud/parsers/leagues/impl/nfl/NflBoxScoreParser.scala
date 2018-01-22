@@ -16,6 +16,7 @@ class NflBoxScoreParser extends ParsedItem {
 
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
+    log.info("Running NflBoxScoreParser")
     new NflBoxScoreParserDelegate().generateRows(data,in,xmlRoot,15,60)
 
   }

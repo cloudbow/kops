@@ -119,7 +119,8 @@ class DownloadSchedulesJob {
 	 def execute() {
     log.trace("Executing task : DownloadSchedulesJob")
 		val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
-		s"curl http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" #> new File("/tmp/summary.json") ! ;
+		val returnCode = s"curl -o /tmp/summary.json http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" ! ;
+     log.trace(s"Return value of download is $returnCode")
 
 		"cat /dev/null" #> new File("/tmp/schedules_plus_3") ! ;
 		getFileContents("/tmp/summary.json").foreach( it => {
@@ -165,8 +166,8 @@ class DownloadSchedulesJob {
       		});
 				val jsonArray:JsonArray = JsonPath.read[com.google.gson.JsonArray](filteredChannels,"$.[*].channel_guid")
         var randomNum = scala.util.Random
-        var higher = 300
-        var lower = 1
+        var higher = 1000
+        var lower = 500
 
 				val  iterator:Iterator[JsonElement] = jsonArray.iterator.asScala
 				while(iterator.hasNext) {
@@ -181,12 +182,14 @@ class DownloadSchedulesJob {
 							val fullUrl = s"http://$cmsHost.cdn.cms.movetv.com/cms/api/linear_feed/channels/v1/$channel_guid/" + formattedDate
 							log.trace(s"Full url is $fullUrl")
 							Thread sleep  randomNum.nextInt(higher - lower) + lower
-							(s"curl $fullUrl" #>> new File("/tmp/schedules_plus_3")).!
-							(s"echo "  #>> new File("/tmp/schedules_plus_3")).! ;
+							val returnCode = (s"curl --retry 8  $fullUrl" #>> new File("/tmp/schedules_plus_3")).!
+              log.trace(s"Return value of schedule download is $returnCode")
+              (s"echo "  #>> new File("/tmp/schedules_plus_3")).! ;
 						}
 					}
 				}
-				s"curl --upload-file /tmp/schedules_plus_3 http://$artifactServer/artifacts/slingtv/sports-cloud/schedules_plus_3" !
+				val returnCode2 = s"curl --upload-file /tmp/schedules_plus_3 http://$artifactServer/artifacts/slingtv/sports-cloud/schedules_plus_3" ! ;
+        log.trace(s"Return value of upload is $returnCode2")
 
 
 		})
@@ -213,8 +216,10 @@ class DownloadThuuzJob  {
 	def execute() {
     val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
     log.trace("Executing task : ThuuzJob")	  
-		"curl http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" #> new File("/tmp/thuuz.json") ! ;
-		s"curl --upload-file /tmp/thuuz.json http://$artifactServer/artifacts/slingtv/sports-cloud/thuuz.json" !
+		val returnCode = "curl --retry 8 -o /tmp/thuuz.json http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999" ! ;
+    log.trace(s"Return value of download is $returnCode")
+    val returnCode2 = s"curl --upload-file /tmp/thuuz.json http://$artifactServer/artifacts/slingtv/sports-cloud/thuuz.json" ! ;
+    log.trace(s"Return value of upload is $returnCode2")
   }
 }
 
@@ -232,9 +237,12 @@ class  DownloadSummaryJob {
 		val cmsHost =  System.getenv("cmsHost")
 		val cmsSummaryUrl = System.getenv("cmsSummaryUrl")
     val artifactServer = System.getenv("ARTIFACT_SERVER_EP")
-		s"curl http://$cmsHost.cdn.cms.movetv.com/$cmsSummaryUrl" #> new File("/tmp/summary.json") ! ;
-		s"curl --upload-file /tmp/summary.json http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" !
-	}
+		val returnCode = s"curl --retry 8 -o /tmp/summary.json http://$cmsHost.cdn.cms.movetv.com/$cmsSummaryUrl" ! ;
+    log.trace(s"Return value of download is $returnCode")
+		val returnCode2 = s"curl --upload-file /tmp/summary.json http://$artifactServer/artifacts/slingtv/sports-cloud/summary.json" ! ;
+    log.trace(s"Return value of upload is $returnCode2")
+
+  }
 
 }
 

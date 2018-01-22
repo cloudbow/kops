@@ -17,8 +17,8 @@ class NbaBoxScoreParser extends ParsedItem {
   private val log = LoggerFactory.getLogger("NbaBoxScoreParser")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
-    log.trace("Parsing rows for boxscore")
-    new NbaBoxScoreParserDelegate().generateRows(data,in,xmlRoot)
+    log.info("Parser NbaBoxScoreParser")
+    new NbaBoxScoreParserDelegate().generateRows(data,in,xmlRoot,"quarter")
   }
 
 }

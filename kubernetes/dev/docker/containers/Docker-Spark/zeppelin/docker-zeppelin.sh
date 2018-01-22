@@ -23,7 +23,8 @@ for ((i=0;i<cnt;i++)); do
     masterListPrepended[i]="spark://${masterList[i]}"
 done 
 echo "Created prepended master list"
-printf "\nexport MASTER=\"%s\"" "spark://`join , ${masterList[@]}`" >>  /opt/zeppelin/conf/zeppelin-env.sh
+## Use local mode for zeppelin and dont use cluster mode.
+printf "\nexport MASTER=\"%s\"" "$APP_SPARK_MASTERS_EPS" >>  /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport SPARK_HOME=\"%s\"" "$SPARK_HOME" >> /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport ZEPPELIN_HOME=\"%s\"" "$ZEPPELIN_HOME" >> /opt/zeppelin/conf/zeppelin-env.sh
 printf "\nexport ZEPPELIN_JAVA_OPTS=\"%s\"" "$ZEPPELIN_JAVA_OPTS" >> /opt/zeppelin/conf/zeppelin-env.sh
