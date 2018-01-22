@@ -79,11 +79,11 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 
 					JsonArray homeScreenGameScheduleGroup = groupedDocSrc.getAsJsonObject().get("top_game_home_hits")
 							.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
-					solrDoc = getSubscribedOrFirstGameSchedule(subpackIds, mainObj, homeScreenGameScheduleGroup);
+					solrDoc = getMatchedGame(mainObj, homeScreenGameScheduleGroup);
 					JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
 					String gameId = solrDoc.get("gameId").getAsString();
 
-					updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
+
 					mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
 					mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
 					mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
@@ -92,6 +92,9 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 					mainObj.add("league",
 							new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
 					addGameScheduleDates(mainObj, gameScheduleJson);
+
+					// let mainObj fill with game_date_epoch and call liveScores
+					updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
 
 					// title
 					mainObj.add("anons_title",
