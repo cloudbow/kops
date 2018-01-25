@@ -11,6 +11,7 @@ lazy val root = (project in file(".")).
     )),
     name := "kafka-schedule-parser",
     resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+		resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
     assemblyMergeStrategy in assembly := {
 		case PathList("META-INF", xs @ _*) => MergeStrategy.discard
 		case x => MergeStrategy.first
@@ -22,7 +23,7 @@ lazy val root = (project in file(".")).
   		kafkalib,
   		ftpKafka,
   		scalaXML,
-  		scalaparser
+  		scalaparser,
+			playJson
 	)
-
   )

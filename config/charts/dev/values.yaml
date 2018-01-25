@@ -253,7 +253,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.9
+        tag: sports-cloud-rest:0.0.1-alpha.15
         pullPolicy: IfNotPresent 
         env:
           JAVA_OPTS: "-Xmx1024M"

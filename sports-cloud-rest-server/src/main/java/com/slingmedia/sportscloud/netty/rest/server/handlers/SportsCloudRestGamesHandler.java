@@ -184,6 +184,7 @@ public class SportsCloudRestGamesHandler {
      */
     public String buildImagesFromNagara(String league, String teamAlias) {
         JsonArray leagueTeamArr = new JsonArray();
+        league = league.toLowerCase();
         if(!leagueTeams.containsKey(league)) {
             ExternalHttpClient$.MODULE$.init();
             StringBuilder builder = new StringBuilder();
@@ -197,20 +198,22 @@ public class SportsCloudRestGamesHandler {
                 leagueTeams.putIfAbsent(league, responseJson.getAsJsonArray());
                 //leagueTeamArr
             } catch (Exception e) {
-                System.out.println("error " +e);
+                LOGGER.error("error " + e);
             }
         }
         leagueTeamArr = leagueTeams.get(league);
         String img = "";
 
         for (JsonElement leagueObj :leagueTeamArr){
-            String alias = leagueObj.getAsJsonObject().get("alias").getAsString();
-            if(alias.equals(teamAlias)) {
-                if(leagueObj.getAsJsonObject().has("img")) {
-                    img = leagueObj.getAsJsonObject().get("img").getAsString();
-                    img= img.replace("MEDIUM","LARGE");
+            if(leagueObj.getAsJsonObject().has("alias")) {
+                String alias = leagueObj.getAsJsonObject().get("alias").getAsString();
+                if (alias.equals(teamAlias)) {
+                    if (leagueObj.getAsJsonObject().has("img")) {
+                        img = leagueObj.getAsJsonObject().get("img").getAsString();
+                        //img= img.replace("MEDIUM","LARGE");
+                    }
+                    break;
                 }
-                break;
             }
         }
         return img;
@@ -570,8 +573,8 @@ public class SportsCloudRestGamesHandler {
 					String homeImage = (String) homeJson.get("img");
 					homeImage = homeImage.replace("baseball", categoryNameForLogo);
 					homeImage = homeImage.replace("mlb", category.toLowerCase());
-                    // set the images for soccer
-                    if(sport.equalsIgnoreCase("soccer")) {
+                    // set the images for soccer and nhl
+                    if(sport.equalsIgnoreCase("soccer") || category.equalsIgnoreCase("NHL") ) {
                         homeImage = buildImagesFromNagara(category.toLowerCase(), (String) homeJson.get("alias"));
                     }
 					homeLogo.setmUrl(homeImage);
@@ -591,8 +594,8 @@ public class SportsCloudRestGamesHandler {
 					awayImage = awayImage.replace("baseball", categoryNameForLogo);
 					awayImage = awayImage.replace("mlb", category.toLowerCase());
 
-                    if(sport.equalsIgnoreCase("soccer")) {
-                        homeImage = buildImagesFromNagara(category.toLowerCase(), (String) awayJson.get("alias"));
+                    if(sport.equalsIgnoreCase("soccer") || "NHL".equalsIgnoreCase(category)) {
+                        awayImage = buildImagesFromNagara(category.toLowerCase(), (String) awayJson.get("alias"));
                     }
 					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);
@@ -743,6 +746,10 @@ public class SportsCloudRestGamesHandler {
 					homeImage = homeImage.replace("baseball", categoryNameForLogo);
 					homeImage = homeImage.replace("mlb", category.toLowerCase());
 
+					// set the images for soccer and nhl
+                    if(sport.equalsIgnoreCase("soccer") || category.equalsIgnoreCase("NHL") ) {
+                        homeImage = buildImagesFromNagara(category.toLowerCase(), (String) homeJson.get("alias"));
+                    }
 					homeLogo.setmUrl(homeImage);
 					homeLogo.setmWidth(64);
 					homeLogo.setmHeight(48);
@@ -759,6 +766,10 @@ public class SportsCloudRestGamesHandler {
 					String awayImage = (String) awayJson.get("img");
 					awayImage = awayImage.replace("baseball", categoryNameForLogo);
 					awayImage = awayImage.replace("mlb", category.toLowerCase());
+
+                    if(sport.equalsIgnoreCase("soccer") || "NHL".equalsIgnoreCase(category)) {
+                        awayImage = buildImagesFromNagara(category.toLowerCase(), (String) awayJson.get("alias"));
+                    }
 
 					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);
