@@ -27,7 +27,7 @@ spec:
                   - key: "app"
                     operator: In
                     values:
-                    - kafka
+                    - {{ template "kafka.name" . }}
               topologyKey: "kubernetes.io/hostname"
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -38,7 +38,7 @@ spec:
                       - key: "app"
                         operator: In
                         values:
-                        - zk
+                        - {{ template "zookeeper.name" . }}
                  topologyKey: "kubernetes.io/hostname"
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
       containers:
@@ -71,7 +71,7 @@ spec:
           --override log.flush.interval.messages=9223372036854775807 \
           --override log.flush.offset.checkpoint.interval.ms=60000 \
           --override log.flush.scheduler.interval.ms=9223372036854775807 \
-          --override log.retention.bytes=-1 \
+          --override log.retention.bytes=42949672960 \
           --override log.retention.hours=60 \
           --override log.roll.hours=60 \
           --override log.roll.jitter.hours=0 \

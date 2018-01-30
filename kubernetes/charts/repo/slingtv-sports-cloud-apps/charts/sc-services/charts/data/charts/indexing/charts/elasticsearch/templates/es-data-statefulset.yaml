@@ -16,6 +16,20 @@ spec:
         release: {{ .Release.Name }}
         role: {{ .Values.deployment.data.role }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - {{ template "elasticsearch.name" . }}
+                  - key: "role"
+                    operator: In
+                    values:
+                    - {{ .Values.deployment.data.role }}
+              topologyKey: "kubernetes.io/hostname"  
       initContainers:
       - name: init-sysctl
         image: busybox:1.27.2
