@@ -47,7 +47,11 @@ case "$DOCKER_IMAGE_TYPE" in
 		spark-job)
 			echo "Building spark job"
 			$BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-SparkJob "$TAG" "$DOCKER_ID"
-            ;;         
+            ;;
+        sc-monitoring)
+            echo "Build Monitoring"         
+            $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Monitoring "$TAG" "$DOCKER_ID"
+            ;;
         *)
             echo $"Invalid tag . Pass the right tag!! or configure here"
             exit 1

@@ -1,6 +1,48 @@
 global:
   repository: registry.sports-cloud.com:5000
 
+sc-monitoring:
+  default-http-backend:
+    image:
+      repository: gcr.io/google_containers
+      tag: defaultbackend:1.0
+      pullPolicy: IfNotPresent   
+    deployment:
+      resources:
+        minCpu: 10m
+        maxCpu: 10m
+        minMem: 20Mi
+        maxMem: 20Mi
+      containerPort: 8080
+      replicas: 1
+      terminationGracePeriodSeconds: 60
+      livenessPath: "/healthz"
+      livenessProbeInitDelay: 30
+      livenessProbeTimeoutSeconds: 5
+      livenessProbePort: 8080  
+    service:
+      name: default-http-backend
+      type: NodePort
+      externalPort: 8080
+      internalPort: 80
+  logrotate:
+    image:
+      tag: sc-monitoring:0.0.1-alpha.1
+      pullPolicy: IfNotPresent   
+    deployment:
+      resources:
+        minCpu: 10m
+        maxCpu: 10m
+        minMem: 20Mi
+        maxMem: 20Mi
+      command:
+      - "/scripts/execute-logrotate.sh"
+      - "1800"     
+    service:
+      name: default-http-backend
+      type: NodePort
+      externalPort: 8080
+      internalPort: 80
 sc-services:
   deployment:
     terminationGracePeriodSeconds: 30
@@ -94,30 +136,6 @@ sc-services:
               NODE_INGEST: "false"
               HTTP_ENABLE: "true"
               ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-  monitoring:
-    default-http-backend:
-      image:
-        repository: gcr.io/google_containers
-        tag: defaultbackend:1.0
-        pullPolicy: IfNotPresent   
-      deployment:
-        resources:
-          minCpu: 10m
-          maxCpu: 10m
-          minMem: 20Mi
-          maxMem: 20Mi
-        containerPort: 8080
-        replicas: 1
-        terminationGracePeriodSeconds: 60
-        livenessPath: "/healthz"
-        livenessProbeInitDelay: 30
-        livenessProbeTimeoutSeconds: 5
-        livenessProbePort: 8080  
-      service:
-        name: default-http-backend
-        type: NodePort
-        externalPort: 8080
-        internalPort: 80
   offline:
     zookeeper:
       image:
@@ -174,7 +192,9 @@ sc-services:
         spark-worker:
           image:
             tag: spark-worker:0.0.1-alpha.6
-            pullPolicy: IfNotPresent  
+            pullPolicy: IfNotPresent 
+            env:
+              SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.appDataTtl=259200" 
           deployment:
             resources:
               cpu: 100m
@@ -202,7 +222,7 @@ sc-services:
             deployment:
               containerPort: 9092
               env:
-                KAFKA_HEAP_OPTS:  "-Xmx1536M -Xms512M"
+                KAFKA_HEAP_OPTS:  "-Xmx2g -Xms1g"
                 KAFKA_OPTS: "-Dlogging.level=INFO"
               terminationGracePeriodSeconds: 300
               replicas: 3
@@ -210,7 +230,7 @@ sc-services:
                 minCpu: "0.5"
                 minMem: "1G"
                 maxCpu: "0.5"
-                maxMem: "2G"
+                maxMem: "3G"
               volumes:
                 hostPath: /data/apps/sports-cloud/kafka/data
           ## The kafka connect deployment and service
@@ -234,7 +254,16 @@ sc-services:
                 CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                 CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
                 CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
-                KAFKA_HEAP_OPTS: "-Xmx1024M"
+                KAFKA_HEAP_OPTS: "-XX:+PrintGCDetails \
+                -XX:+PrintGCTimeStamps \
+                -XX:+PrintReferenceGC   \
+                -XX:+ParallelRefProcEnabled \
+                -XX:+PrintAdaptiveSizePolicy  \
+                -XX:+UnlockExperimentalVMOptions \
+                -XX:+UseG1GC  \
+                -XX:G1MixedGCLiveThresholdPercent=25 \
+                -XX:InitiatingHeapOccupancyPercent=10 \
+                -Xmx3g"
                 CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                 CONNECT_OFFSET_STORAGE_TOPIC: "connect-sc-offsets"
                 CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
@@ -243,8 +272,10 @@ sc-services:
               containerPort: 8083
               replicas: 3   
               resources:
-                maxMem: "1.5G"
-                minMem: "512M"
+                maxMem: "4G"
+                minMem: "1G"
+                maxCpu: "2"
+                minCpu: "0.5"
             service:
               name: kafka-connect
               type: NodePort
@@ -253,7 +284,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.9
+        tag: sports-cloud-rest:0.0.1-alpha.16
         pullPolicy: IfNotPresent 
         env:
           JAVA_OPTS: "-Xmx1024M"

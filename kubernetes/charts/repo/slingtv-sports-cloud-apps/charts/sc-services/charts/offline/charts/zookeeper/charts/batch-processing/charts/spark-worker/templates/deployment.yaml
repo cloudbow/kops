@@ -19,6 +19,16 @@ spec:
         app: {{ template "spark-worker.name" . }}
         release: {{ .Release.Name }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - {{ template "spark-worker.name" . }}
+              topologyKey: "kubernetes.io/hostname"
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.global.repository }}/{{ .Values.image.tag }}

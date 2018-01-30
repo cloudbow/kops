@@ -19,6 +19,16 @@ spec:
         app: {{ template "connect.name" . }}
         release: {{ .Release.Name }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - {{ template "connect.name" . }}
+              topologyKey: "kubernetes.io/hostname"
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
@@ -39,6 +49,8 @@ spec:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:
           limits:  
+            cpu: {{ .Values.deployment.resources.maxCpu }}
             memory: {{ .Values.deployment.resources.maxMem }}
           requests:
+            cpu: {{ .Values.deployment.resources.minCpu }}
             memory: {{ .Values.deployment.resources.minMem }}

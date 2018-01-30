@@ -20,12 +20,6 @@ TAG=sports-cloud-k8s
 NETWORK=sports-cloud-k8s-network
 
 
-
-## Run this on the Jenkins server
-build-and-push-builder-docker:
-	@$(current_path)/dev/scripts/application/build-builder.sh $(current_path)/dev
-
-
 all-external-tools-once:
 	@$(current_path)/dev/scripts/application/external-tools-exactly-once.sh $(current_path)/dev
 
@@ -37,13 +31,7 @@ all-external-tools:
 # Following actions needs to be done whenever any change in image happens to any of the docker images
 # Build Docker images for the required applicatons
 
-## This will burn all required docker things into the corresponding docker directores
-add-docker-artifacts-from-project:
-	@$(current_path)/dev/scripts/application/burn-project-artifacts-for-docker.sh $(current_path)/dev
 
-# Following action is needed to push all docker contianers
-build-and-push-all-docker-containers:
-	@$(current_path)/dev/scripts/application/push-all-docker-containers.sh $(current_path)/dev
 
 add-docker-artifacts-from-project-for-tag:
 	@$(current_path)/dev/scripts/jenkins/burn-project-artifacts-for-docker-tag.sh
@@ -51,17 +39,4 @@ add-docker-artifacts-from-project-for-tag:
 build-and-push-docker-container-for-tag:
 	@$(current_path)/dev/scripts/jenkins/build-and-push-docker-container-for-tag.sh
 
-## Use this to submit all serivces
-all-services:
-	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh  $(current_path)/dev/config/all-services.yml
-## Use this to submit all the jobs	
-all-jobs:
-	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh  $(current_path)/dev/config/all-jobs.yml
 
-
-## Use this to test a single srevce	
-services-placeholder:
-	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh  $(current_path)/dev/config/all-services-placeholder.yml
-## Use this to test a single job
-jobs-placeholder:
-	@$(current_path)/dev/scripts/k8s/deploy-services-group.sh $(current_path)/dev/config/job-placeholder.yml
