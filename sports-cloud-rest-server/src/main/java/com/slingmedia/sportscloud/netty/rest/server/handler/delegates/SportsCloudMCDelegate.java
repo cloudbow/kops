@@ -330,7 +330,7 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 		if (gameResponse != null && gameResponse.size() != 0) {
 			JsonObject sportDataItem = new JsonObject();
 
-			JsonObject solrDoc = getSubscribedOrFirstGameSchedule(subpackIds, sportDataItem, gameResponse);
+			JsonObject solrDoc = getMatchedGame(sportDataItem, gameResponse);
 
 			gameId = solrDoc.get("gameId").getAsString();
 			String awayPitcherId = "0";

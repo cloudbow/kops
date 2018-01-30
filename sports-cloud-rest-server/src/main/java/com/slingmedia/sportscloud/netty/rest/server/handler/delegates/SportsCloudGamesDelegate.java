@@ -119,11 +119,11 @@ public class SportsCloudGamesDelegate extends SportsCloudHomeScreenDelegate {
 			JsonObject solrDoc = null;
 			// get a list of subpackage ids
 
-			solrDoc = getSubscribedOrFirstGameSchedule(subpackIds, mainObj, homeScreenGameScheduleGroup);
+			solrDoc = getMatchedGame(mainObj, homeScreenGameScheduleGroup);
 			JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
 			String gameId = solrDoc.get("gameId").getAsString();
 
-			updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
+
 			mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
 			mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
 			mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
@@ -131,6 +131,9 @@ public class SportsCloudGamesDelegate extends SportsCloudHomeScreenDelegate {
 			mainObj.add("sport", new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
 			mainObj.add("league", new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
 			addGameScheduleDates(mainObj, gameScheduleJson);
+
+			// add it after mainObj is filled
+			updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
 
 			// Thuuz rating
 			mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));

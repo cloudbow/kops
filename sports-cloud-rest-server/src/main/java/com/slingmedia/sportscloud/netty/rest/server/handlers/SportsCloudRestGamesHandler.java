@@ -25,15 +25,13 @@ written consent of Sling Media, Inc.
 package com.slingmedia.sportscloud.netty.rest.server.handlers;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.gson.*;
+import com.slingmedia.sportscloud.facade.ExternalHttpClient$;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -41,10 +39,6 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.slingmedia.sportscloud.netty.client.model.Channel;
@@ -100,6 +94,10 @@ public class SportsCloudRestGamesHandler {
 	/** Delegate Service for Sling TV Sports */
 	private SportsCloudGamesDelegate sportsCloudGamesDelegate = new SportsCloudGamesDelegate();
 
+    private static final String nagaraTeamList = "http://gwserv-mobileprod.echodata.tv/Gamefinder/api/team/list?leagueAlias=";
+
+    private ConcurrentHashMap<String, JsonArray> leagueTeams = new ConcurrentHashMap<>();
+
 	/**
 	 * Rest service names
 	 * 
@@ -120,7 +118,7 @@ public class SportsCloudRestGamesHandler {
 	private String getNewCategoryName(String league) {
 		String newCategory = "";
 
-		switch (league) {
+		switch (league.toUpperCase()) {
 		case "MLB":
 			newCategory = "Baseball";
 			break;
@@ -145,7 +143,27 @@ public class SportsCloudRestGamesHandler {
 			newCategory = "Soccer";
 			break;
 
-		case "NHL":
+        case "EPL":
+            newCategory = "Soccer - EPL";
+            break;
+
+        case "KNVB":
+            newCategory = "Soccer - KNVB";
+            break;
+
+        case "SERIEA":
+            newCategory = "Soccer - SERIEA";
+            break;
+
+        case "BUND":
+            newCategory = "Soccer - BUND";
+            break;
+
+        case "LALIGA":
+            newCategory = "Soccer - LALIGA";
+            break;
+
+        case "NHL":
 			newCategory = "Hockey";
 			break;
 
@@ -158,7 +176,48 @@ public class SportsCloudRestGamesHandler {
 		return newCategory;
 	}
 
-	/**
+    /**
+     * This method fetches the images of the teams that nagara has.
+     * @param league
+     * @param teamAlias
+     * @return Image Url
+     */
+    public String buildImagesFromNagara(String league, String teamAlias) {
+        JsonArray leagueTeamArr = new JsonArray();
+        if(!leagueTeams.containsKey(league)) {
+            ExternalHttpClient$.MODULE$.init();
+            StringBuilder builder = new StringBuilder();
+
+            builder.append(nagaraTeamList+""+league.toLowerCase());
+            JsonParser parser = new JsonParser();
+            String responseString = ExternalHttpClient$.MODULE$.getFromUrl(builder.toString());
+            JsonElement responseJson = parser.parse("{}");
+            try {
+                responseJson = parser.parse(responseString);
+                leagueTeams.putIfAbsent(league, responseJson.getAsJsonArray());
+                //leagueTeamArr
+            } catch (Exception e) {
+                System.out.println("error " +e);
+            }
+        }
+        leagueTeamArr = leagueTeams.get(league);
+        String img = "";
+
+        for (JsonElement leagueObj :leagueTeamArr){
+            String alias = leagueObj.getAsJsonObject().get("alias").getAsString();
+            if(alias.equals(teamAlias)) {
+                if(leagueObj.getAsJsonObject().has("img")) {
+                    img = leagueObj.getAsJsonObject().get("img").getAsString();
+                    img= img.replace("MEDIUM","LARGE");
+                }
+                break;
+            }
+        }
+        return img;
+    }
+
+
+    /**
 	 * Handles Sling TV REST services
 	 * 
 	 * @param host
@@ -470,12 +529,16 @@ public class SportsCloudRestGamesHandler {
 					}
 					else if (category.equalsIgnoreCase("NBA")) {
 						categoryNameForLogo = "basketball";
-					}
+					} else if(sport.equalsIgnoreCase("soccer")) {
+                        categoryNameForLogo = "soccer";
+                    }
 					else {
 						categoryNameForLogo = getNewCategoryName(category.toUpperCase()).toLowerCase();
 					}
 					thumbnail.setmUrl(
 							"http://qahsports.slingbox.com/gf2client-1.7-e/img/bg/" + categoryNameForLogo + ".png");
+
+
 					thumbnail.setmWidth(288);
 					thumbnail.setmHeight(258);
 					tile.setThumbnail(thumbnail);
@@ -507,7 +570,10 @@ public class SportsCloudRestGamesHandler {
 					String homeImage = (String) homeJson.get("img");
 					homeImage = homeImage.replace("baseball", categoryNameForLogo);
 					homeImage = homeImage.replace("mlb", category.toLowerCase());
-
+                    // set the images for soccer
+                    if(sport.equalsIgnoreCase("soccer")) {
+                        homeImage = buildImagesFromNagara(category.toLowerCase(), (String) homeJson.get("alias"));
+                    }
 					homeLogo.setmUrl(homeImage);
 					homeLogo.setmWidth(64);
 					homeLogo.setmHeight(48);
@@ -525,6 +591,9 @@ public class SportsCloudRestGamesHandler {
 					awayImage = awayImage.replace("baseball", categoryNameForLogo);
 					awayImage = awayImage.replace("mlb", category.toLowerCase());
 
+                    if(sport.equalsIgnoreCase("soccer")) {
+                        homeImage = buildImagesFromNagara(category.toLowerCase(), (String) awayJson.get("alias"));
+                    }
 					awayLogo.setmUrl(awayImage);
 					awayLogo.setmWidth(64);
 					awayLogo.setmHeight(48);
