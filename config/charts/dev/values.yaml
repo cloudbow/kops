@@ -174,7 +174,9 @@ sc-services:
         spark-worker:
           image:
             tag: spark-worker:0.0.1-alpha.6
-            pullPolicy: IfNotPresent  
+            pullPolicy: IfNotPresent 
+            env:
+              SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.appDataTtl=259200" 
           deployment:
             resources:
               cpu: 100m
@@ -253,7 +255,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.9
+        tag: sports-cloud-rest:0.0.1-alpha.16
         pullPolicy: IfNotPresent 
         env:
           JAVA_OPTS: "-Xmx1024M"

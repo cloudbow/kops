@@ -30,7 +30,7 @@ spec:
                   - key: "app"
                     operator: In
                     values:
-                    - {{ template "zookeeper.fullname" . }}
+                    - {{ include "zookeeper.name" . | quote }}
               topologyKey: "kubernetes.io/hostname"
       containers:
       - name: kubernetes-zookeeper
