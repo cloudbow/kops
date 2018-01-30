@@ -180,6 +180,21 @@ public class AbstractSportsCloudRestDelegate {
 		return contentIds;
 	}
 
+	public JsonObject getMatchedGame( JsonObject sportDataItem,
+													   JsonArray gameScheduleArray) {
+
+		List<JsonObject> solrDocs = new ArrayList<>();
+		solrDocs.add(0,gameScheduleArray.get(0).getAsJsonObject().get("_source").getAsJsonObject());
+		sportDataItem.add("contentInfo", new JsonPrimitive(GameAvailability.UNAVAILABLE.toString()));
+		gameScheduleArray.forEach(it -> {
+			JsonObject item = it.getAsJsonObject().get("_source").getAsJsonObject();
+			if (item.has("subpackage_guids")) {
+				solrDocs.add(0,item);
+				//sportDataItem.add("contentInfo", new JsonPrimitive(GameAvailability.AVAILABLE.toString()));
+			}
+		});
+		return solrDocs.get(0);
+	}
 	/**
 	 * Finds the user subscribed channels and filters the games
 	 * 
@@ -268,7 +283,16 @@ public class AbstractSportsCloudRestDelegate {
 			gameData.add("gameStatus", new JsonPrimitive(
 					GameStatus.getValue(liveResponseJson.get(gameId).get("statusId").getAsInt()).toString()));
 		} else {
-			gameData.add("gameStatus", new JsonPrimitive(GameStatus.UPCOMING.toString()));
+            gameData.add("gameStatus", new JsonPrimitive(GameStatus.UPCOMING.toString()));
+		    long currentTime = System.currentTimeMillis();
+            if(gameData.has("startTimeEpoch") ) {
+                long gameDateAndTime = gameData.get("startTimeEpoch").getAsLong();
+                if((currentTime - (gameDateAndTime*1000)) > 86400000) {
+                    gameData.add("gameStatus", new JsonPrimitive(GameStatus.COMPLETED.toString()));
+                }
+            }
+
+
 		}
 	}
 
@@ -281,7 +305,7 @@ public class AbstractSportsCloudRestDelegate {
 	 *            the sports data with live score info
 	 * @param addPitcherDetails
 	 *            the pitcher details
-	 * @param homePitcherWin
+	 * @param homePitcherWins
 	 *            the home pitcher wins
 	 * @param homePitcherLosses
 	 *            the home pitcher losses
@@ -405,13 +429,13 @@ public class AbstractSportsCloudRestDelegate {
 		long stopTimeEpoch = 0;
 		if (gameScheduleJsonObj.has("startTimeEpoch")) {
 			startTimeEpoch = gameScheduleJsonObj.get("startTimeEpoch").getAsLong();
+			if(startTimeEpoch == 0) {
+				startTimeEpoch = gameDateEpoch;
+			}
 		}
 		if (gameScheduleJsonObj.has("stopTimeEpoch")) {
 			stopTimeEpoch = gameScheduleJsonObj.get("stopTimeEpoch").getAsLong();
-		} else {
-			if (startTimeEpoch == 0) {
-				stopTimeEpoch = gameDateEpoch + Math.round(SportsCloudRestConfig.getGameStopTimeOffset());
-			} else {
+			if (stopTimeEpoch == 0) {
 				stopTimeEpoch = startTimeEpoch + Math.round(SportsCloudRestConfig.getGameStopTimeOffset());
 			}
 		}

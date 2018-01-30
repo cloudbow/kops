@@ -126,8 +126,8 @@ object SportsDataGamesFacade {
 			        "bool": {
 			          "must": [
 			            {
-			              "term": {
-			                "league.keyword": "$gameCategory"
+			              "match": {
+			                "league": "$gameCategory"
 			              }
 			            },
 			            {
