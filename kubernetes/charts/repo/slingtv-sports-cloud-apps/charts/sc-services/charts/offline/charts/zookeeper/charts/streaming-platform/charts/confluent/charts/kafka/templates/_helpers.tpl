@@ -2,6 +2,15 @@
 {{/*
 Expand the name of the chart.
 */}}
+
+{{/*
+Define here the same zookeeper name as in the original zookeeper
+This is to have kafka running in same node as zookeeper
+*/}}
+{{- define "zookeeper.name" -}}
+{{- printf "%s" "zookeeper" -}}
+{{- end -}}
+
 {{- define "kafka.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

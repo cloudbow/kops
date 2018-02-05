@@ -1,6 +1,6 @@
 FROM anapsix/alpine-java:8_jdk
 ADD deploy-scheduled-jobs /deploy-scheduled-jobs
-ENV SCALA_VERSION=2.12.2 \
+ENV SCALA_VERSION=2.11.8 \
     SCALA_HOME=/usr/share/scala
 RUN apk update && \
     apk add bash && \ 

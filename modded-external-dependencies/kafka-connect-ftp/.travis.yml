@@ -1,0 +1,12 @@
+sudo: required
+
+services:
+  - docker
+
+language: scala
+scala: 2.11.7
+jdk: oraclejdk8
+script: ./gradlew buildDocker
+
+after_success:
+  - ./deploy.sh

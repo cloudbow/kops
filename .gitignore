@@ -25,3 +25,5 @@ sports-cloud-rest-server/.idea
 sports-cloud-k8s-schedulers/.idea
 sports-cloud-parsers/.idea
 *.iml
+modded-external-dependencies/kafka-connect-ftp/build
+sports-cloud-rest-parsers/.idea
