@@ -47,7 +47,7 @@ podTemplate(
                                    make INPUT_TAG=${TAG_TO_RUN} BASE_PATH=${PROJECT_DIR}/kubernetes/${ENV} CONFIG_PATH=${PROJECT_DIR}/config/${ENV} ENV=${ENV} add-docker-artifacts-from-project-for-tag
                                """
                             echo "Got the tag ${TAG_TO_RUN}"
-                            slackSend channel: '#jenkins-builds', color: 'good', message: "Building image ${TAG_TO_RUN} in env ${ENV}"
+                            slackSend channel: '#jenkins-builds', color: 'good', message: "Building image ${TAG_TO_RUN} in env ${ENV}"	
                             container('docker')
                             {
                                 

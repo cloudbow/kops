@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).
       scalaVersion := "2.11.8",
       version      := "0.1.0"
     )),
-    name := "kafka-schedule-parser",
+    name := "kafka-schedule-rest-parsers",
     resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
 		resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
     assemblyMergeStrategy in assembly := {
@@ -20,9 +20,7 @@ lazy val root = (project in file(".")).
   		scalaTest % Test,
   		logback,
   		scalaLogger,
-  		kafkalib,
-  		ftpKafka,
-  		scalaXML,
-  		scalaparser
+  		scalaparser,
+			playJson
 	)
   )
