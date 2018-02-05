@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "rest-proxy.fullname" . }}
+  labels:
+    app: {{ template "rest-proxy.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "rest-proxy.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "rest-proxy.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          {{- range $key, $value := .Values.image.env }}
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
+          {{- end }}
+          - name: KAFKA_REST_ZOOKEEPER_CONNECT
+            value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
+          - name: KAFKA_REST_LISTENERS
+            value: http://0.0.0.0:8082
+          - name: KAFKA_REST_HOST_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          ports:
+            - containerPort: {{ .Values.deployment.containerPort}}
+          resources:
+            limits:  
+              memory: {{ .Values.deployment.resources.maxMem }}
+            requests:
+              memory: {{ .Values.deployment.resources.minMem }}

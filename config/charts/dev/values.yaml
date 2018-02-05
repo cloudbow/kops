@@ -252,6 +252,23 @@ sc-services:
               type: NodePort
               externalPort: 8083
               internalPort: 8083
+          rest-proxy:
+            image: 
+              repository: confluentinc
+              tag: cp-kafka-rest:3.2.0
+              env:
+              pullPolicy: IfNotPresent 
+            deployment:
+              containerPort: 8082
+              replicas: 1   
+              resources:
+                maxMem: "768M"
+                minMem: "512M"
+            service:
+              name: kafka-rest-proxy
+              type: NodePort
+              externalPort: 8082
+              internalPort: 8082
   online:
     sc-rest-layer:
       image:
@@ -1323,7 +1340,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.20
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1341,6 +1358,50 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "40 7 * * *"
+    connect-live-info-soccer:
+      ingress: {}
+      service: {}
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.18
+        pullPolicy: IfNotPresent
+        env:
+      cronJob:
+        args: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "rest-parser-jobs"
+        - "com.slingmedia.sportscloud.rest.parsers.leagues.soccer.SoccerLiveParser"
+        - "live_info_soccer"
+        type: ClusterIP
+        restartPolicy: OnFailure
+        concurrencyPolicy: Forbid
+    spark-live-info-soccer:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.20
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.live.impl.SoccerLiveDataMuncher
+        jobName: SoccerLiveDataMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "live_info_soccer"
+        - "live_info"
+      cronJob:
+        command: 
+        type: ClusterIP
+        restartPolicy: Never
+        schedule: "30 7 * * *"
   nhl:
     connect-content-match-nhl:
       ingress: {}

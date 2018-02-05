@@ -57,6 +57,19 @@ class SoccerContentMatcher extends ContentMatcher {
 
   val externalIDUDF = udf(getExternalIDFunc(_: String))
 
+  override val getReorderedStatusId: (Int => Int) = (statusId: Int) => {
+    if (statusId == 10)  {
+      4
+    }  else if (statusId == 40) {
+      2
+    } else if (statusId == 80) {
+      1
+    }
+    else {
+      statusId
+    }
+  }
+
   def nagraUtcStrToEpochFunc(utcStr: String): Long = {
     val zdt = ZonedDateTime.parse(utcStr,DateTimeFormatter.ofPattern("EEE, d MMM yyyy HH:mm:ss Z"));
     val epoch = zdt.toEpochSecond()
@@ -115,6 +128,7 @@ class SoccerContentMatcher extends ContentMatcher {
 
     val nagraGameScheduleDF41 = nagraGameScheduleDF4.
       withColumn("anonsTitle", getAnonsTitleUDF($"homeTeamName", $"awayTeamName", $"stadiumName")).
+      withColumn("statusId", getReorderedStatusIdUDF($"statusId")).
       withColumn("homeTeamImg", makeImgUrl($"homeTeamExternalId", $"league")).
       withColumn("awayTeamImg", makeImgUrl($"awayTeamExternalId", $"league"))
 

@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "com.slingmedia",
-      scalaVersion := "2.12.2",
+      scalaVersion := "2.11.8",
       version      := "0.1.0"
     )),
     name := "sports-cloud-k8s-schedulers",

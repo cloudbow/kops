@@ -56,11 +56,20 @@ case "$DOCKER_IMAGE_TYPE" in
 			cp -rf $BASE_PATH/../../sports-cloud-k8s-schedulers  .
 			cd sports-cloud-k8s-schedulers
 			sbt clean assembly
+			
 			### Add the jar to the docker image
 			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs
 			cp target/scala-*/sports-cloud-*-schedulers-assembly-*.jar $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs/sports-cloud-schedulers-assembly.jar
 			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect
 			cp -rf $CONFIG_PATH/worker-config $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect
+
+			#### rest-proxy-parser
+			cd /tmp
+			rm -rf /tmp/sports-cloud-rest-parsers
+			cp -rf $BASE_PATH/../../sports-cloud-rest-parsers  .
+			cd sports-cloud-rest-parsers
+			sbt clean assembly
+			cp target/scala-*/kafka-schedule-rest-parsers-assembly-*.jar $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs/kafka-schedule-rest-parsers-assembly.jar
 			;;
         *)
             echo $"Nothing special to do"
