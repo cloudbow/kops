@@ -45,6 +45,15 @@ trait Muncher {
     x == null || x.trim.isEmpty
   }
 
+
+  val zeroPadNum: (Int => String) = (num: Int) => {
+    if (num < 10) {
+      "0".concat(num.toString)
+    } else {
+      num.toString()
+    }
+  }
+
   val getZeroPadTimeOffsetFunc: (String, String) => String = (offHour: String, offMinute: String) => {
     var defaultOffset="+00:00"
     if (isEmpty(offHour) && isEmpty(offMinute)) {
@@ -64,14 +73,6 @@ trait Muncher {
   val zeroPadTimeOffsetUDF = udf(getZeroPadTimeOffsetFunc(_: String,_:String))
 
 
-  val zeroPadNum: (Int => String) = (num: Int) => {
-    if (num < 10) {
-      "0".concat(num.toString)
-    } else {
-      num.toString()
-    }
-  }
-
   val getZeroPadDateTimeFunc: (String => String) = (timeStr: String) => {
     if (isEmpty(timeStr)) {
       "00"
@@ -80,7 +81,7 @@ trait Muncher {
       zeroPadNum(timeInt)
     }
   }
-  
+
   val zeroPadDateTimeUDF = udf(getZeroPadDateTimeFunc(_: String))
 
   val timeEpochToStr: (Long => String) = (timeEpoch: Long) => {
@@ -102,7 +103,7 @@ trait Muncher {
     val inputConverted = input.toJSON
     EsSpark.saveJsonToEs(inputConverted.rdd,s"$index/$outputCollName", Map("es.mapping.id" -> "id"))
   }
-  
+
   val getReorderedStatusId: (Int => Int) = (statusId: Int) => {
     if (statusId == 23) 2 else statusId
   }
@@ -122,5 +123,20 @@ trait Muncher {
     if (inputStream != null) inputStream.close
     content
   }
+
+  val getDFFromHttp:(String => DataFrame) = (url: String) => {
+    import scala.collection.mutable.ListBuffer
+    val content = get(url)
+    var responseArrList = ListBuffer.empty[String].toList
+    if(content!=null) {
+      responseArrList = content.split("\n").toList.filter(_ != "")
+    }
+    val spark = SparkSession.builder().getOrCreate()
+    import spark.implicits._
+    val jsonRDD = spark.sparkContext.parallelize(responseArrList)
+    val jsonDF = spark.read.json(jsonRDD)
+    jsonDF
+  }
+
 
 }

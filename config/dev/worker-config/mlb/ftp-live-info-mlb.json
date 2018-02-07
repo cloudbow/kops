@@ -12,7 +12,7 @@
     "ftp.file.maxage": "P1D",
     "ftp.monitor.update": "/:live_info_mlb",
     "ftp.keystyle": "string",
-    "tasks.max": "1",
+    "tasks.max": "2",
     "topics": "live_info_mlb"
   }
 }

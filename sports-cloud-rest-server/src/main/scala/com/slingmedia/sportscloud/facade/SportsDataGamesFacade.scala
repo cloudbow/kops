@@ -117,6 +117,12 @@ object SportsDataGamesFacade {
 			    {
 			      "game_date_epoch": {
 			        "order": "asc"
+			      },
+			      "channel_no": {
+			        "order": "asc"
+			      },
+			      "id.keyword": {
+			        "order": "asc"
 			      }
 			    }
 			  ],

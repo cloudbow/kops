@@ -31,7 +31,7 @@ spec:
         - name: APP_SPARK_MASTERS_EPS
           value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
         - name: APP_SPARK_ZOOKEEPER_EP
-          value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
+          value: "{{ .Release.Name }}-zookeeper-0.{{ .Release.Name }}-zookeeper-headless.default.svc.cluster.local:2181,{{ .Release.Name }}-zookeeper-1.{{ .Release.Name }}-zookeeper-headless.default.svc.cluster.local:2181,{{ .Release.Name }}-zookeeper-2.{{ .Release.Name }}-zookeeper-headless.default.svc.cluster.local:2181"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: 
         {{- range .Values.deployment.command }}

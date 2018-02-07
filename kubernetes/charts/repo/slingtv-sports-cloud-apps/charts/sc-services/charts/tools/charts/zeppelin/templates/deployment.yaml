@@ -44,8 +44,6 @@ spec:
           com.databricks:spark-csv_2.10:1.5.0,{{ "" -}} 
           ch.qos.logback:logback-classic:1.1.7,{{ "" -}}
           org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
-        - name: APP_SPARK_MASTERS_EPS
-          value: "local[2]"  
         - name: APP_SPARK_ZOOKEEPER_EP
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
         volumeMounts:
@@ -54,8 +52,12 @@ spec:
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:
-            requests:
-              cpu: {{ .Values.deployment.resources.cpu }}
+          limits:  
+            cpu: {{ .Values.deployment.resources.maxCpu }}
+            memory: {{ .Values.deployment.resources.maxMem }}
+          requests:
+            cpu: {{ .Values.deployment.resources.minCpu }}
+            memory: {{ .Values.deployment.resources.minMem }}
       volumes:
       - name: {{ template "zeppelin.fullname" . }}-note-store
         persistentVolumeClaim:

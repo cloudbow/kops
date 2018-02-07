@@ -11,7 +11,7 @@
     "ftp.file.maxage": "P1D",
     "ftp.monitor.update": "/:meta_batch_nhl",
     "ftp.keystyle": "string",
-    "tasks.max": "1",
+    "tasks.max": "2",
     "topics": "meta_batch_nhl"
   }
 }
