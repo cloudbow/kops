@@ -46,6 +46,13 @@ spec:
         resources:
           requests:
             cpu: {{ .Values.deployment.resources.minCpu }}
+        livenessProbe:
+          httpGet:
+            path: /applications
+            port: {{ .Values.deployment.livenessProbe.port }}
+          initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
+          periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}
         volumeMounts:
         - name: workdir
           mountPath: /spark/work

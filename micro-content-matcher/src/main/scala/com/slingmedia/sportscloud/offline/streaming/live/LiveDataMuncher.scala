@@ -108,6 +108,7 @@ trait LiveDataMuncher extends Muncher {
           lit(zeroPadTimeOffsetUDF($"srcUtcHour",$"srcUtcMinute"))))).
       filter(col("gameId").isNotNull).
       withColumn("rStatusId", getReorderedStatusIdUDF($"statusId")).
+      withColumn("league", normalizeLeagueUDF($"league")).
       coalesce(4).
       withColumn("id", $"gameId").
       withColumn("date",

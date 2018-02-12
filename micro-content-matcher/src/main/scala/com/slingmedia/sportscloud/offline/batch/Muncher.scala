@@ -36,6 +36,15 @@ trait Muncher {
     fields.map(x => col(s"$colname.${x.name}"))
   }
 
+  val normalizeLeague: (String => String) = (league: String) => {
+    league match {
+      case "CBK" =>  "NCAAB"
+      case "CFB" => "NCAAF"
+      case _ => league
+    }
+  }
+  val normalizeLeagueUDF = udf(normalizeLeague(_: String))
+
   val timeStrToEpoch: (String => Long) = (timeStr: String) => {
     if (timeStr == null) 0L else OffsetDateTime.parse(timeStr).toEpochSecond()
   }

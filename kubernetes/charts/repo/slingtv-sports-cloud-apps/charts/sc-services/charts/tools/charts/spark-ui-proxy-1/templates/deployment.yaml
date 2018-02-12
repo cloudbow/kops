@@ -13,6 +13,8 @@ spec:
     matchLabels:
       app: {{ template "spark-ui-proxy-1.name" . }}
       release: {{ .Release.Name }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:

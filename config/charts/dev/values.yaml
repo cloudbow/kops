@@ -184,6 +184,11 @@ sc-services:
             ports: ["7077","8080"]
             resources:
                 minCpu: "100m"
+            livenessProbe:
+              port: 8080
+              initialDelaySeconds: 120
+              periodSeconds: 20
+              timeoutSeconds: 10
           service:
               name: spark-master
               clusterIP: None
@@ -191,7 +196,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.8
+            tag: spark-worker:0.0.1-alpha.10
             pullPolicy: IfNotPresent 
             env:
               SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.appDataTtl=259200" 
@@ -240,7 +245,7 @@ sc-services:
           ## The kafka connect deployment and service
           connect:
             image:
-              tag: sc-cp-connect:0.0.1-alpha.4
+              tag: sc-cp-connect:0.0.1-alpha.5
               env:
                 CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
                 CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
@@ -273,6 +278,10 @@ sc-services:
                 CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
               pullPolicy: IfNotPresent 
             deployment:
+              readinessProbe:
+                initialDelaySeconds: 120
+                periodSeconds: 20
+                timeoutSeconds: 10
               containerPort: 8083
               replicas: 3   
               resources:
@@ -316,6 +325,10 @@ sc-services:
           maxMem: "1.5G"
           minMem: "1024M"
         livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 20
+          timeoutSeconds: 10
+        readinessProbe:
           initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 10
@@ -594,11 +607,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NflTeamStandingsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -634,7 +647,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -679,7 +692,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -700,11 +713,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NflBoxScore
         driverMem: 2G
         executorMem: 2G
@@ -741,11 +754,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: MlbTeamStandingsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -764,11 +777,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: MlbPlayerStatsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -804,7 +817,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -849,7 +862,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -870,11 +883,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: MlbBoxScore
         driverMem: 2G
         executorMem: 2G
@@ -911,11 +924,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NcaafTeamStandingsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -951,7 +964,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -996,7 +1009,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1018,11 +1031,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NcaafBoxScore
         driverMem: 2G
         executorMem: 2G
@@ -1099,11 +1112,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NbaTeamStandingsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -1122,11 +1135,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.nba.NbaMetaDataMuncher
         jobName: NbaPlayerStatsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -1145,7 +1158,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1167,7 +1180,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1189,11 +1202,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NbaBoxScore
         driverMem: 2G
         executorMem: 2G
@@ -1270,11 +1283,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NcaabTeamStandingsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -1293,11 +1306,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NcaabPlayerStatsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -1316,7 +1329,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1338,7 +1351,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1360,11 +1373,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NcaabBoxScore
         driverMem: 2G
         executorMem: 2G
@@ -1508,11 +1521,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NhlTeamStandingsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -1531,11 +1544,11 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
-        className: com.slingmedia.sportscloud.offline.batch.impl.MetaDataMuncher
+        className: com.slingmedia.sportscloud.offline.batch.meta.impl.DefaultMetaDataMuncher
         jobName: NhlPlayerStatsMetaDataMuncher
         driverMem: 2G
         executorMem: 2G
@@ -1554,7 +1567,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1576,7 +1589,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.10
+        tag: spark-job:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:

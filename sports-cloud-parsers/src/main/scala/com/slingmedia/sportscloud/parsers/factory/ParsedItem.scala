@@ -19,6 +19,11 @@ trait ParsedItem {
     log.error("NOT DOING ANYTHING SPECIAL here!!")
     Array[SourceRecord]().toList.asJava
   }
+
+  def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq,league:String, sport:String): java.util.List[SourceRecord] = {
+    log.error("NOT DOING ANYTHING SPECIAL here!!")
+    Array[SourceRecord]().toList.asJava
+  }
   
   def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq): java.util.List[SourceRecord] = {
     log.error("NOT DOING ANYTHING SPECIAL here!!")

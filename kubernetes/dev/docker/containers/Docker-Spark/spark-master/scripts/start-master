@@ -32,9 +32,7 @@ printf "\nspark.master %s" `join , ${masterListPrepended[@]}` >>  /opt/spark/con
 
 
 ##START writing to env.sh as well . This is for spark to know other masters
-
 printf "\nSPARK_DAEMON_JAVA_OPTS=\"-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=%s\"" $APP_SPARK_ZOOKEEPER_EP >> /opt/spark/conf/spark-env.sh
-
 ##END
 
 echo "Env $SPARK_LOCAL_DIRS"

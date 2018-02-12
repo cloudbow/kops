@@ -75,7 +75,9 @@ class NflLiveDataMuncher extends Serializable with LiveDataMuncher {
     indexResult match {
       case Success(data) =>
         NLDHolder.log.info(data.toString)
-        val kafkaLiveInfoT10DF2 = df.select($"lastPlay",
+        val kafkaLiveInfoT10DF2 = df.select(
+          $"league",
+          $"lastPlay",
           $"batchTime",
           $"srcTimeEpoch".alias("srcTime"),
           $"homeTeamExtId",
