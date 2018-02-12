@@ -38,3 +38,10 @@ spec:
             memory: {{ .Values.deployment.resources.maxMem }}
           requests:
             memory: {{ .Values.deployment.resources.minMem }}
+        livenessProbe:
+          httpGet:
+            path: /api
+            port: {{ .Values.deployment.containerPort }}
+          initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
+          periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}

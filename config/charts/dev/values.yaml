@@ -174,13 +174,13 @@ sc-services:
       batch-processing:
         spark-master:
           image:
-            tag: spark-master:0.0.1-alpha.1
+            tag: spark-master:0.0.1-alpha.3
             pullPolicy: IfNotPresent  
           deployment:
             replicas: 2
             terminationGracePeriodSeconds: 10
             command:
-            - "/start-master"
+            - "/scripts/start-master"
             ports: ["7077","8080"]
             resources:
                 minCpu: "100m"
@@ -191,17 +191,21 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.6
+            tag: spark-worker:0.0.1-alpha.8
             pullPolicy: IfNotPresent 
             env:
               SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.appDataTtl=259200" 
           deployment:
+            livenessProbe:
+              initialDelaySeconds: 120
+              periodSeconds: 20
+              timeoutSeconds: 20
             resources:
               cpu: 100m
             containerPort: 8081
             replicas: 3
             command: 
-            - "/start-worker"
+            - "/scripts/start-worker"
       streaming-platform:
         ## Represents all streaming data related paltform. The one platform we chose is confluent
         confluent:
@@ -311,6 +315,10 @@ sc-services:
         resources:
           maxMem: "1.5G"
           minMem: "1024M"
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 20
+          timeoutSeconds: 10
       service:
         name: sc-rest
         type: NodePort
@@ -326,6 +334,9 @@ sc-services:
         resources:
           maxMem: "256M"
           minMem: "100M"
+        livenessProbe:
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
       service:
         name: artifact-server
         type: NodePort

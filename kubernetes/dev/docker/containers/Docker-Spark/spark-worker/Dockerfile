@@ -3,7 +3,7 @@ ADD jars /jars
 COPY spark-libs/*.jar /opt/spark/jars/
 ADD log4j.properties /opt/spark/conf/log4j.properties
 ADD spark-defaults.conf /opt/spark/conf/spark-defaults.conf
-ADD start-worker /
+ADD scripts /scripts
 ENV PATH $PATH:/opt/spark/bin
 ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/opt/hadoop/lib/native
 ENV SPARK_LOCAL_DIRS /spark/work

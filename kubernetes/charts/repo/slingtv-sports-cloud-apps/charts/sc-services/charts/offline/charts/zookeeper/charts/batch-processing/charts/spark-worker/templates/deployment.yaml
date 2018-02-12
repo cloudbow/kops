@@ -57,6 +57,13 @@ spec:
         resources:
           requests:
             cpu: {{ .Values.deployment.resources.cpu }}
+        livenessProbe:
+          exec:
+            command:
+            - /scripts/liveness
+          initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
       volumes:
       - name: workdir
         hostPath:
