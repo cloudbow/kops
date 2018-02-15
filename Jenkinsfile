@@ -99,7 +99,7 @@ podTemplate(
                     try{            
                         slackSend channel: '#jenkins-builds', color: 'good', message: "Deploying app for tag ${REAL_VERSION} or branch ${BRANCH_TO_RUN} "
                         sh """                      
-                              helm init && \
+                              helm init --upgrade --history-max=10 && \
                               sleep 5 && \
                               helm upgrade --install -f ${PWD}/config/charts/${ENV}/values.yaml sc-apps-${ENV} ${PWD}/kubernetes/charts/repo/slingtv-sports-cloud-apps --version ${REAL_VERSION}
                            """

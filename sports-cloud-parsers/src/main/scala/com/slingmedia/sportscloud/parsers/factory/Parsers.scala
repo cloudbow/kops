@@ -72,10 +72,10 @@ object Parsers {
       case ParserType.NhlTeamStandingsParser =>
         new NhlTeamStandingsParser()
       case ParserType.MlbPlayerStatsParser
-           | ParserType.NcaabPlayerStatsParser
            | ParserType.NhlPlayerStatsParser =>
         new PlayerStatsParser()
-      case ParserType.NbaPlayerStatsParser =>
+      case ParserType.NbaPlayerStatsParser
+           | ParserType.NcaabPlayerStatsParser =>
         new NbaPlayerStatsParser()
       case ParserType.NbaTeamStandingsParser =>
         new NbaTeamStandingsParser()

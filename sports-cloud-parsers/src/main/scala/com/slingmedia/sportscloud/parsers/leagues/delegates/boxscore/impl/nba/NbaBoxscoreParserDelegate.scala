@@ -47,6 +47,9 @@ class NbaBoxScoreParserDelegate extends ParsedItem {
         homeScore = homeTeamlineScore.reduceLeft[Int](_ + _)
       }
 
+      val lastPlay = (rowData \\ "last-play" \ "@textual-description").text
+      commonFields.lastPlay = lastPlay
+
       val message = NbaBoxScoreData(
         commonFields,
         homeTeamlineScore.toList,

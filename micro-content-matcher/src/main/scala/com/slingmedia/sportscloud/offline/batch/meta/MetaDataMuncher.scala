@@ -100,8 +100,10 @@ trait MetaDataMuncher extends Muncher {
     val ds4 = ds3.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
 
     val ds5 = ds4.select($"fileName", from_json($"payloadStruct.payload", schema) as "metaDataStruct")
-    val ds6 = ds5.select(children("metaDataStruct", ds5): _*)
-       .filter("playerCode!=''")
+    val ds6 = ds5.select(children("metaDataStruct", ds5): _*).
+      filter(idColumn =!= "")
+
+
     val ds7 = ds6.withColumn("id", idColumn)
     val ds8 = ds7.filter(testColumn)
     val ds9 = ds8.withColumn("batchTime", lit(batchTimeStamp))
