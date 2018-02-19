@@ -143,6 +143,17 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 		}
 	}
 
+	public void preparePlayerStats(String homeTeamExternalId, String awayTeamExternalId, JsonObject mainObj) {
+		//add team stats
+		JsonObject teamStatsObj = new JsonObject();
+		mainObj.add("teamStats",teamStatsObj);
+		getTeamStats(homeTeamExternalId,"homeTeam",teamStatsObj);
+		getTeamStats(awayTeamExternalId,"awayTeam",teamStatsObj);
+		mainObj.add("teamStats",teamStatsObj);
+
+
+	}
+
 	/**
 	 * Prepares JSON response for drives for specific game
 	 * 
@@ -172,6 +183,21 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 			}
 
 		}
+	}
+
+	public void getTeamStats(String teamId, String type, JsonObject teamStatsMainObj) {
+
+		JsonArray teamStatsJsonResponse = SportsDataFacade$.MODULE$.getTeamStatsFromPlayerStats(teamId).getAsJsonObject()
+				.get("hits").getAsJsonObject().get("hits").getAsJsonArray();
+
+		JsonObject homePlayerStatsJson = new JsonObject();
+		JsonArray homePlayerStatsArray = new JsonArray();
+		homePlayerStatsJson.add("playerStats",homePlayerStatsArray);
+		for (JsonElement teamStats : teamStatsJsonResponse) {
+			homePlayerStatsArray.add(teamStats.getAsJsonObject().get("_source").getAsJsonObject());
+		}
+		teamStatsMainObj.add(type,homePlayerStatsJson );
+
 	}
 
 	/**

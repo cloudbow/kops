@@ -10,7 +10,7 @@ import scala.collection.JavaConverters._
 import scala.xml.{Elem, Node}
 
 
-class TeamStandingsDataExtractor(data:Elem, rowData: Node) extends ParsedItem {
+class TeamStandingsDataExtractor(data:Elem, rowData: Node, subLeague2: String) extends ParsedItem {
 
   //allow edit of teamname & team city for college leagues
   val league = (data \\ "league" \ "@alias").text
@@ -21,7 +21,7 @@ class TeamStandingsDataExtractor(data:Elem, rowData: Node) extends ParsedItem {
   val wins = toInt((rowData \\ "wins" \ "@number").text).getOrElse(0)
   val losses = toInt((rowData \\ "losses" \ "@number").text).getOrElse(0)
   val pct = toFloat((rowData \\ "winning-percentage" \ "@percentage").text).getOrElse(0f)
-
+  val subLeague = subLeague2
 
 
 }
@@ -31,6 +31,7 @@ case class TeamStandingsSchemaGenerator(schemaBuilder: SchemaBuilder) {
   schemaBuilder
     .field("alias", Schema.STRING_SCHEMA)
     .field("league", Schema.STRING_SCHEMA)
+    .field("subLeague", Schema.STRING_SCHEMA)
     .field("teamName", Schema.STRING_SCHEMA)
     .field("teamCity", Schema.STRING_SCHEMA)
     .field("teamCode", Schema.STRING_SCHEMA)
@@ -44,6 +45,7 @@ case class TeamStandingsStructGenerator(struct: Struct, boxScoreExtractor: TeamS
   struct
     .put("alias", boxScoreExtractor.alias)
     .put("league", boxScoreExtractor.league)
+    .put("subLeague", boxScoreExtractor.subLeague)
     .put("teamName", boxScoreExtractor.teamName)
     .put("teamCity", boxScoreExtractor.teamCity)
     .put("teamCode", boxScoreExtractor.teamCode)

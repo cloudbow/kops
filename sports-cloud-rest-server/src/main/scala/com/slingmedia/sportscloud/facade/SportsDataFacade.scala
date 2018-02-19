@@ -122,6 +122,17 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getTeamStandingsURLBase(), Map[String, String](),searchTemplate)
   	
   	}
+
+
+	def getTeamStatsFromPlayerStats(teamCode: String) : JsonElement = {
+		val searchTemplate =  s"""{
+	       "size" : 500,
+				 "query": {
+					 "term": {"teamCode.keyword":"$teamCode"}
+				 }
+	      }""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getPlayerStatsURLBase(), Map[String, String](),searchTemplate)
+	}
   	
   	/**
 	  * Fetches sub leagues grouped for league

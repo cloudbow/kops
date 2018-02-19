@@ -34,7 +34,7 @@ class NhlTeamStandingsParserDelegate extends ParsedItem {
             val division = (mlbDivisionStandings \ "title" \ "@name").text
             (mlbDivisionStandings \\ "hockey-nhl-team-standings").map {
               teamStandings =>
-                val commonFields = new TeamStandingsDataExtractor(data,teamStandings)
+                val commonFields = new TeamStandingsDataExtractor(data,teamStandings,subLeague)
                 val message = TeamStandings(commonFields)
                 teamStandingsRows += new SourceRecord(
                   in.sourcePartition,

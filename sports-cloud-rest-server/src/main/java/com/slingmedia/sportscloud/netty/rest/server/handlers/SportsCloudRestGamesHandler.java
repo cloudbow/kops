@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import com.google.gson.*;
 import com.slingmedia.sportscloud.facade.ExternalHttpClient$;
+import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudMCDelegate;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -93,6 +94,9 @@ public class SportsCloudRestGamesHandler {
 
 	/** Delegate Service for Sling TV Sports */
 	private SportsCloudGamesDelegate sportsCloudGamesDelegate = new SportsCloudGamesDelegate();
+
+    private SportsCloudMCDelegate sportsCloudMCDelegate = new SportsCloudMCDelegate();
+
 
     private static final String nagaraTeamList = "http://gwserv-mobileprod.echodata.tv/Gamefinder/api/team/list?leagueAlias=";
 
@@ -361,7 +365,14 @@ public class SportsCloudRestGamesHandler {
 		finalResponse = sportsCloudGamesDelegate.prepareJsonResponseMCForGame(gameId, gameCategory,
 				new HashSet<String>());
 		String output = transformToClientFormatForMediaCard(finalResponse, gameCategory, serverHost);
-		return output;
+
+        JsonArray homeScreenGameScheduleGroup = sportsCloudMCDelegate.getGameForGameId(gameId);
+        JsonObject solrDoc = sportsCloudMCDelegate.getMatchedGame(new JsonObject(), homeScreenGameScheduleGroup);
+        JsonParser parser = new JsonParser();
+		JsonObject parsedJsonObj  = parser.parse(output).getAsJsonObject();
+        sportsCloudMCDelegate.preparePlayerStats(solrDoc.get("homeTeamExternalId").getAsString(),solrDoc.get("awayTeamExternalId").getAsString(),parsedJsonObj);
+
+        return parsedJsonObj.toString();
 	}
 
 	/**

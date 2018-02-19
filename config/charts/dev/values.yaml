@@ -245,7 +245,7 @@ sc-services:
           ## The kafka connect deployment and service
           connect:
             image:
-              tag: sc-cp-connect:0.0.1-alpha.7
+              tag: sc-cp-connect:0.0.1-alpha.9
               env:
                 CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
                 CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
@@ -314,7 +314,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.18
+        tag: sports-cloud-rest:0.0.1-alpha.19
         pullPolicy: IfNotPresent 
         env:
           JAVA_OPTS: "-Xmx1024M"
@@ -1425,7 +1425,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.18
+        tag: sc-job-scheduler:0.0.1-alpha.12
         pullPolicy: IfNotPresent
         env:
       cronJob:
