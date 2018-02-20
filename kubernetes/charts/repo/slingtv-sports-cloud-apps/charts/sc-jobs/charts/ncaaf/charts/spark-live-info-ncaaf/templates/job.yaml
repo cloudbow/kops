@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "spark-live-info-ncaaf.fullname" . }}
+  name: {{ template "spark-live-info-ncaaf.fullname" . }}-{{ randAlphaNum 5 | lower }}
 spec:
   template:
     metadata:

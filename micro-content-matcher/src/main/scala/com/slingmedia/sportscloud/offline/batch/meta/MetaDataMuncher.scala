@@ -106,7 +106,9 @@ trait MetaDataMuncher extends Muncher {
 
     val ds7 = ds6.withColumn("id", idColumn)
     val ds8 = ds7.filter(testColumn)
-    val ds9 = ds8.withColumn("batchTime", lit(batchTimeStamp))
+    val ds9 = ds8.
+      withColumn("batchTime", lit(batchTimeStamp)).
+      withColumn("league", normalizeLeagueUDF($"league"))
     var finalDataFrame: DataFrame = null
     if (imgRequired) {
       val allCols = ds9.columns.map { it => col(it) } :+ concat(lit("http://gwserv-mobileprod.echodata.tv/Gamefinder/logos/LARGE/gid"), $"id", lit(".png")).alias("img")

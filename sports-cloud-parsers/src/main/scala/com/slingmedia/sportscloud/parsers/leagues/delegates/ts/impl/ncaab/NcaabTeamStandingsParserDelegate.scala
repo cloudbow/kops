@@ -26,24 +26,25 @@ class NcaabTeamStandingsParserDelegate extends ParsedItem {
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
     var teamStandingsRows = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     xmlRoot.map { leagueStandings =>
-      (leagueStandings \\ "cbk-conference-standings").map { conferenceStanding =>
-        val subLeague = (conferenceStanding \ "@abbrev").text
-
-        val mlbDivisionStandingsRows = (conferenceStanding \\ "cbk-conference-division").map {
+        val subLeague = (leagueStandings \ "@abbrev").text
+        val mlbDivisionStandingsRows = (leagueStandings \\ "cbk-conference-division").map {
           mlbDivisionStandings =>
             val division = (mlbDivisionStandings \ "@division").text
             (mlbDivisionStandings \\ "cbk-team-standings").map {
               teamStandings =>
-                val commonFields = new TeamStandingsDataExtractor(data,teamStandings,subLeague)
+                val commonFields = new TeamStandingsDataExtractor(data, teamStandings)
+                commonFields.subLeague=subLeague
+                //divisoin same as subLeague
+                commonFields.division=subLeague
                 //swap team name and city
-                var teamName =  commonFields.teamName
+                var teamName = commonFields.teamName
                 var teamCity = (teamStandings \\ "college-name" \ "@name").text
                 val tempCity = teamCity
                 teamCity = teamName
                 teamName = tempCity
 
-                commonFields.teamName=teamName
-                commonFields.teamCity=teamCity
+                commonFields.teamName = teamName
+                commonFields.teamCity = teamCity
 
                 val message = TeamStandings(commonFields)
                 teamStandingsRows += new SourceRecord(
@@ -57,7 +58,6 @@ class NcaabTeamStandingsParserDelegate extends ParsedItem {
                   message.getStructure)
             }
         }
-      }
     }
     teamStandingsRows.toList.asJava
   }

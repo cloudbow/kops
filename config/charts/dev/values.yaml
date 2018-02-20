@@ -196,7 +196,7 @@ sc-services:
               internalPort: 7077
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.12
+            tag: spark-worker:0.0.1-alpha.13
             pullPolicy: IfNotPresent 
             env:
               SPARK_WORKER_OPTS: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.appDataTtl=259200" 
@@ -245,7 +245,7 @@ sc-services:
           ## The kafka connect deployment and service
           connect:
             image:
-              tag: sc-cp-connect:0.0.1-alpha.9
+              tag: sc-cp-connect:0.0.1-alpha.13
               env:
                 CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
                 CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
@@ -527,7 +527,7 @@ sc-jobs:
     ingress: {}
     service: {}
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.12
+      tag: sc-job-scheduler:0.0.1-alpha.13
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
@@ -549,7 +549,7 @@ sc-jobs:
           minMem: 256Mi
           maxMem: 512Mi
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.12
+      tag: sc-job-scheduler:0.0.1-alpha.13
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
@@ -572,7 +572,7 @@ sc-jobs:
           minMem: 256Mi
           maxMem: 512Mi
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.12
+      tag: sc-job-scheduler:0.0.1-alpha.13
       pullPolicy: IfNotPresent
       env:
         cmsHost: "cbd46b77"
@@ -590,7 +590,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -607,7 +607,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -630,7 +630,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -647,7 +647,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -675,7 +675,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -692,7 +692,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -713,7 +713,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -737,7 +737,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -754,7 +754,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -777,7 +777,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -800,7 +800,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -817,7 +817,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -845,7 +845,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -862,7 +862,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -883,7 +883,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -907,7 +907,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -924,7 +924,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -947,7 +947,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -964,7 +964,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -992,7 +992,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1009,7 +1009,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1031,7 +1031,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1055,7 +1055,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1072,7 +1072,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1095,7 +1095,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1112,7 +1112,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1135,7 +1135,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1158,7 +1158,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1180,7 +1180,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1202,7 +1202,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1226,7 +1226,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1243,7 +1243,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1266,7 +1266,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1283,7 +1283,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1306,7 +1306,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1329,7 +1329,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1351,7 +1351,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1373,7 +1373,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1425,7 +1425,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1464,7 +1464,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1481,7 +1481,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1504,7 +1504,7 @@ sc-jobs:
           minMem: 64Mi
           maxMem: 64Mi
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.12
+        tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
       cronJob:
@@ -1521,7 +1521,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1544,7 +1544,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1567,7 +1567,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:
@@ -1589,7 +1589,7 @@ sc-jobs:
       ingress: {}
       service: {}
       image:
-        tag: spark-job:0.0.1-alpha.15
+        tag: spark-job:0.0.1-alpha.16
         pullPolicy: IfNotPresent
         env:
       sparkJobArgs:

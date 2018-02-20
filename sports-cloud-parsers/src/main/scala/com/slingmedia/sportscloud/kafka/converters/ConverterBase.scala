@@ -69,14 +69,14 @@ trait ConverterBase {
         playerStatsParserType=ParserType.NcaabPlayerStatsParser
         teamStandingsParserType=ParserType.NcaabTeamStandingsParser
         teamStandingsRoot="cbk-conference-standings"
-        playerStatsRoot="cbk-player-stat"
+        playerStatsRoot="cbk-player-stats"
       case LeagueEnum.NHL =>
         teamStandings = ".*NHL_TEAM_STANDINGS\\.XML.*".r
         playerStats = ".*NHL_PLAYER_STATS.*\\.XML.*".r
         playerStatsParserType=ParserType.NhlPlayerStatsParser
         teamStandingsParserType=ParserType.NhlTeamStandingsParser
         teamStandingsRoot="hockey-nhl-standings"
-        playerStatsRoot="nhl-player-split-goalie"
+        playerStatsRoot="nhl-player-splits"
 
 
 

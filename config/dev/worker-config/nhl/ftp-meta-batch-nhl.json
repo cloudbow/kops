@@ -8,7 +8,7 @@
     "ftp.password": "D1sh3325",
     "ftp.refresh": "PT1M",
     "ftp.max.backoff": "PT1M",
-    "ftp.file.maxage": "P1D",
+    "ftp.file.maxage": "P2D",
     "ftp.monitor.update": "/:meta_batch_nhl",
     "ftp.keystyle": "string",
     "tasks.max": "2",
