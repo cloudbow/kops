@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import com.google.gson.*;
 import com.slingmedia.sportscloud.facade.ExternalHttpClient$;
+import com.slingmedia.sportscloud.netty.rest.model.ActiveTeamGame;
 import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudMCDelegate;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -368,10 +369,25 @@ public class SportsCloudRestGamesHandler {
 
         JsonArray homeScreenGameScheduleGroup = sportsCloudMCDelegate.getGameForGameId(gameId);
         JsonObject solrDoc = sportsCloudMCDelegate.getMatchedGame(new JsonObject(), homeScreenGameScheduleGroup);
+        final ActiveTeamGame activeTeamGame = sportsCloudMCDelegate.getActiveTeamGame(
+                solrDoc.get("awayTeamExternalId").getAsString(),
+                homeScreenGameScheduleGroup);
+
         JsonParser parser = new JsonParser();
 		JsonObject parsedJsonObj  = parser.parse(output).getAsJsonObject();
-        sportsCloudMCDelegate.preparePlayerStats(solrDoc.get("homeTeamExternalId").getAsString(),solrDoc.get("awayTeamExternalId").getAsString(),parsedJsonObj);
-
+        JsonObject teamStatsObj = new JsonObject();
+        parsedJsonObj.add("teamStats",teamStatsObj);
+        sportsCloudMCDelegate.preparePlayerStats(
+                solrDoc.get("homeTeamExternalId").getAsString(),
+                solrDoc.get("awayTeamExternalId").getAsString(),
+                teamStatsObj);
+        JsonObject standings = new JsonObject();
+        parsedJsonObj.add("standings",standings);
+        sportsCloudMCDelegate.prepareMCTeamStandings(
+                activeTeamGame,
+                standings,
+                solrDoc.get("league").getAsString().toLowerCase());
+        sportsCloudMCDelegate.mergeLiveInfoToMediaCard(activeTeamGame,parsedJsonObj,solrDoc,new JsonObject());
         return parsedJsonObj.toString();
 	}
 

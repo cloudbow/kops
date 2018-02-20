@@ -514,7 +514,7 @@ public class AbstractSportsCloudRestDelegate {
 	 * @param mcSportData
 	 *            media card sport data
 	 */
-	protected void mergeLiveInfoToMediaCard(ActiveTeamGame activeGame, JsonObject mc, JsonObject solrDoc,
+	public void mergeLiveInfoToMediaCard(ActiveTeamGame activeGame, JsonObject mc, JsonObject solrDoc,
 			JsonObject mcSportData) {
 		//
 		// Fill in the live scores and other details
@@ -542,11 +542,11 @@ public class AbstractSportsCloudRestDelegate {
 			addFieldsCount(mcSportData, liveGameJsonObj);
 
 			// update score data into media card
-			if (solrDoc.get("league").getAsString().toLowerCase().equals("ncaaf")) {
-				addScoreDataNonMlb(activeGame, mc, solrDoc, liveGameJsonObj);
-			} else {
+			if (solrDoc.get("league").getAsString().toLowerCase().equals("mlb")) {
 				addScoreData(activeGame, mc, solrDoc, liveGameJsonObj);
 				addCurrentPlayerDetails(mcSportData, liveGameJsonObj);
+			} else {
+				addScoreDataNonMlb(activeGame, mc, solrDoc, liveGameJsonObj);
 			}
 
 			updateGameStatusAndType(mcSportData, liveGameJsonObj);
@@ -567,8 +567,12 @@ public class AbstractSportsCloudRestDelegate {
 		// separated out.
 		sportDataItem.add("gameStatus",
 				new JsonPrimitive(GameStatus.getValue(gameScheduleJsonObj.get("statusId").getAsInt()).toString()));
+		GameType gameType= GameType.UNKNOWN;
+		if(gameScheduleJsonObj.has("gameType")){
+			gameType=GameType.getValue(gameScheduleJsonObj.get("gameType").getAsString());
+		}
 		sportDataItem.add("gameType",
-				new JsonPrimitive(GameType.getValue(gameScheduleJsonObj.get("gameType").getAsString()).toString()));
+				new JsonPrimitive(gameType.toString()));
 	}
 
 	/**

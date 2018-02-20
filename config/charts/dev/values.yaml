@@ -314,7 +314,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.19
+        tag: sports-cloud-rest:0.0.1-alpha.23
         pullPolicy: IfNotPresent 
         env:
           JAVA_OPTS: "-Xmx1024M"
@@ -561,7 +561,7 @@ sc-jobs:
       - "download-summary"
       type: ClusterIP
       restartPolicy: Never
-      schedule: "20 5 * * *"
+      schedule: "20 0/5 * * *"
   schedules-download-job:
     ingress: {}
     service: {}
@@ -584,7 +584,7 @@ sc-jobs:
       - "download-schedules"
       type: ClusterIP
       restartPolicy: Never
-      schedule: "40 5 * * *"
+      schedule: "40 0/5 * * *"
   nfl:    
     connect-meta-batch-nfl:
       ingress: {}
@@ -1414,7 +1414,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 7 * * *"
+        schedule: "40 0/7 * * *"
     connect-live-info-soccer:
       ingress: {}
       service: {}

@@ -143,15 +143,10 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 		}
 	}
 
-	public void preparePlayerStats(String homeTeamExternalId, String awayTeamExternalId, JsonObject mainObj) {
+	public void preparePlayerStats(String homeTeamExternalId, String awayTeamExternalId, JsonObject teamStatsObj) {
 		//add team stats
-		JsonObject teamStatsObj = new JsonObject();
-		mainObj.add("teamStats",teamStatsObj);
 		getTeamStats(homeTeamExternalId,"homeTeam",teamStatsObj);
 		getTeamStats(awayTeamExternalId,"awayTeam",teamStatsObj);
-		mainObj.add("teamStats",teamStatsObj);
-
-
 	}
 
 	/**
@@ -297,7 +292,7 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 
 			try {
 
-				JsonElement groupedTSRespJson = SportsDataFacade$.MODULE$.getSubLeagues(subLeague);
+				JsonElement groupedTSRespJson = SportsDataFacade$.MODULE$.getSubLeagues(league.toUpperCase(),subLeague);
 				if (groupedTSRespJson != null) {
 
 					JsonArray mainQueryDocs = groupedTSRespJson.getAsJsonObject().get("aggregations").getAsJsonObject()
