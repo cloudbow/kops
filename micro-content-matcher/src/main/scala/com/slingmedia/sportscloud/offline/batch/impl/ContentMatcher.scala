@@ -145,73 +145,145 @@ class ContentMatcher extends Serializable with Muncher {
     var regexp: String = null
     matchType match {
       case 0 =>
-        if(isEmpty(awayTeamCity) && isEmpty(awayTeamName) && isEmpty(homeTeamCity) && isEmpty(homeTeamName) ) {
+        if(
+          (isEmpty(awayTeamCity) && isEmpty(awayTeamName) && isEmpty(homeTeamCity) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamCity) && isEmpty(awayTeamName) )
+            ||
+          (isEmpty(homeTeamCity) && isEmpty(homeTeamName) )
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + awayTeamCity + ".*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + ".*$")
         }
       case 1 =>
-        if(isEmpty(awayTeamName) && isEmpty(homeTeamName)) {
+        if(
+          (isEmpty(awayTeamName) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamName))
+            ||
+          (isEmpty(homeTeamName))
+        ) {
           regexp = matchNothing
         }else {
           regexp = ("^" + startExpr + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamName + "$")
         }
       case 2 =>
-        if(isEmpty(awayTeamName) && isEmpty(homeTeamCity) && isEmpty(homeTeamName) ) {
+        if(
+          (isEmpty(awayTeamName) && isEmpty(homeTeamCity) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(homeTeamCity) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamName))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + "$")
         }
       case 3 =>
-        if(isEmpty(awayTeamCity) && isEmpty(awayTeamName) && isEmpty(homeTeamName)) {
+        if(
+          (isEmpty(awayTeamCity) && isEmpty(awayTeamName) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamCity) && isEmpty(awayTeamName))
+            ||
+          (isEmpty(homeTeamName))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamName + "$")
         }
       case 4 =>
-        if(isEmpty(awayTeamCity) && isEmpty(homeTeamCity)) {
+        if(
+          (isEmpty(awayTeamCity) && isEmpty(homeTeamCity))
+            ||
+          (isEmpty(awayTeamCity))
+            ||
+          (isEmpty(homeTeamCity))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + ".*$")
         }
       case 5 =>
-        if(isEmpty(homeTeamCity) && isEmpty(awayTeamCity)) {
+        if(
+          (isEmpty(homeTeamCity) && isEmpty(awayTeamCity))
+            ||
+          (isEmpty(homeTeamCity))
+            ||
+          (isEmpty(awayTeamCity))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + ".*$")
         }
       case 6 =>
-        if(isEmpty(homeTeamCity) && isEmpty(homeTeamName) && isEmpty(awayTeamCity) && isEmpty(awayTeamName) ) {
+        if(
+          (isEmpty(homeTeamCity) && isEmpty(homeTeamName) && isEmpty(awayTeamCity) && isEmpty(awayTeamName))
+            ||
+          (isEmpty(homeTeamCity) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamCity) && isEmpty(awayTeamName))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + homeTeamCity + ".*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + ".*$")
         }
       case 7 =>
-        if(isEmpty(homeTeamName) && isEmpty(awayTeamName)) {
+        if(
+          (isEmpty(homeTeamName) && isEmpty(awayTeamName))
+            ||
+          (isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamName))
+        ) {
           regexp = matchNothing
         }else {
           regexp = ("^" + startExpr + "\\s*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamName + "$")
         }
       case 8 =>
-        if(isEmpty(homeTeamName) && isEmpty(awayTeamCity) && isEmpty(awayTeamName) ) {
+        if(
+          (isEmpty(homeTeamName) && isEmpty(awayTeamCity) && isEmpty(awayTeamName))
+            ||
+          (isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamCity) && isEmpty(awayTeamName))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + "$")
         }
       case 9 =>
-        if(isEmpty(homeTeamCity) && isEmpty(homeTeamName) && isEmpty(awayTeamName)) {
+        if(
+          (isEmpty(homeTeamCity) && isEmpty(homeTeamName) && isEmpty(awayTeamName))
+            ||
+          (isEmpty(homeTeamCity) && isEmpty(homeTeamName))
+            ||
+          (isEmpty(awayTeamName))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamName + "$")
         }
       case 10 =>
-        if(isEmpty(homeTeamCity) && isEmpty(awayTeamCity)) {
+        if(
+          (isEmpty(homeTeamCity) && isEmpty(awayTeamCity))
+            ||
+          (isEmpty(homeTeamCity))
+            ||
+          (isEmpty(awayTeamCity))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + ".*$")
         }
       case 11 =>
-        if(isEmpty(awayTeamCity) && isEmpty(homeTeamCity)) {
+        if(
+          (isEmpty(awayTeamCity) && isEmpty(homeTeamCity))
+            ||
+          (isEmpty(awayTeamCity))
+            ||
+          (isEmpty(homeTeamCity))
+        ) {
           regexp = matchNothing
         } else {
           regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + ".*$")
