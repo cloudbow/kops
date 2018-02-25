@@ -237,20 +237,28 @@ public class SportsCloudGamesDelegate extends SportsCloudHomeScreenDelegate {
 		if (LOGGER.isTraceEnabled()) {
 			LOGGER.trace(String.format("Getting date for %s", gameId));
 		}
-		JsonArray currGameDocs = null;
+		JsonArray currGameDocs = new JsonArray();
 		JsonElement currentGameRespJson = SportsDataGamesFacade$.MODULE$.getGameScheduleByGameCode(gameId);
 
-		JsonArray groupedDocs = currentGameRespJson.getAsJsonObject().get("aggregations").getAsJsonObject()
-				.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
 
-		// get game info
-		JsonObject gameInfo = groupedDocs.get(0).getAsJsonObject();
 
-		if (gameInfo != null) {
-			currGameDocs = gameInfo.get("game_info").getAsJsonObject().get("hits").getAsJsonObject().get("hits")
-					.getAsJsonArray();
-		} else {
-			currGameDocs = new JsonArray();
+		JsonArray groupedDocsByGameId = currentGameRespJson.getAsJsonObject()
+				.get("aggregations").getAsJsonObject()
+				.get("group_by_gameId").getAsJsonObject()
+				.get("buckets").getAsJsonArray();
+		for(JsonElement groupByGameId : groupedDocsByGameId) {
+			JsonArray groupedMaxBatchTimeDocs = groupByGameId.getAsJsonObject()
+					.get("top_hits_by_batch_time").getAsJsonObject()
+					.get("buckets").getAsJsonArray();
+			for (JsonElement maxBatchTimeDoc : groupedMaxBatchTimeDocs) {
+				JsonArray groupedDocs = maxBatchTimeDoc.getAsJsonObject()
+						.get("top_game_hits").getAsJsonObject()
+						.get("hits").getAsJsonObject()
+						.get("hits").getAsJsonArray();
+				for (JsonElement groupedDocSrc : groupedDocs) {
+					currGameDocs.add(groupedDocSrc.getAsJsonObject());
+				}
+			}
 		}
 
 		return currGameDocs;

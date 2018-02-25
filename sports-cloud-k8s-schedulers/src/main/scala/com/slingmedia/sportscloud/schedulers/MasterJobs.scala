@@ -173,7 +173,7 @@ class DownloadSchedulesJob {
 				while(iterator.hasNext) {
 				  val channel_guid=iterator.next.getAsString
 					if(channel_guid!=null) { 
-						for( i <- 0 to 5){
+						for( i <- -1 to 5){
 							val epochTimeOffset = Instant.now().plus(i, ChronoUnit.DAYS);      				  
 							val utc = epochTimeOffset.atZone(ZoneId.of("Z"));        				  
 							def pattern = "yyyyMMdd";

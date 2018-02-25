@@ -102,7 +102,8 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PUT,DELETE,OPTIONS");
 			response.headers().set(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS, "X-Requested-With, Content-Type, Content-Length");
 
-			if(request.method()==HttpMethod.HEAD){
+			if(request.method()==HttpMethod.HEAD ||
+			   request.method()==HttpMethod.OPTIONS){
 				bytes =new byte[0];
 			}else {
 				String uri = request.uri();
