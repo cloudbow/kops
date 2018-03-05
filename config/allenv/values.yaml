@@ -317,13 +317,22 @@ sc-services:
         tag: sports-cloud-rest:0.0.1-alpha.23
         pullPolicy: IfNotPresent 
         env:
-          JAVA_OPTS: "-Xmx1024M"
+          JAVA_OPTS: "-XX:+PrintGCDetails \
+                -XX:+PrintGCTimeStamps \
+                -XX:+PrintReferenceGC   \
+                -XX:+ParallelRefProcEnabled \
+                -XX:+PrintAdaptiveSizePolicy  \
+                -XX:+UnlockExperimentalVMOptions \
+                -XX:+UseG1GC  \
+                -XX:G1MixedGCLiveThresholdPercent=25 \
+                -XX:InitiatingHeapOccupancyPercent=10 \
+                -Xmx2g"
       deployment:
         containerPort: 9080
         replicas: 3 
         resources:
-          maxMem: "1.5G"
-          minMem: "1024M"
+          maxMem: "3G"
+          minMem: "3G"
         livenessProbe:
           initialDelaySeconds: 120
           periodSeconds: 20

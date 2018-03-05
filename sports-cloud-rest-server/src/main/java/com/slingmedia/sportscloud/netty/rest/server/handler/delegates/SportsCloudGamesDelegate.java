@@ -255,9 +255,7 @@ public class SportsCloudGamesDelegate extends SportsCloudHomeScreenDelegate {
 						.get("top_game_hits").getAsJsonObject()
 						.get("hits").getAsJsonObject()
 						.get("hits").getAsJsonArray();
-				for (JsonElement groupedDocSrc : groupedDocs) {
-					currGameDocs.add(groupedDocSrc.getAsJsonObject());
-				}
+				currGameDocs.addAll(groupedDocs);
 			}
 		}
 

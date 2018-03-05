@@ -8,8 +8,9 @@ import org.apache.spark.sql.types.{ StructType, StructField, StringType, Integer
 
 import sys.process._
 import scala.language.postfixOps
-import scala.collection.mutable.WrappedArray
+import scala.collection.mutable.{ WrappedArray , ListBuffer }
 import scala.util.{ Try, Success, Failure }
+
 
 import java.time.{ ZonedDateTime,LocalDateTime, OffsetDateTime, ZoneOffset, Instant, ZoneId }
 import java.time.format.DateTimeFormatter
@@ -138,179 +139,6 @@ class ContentMatcher extends Serializable with Muncher {
   }
   val selfTimeUDF = udf(getSelfTimeUDFFunc(_: String))
 
-  val regexpCreator = (awayTeamCity: String, awayTeamName: String, homeTeamCity: String, homeTeamName: String, matchType: Int) => {
-    val matchNothing = "(?!.*)"
-    val interMediaryExpr = "(vs\\.|at)"
-    val startExpr = ".*?"
-    var regexp: String = null
-    matchType match {
-      case 0 =>
-        if(
-          (isEmpty(awayTeamCity) && isEmpty(awayTeamName) && isEmpty(homeTeamCity) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamCity) && isEmpty(awayTeamName) )
-            ||
-          (isEmpty(homeTeamCity) && isEmpty(homeTeamName) )
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + awayTeamCity + ".*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + ".*$")
-        }
-      case 1 =>
-        if(
-          (isEmpty(awayTeamName) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamName))
-            ||
-          (isEmpty(homeTeamName))
-        ) {
-          regexp = matchNothing
-        }else {
-          regexp = ("^" + startExpr + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamName + "$")
-        }
-      case 2 =>
-        if(
-          (isEmpty(awayTeamName) && isEmpty(homeTeamCity) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(homeTeamCity) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamName))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + "$")
-        }
-      case 3 =>
-        if(
-          (isEmpty(awayTeamCity) && isEmpty(awayTeamName) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamCity) && isEmpty(awayTeamName))
-            ||
-          (isEmpty(homeTeamName))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + "\\s*" + interMediaryExpr + "\\s*" + homeTeamName + "$")
-        }
-      case 4 =>
-        if(
-          (isEmpty(awayTeamCity) && isEmpty(homeTeamCity))
-            ||
-          (isEmpty(awayTeamCity))
-            ||
-          (isEmpty(homeTeamCity))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + ".*$")
-        }
-      case 5 =>
-        if(
-          (isEmpty(homeTeamCity) && isEmpty(awayTeamCity))
-            ||
-          (isEmpty(homeTeamCity))
-            ||
-          (isEmpty(awayTeamCity))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + ".*$")
-        }
-      case 6 =>
-        if(
-          (isEmpty(homeTeamCity) && isEmpty(homeTeamName) && isEmpty(awayTeamCity) && isEmpty(awayTeamName))
-            ||
-          (isEmpty(homeTeamCity) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamCity) && isEmpty(awayTeamName))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + homeTeamCity + ".*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + ".*$")
-        }
-      case 7 =>
-        if(
-          (isEmpty(homeTeamName) && isEmpty(awayTeamName))
-            ||
-          (isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamName))
-        ) {
-          regexp = matchNothing
-        }else {
-          regexp = ("^" + startExpr + "\\s*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamName + "$")
-        }
-      case 8 =>
-        if(
-          (isEmpty(homeTeamName) && isEmpty(awayTeamCity) && isEmpty(awayTeamName))
-            ||
-          (isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamCity) && isEmpty(awayTeamName))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + "\\s*" + awayTeamName + "$")
-        }
-      case 9 =>
-        if(
-          (isEmpty(homeTeamCity) && isEmpty(homeTeamName) && isEmpty(awayTeamName))
-            ||
-          (isEmpty(homeTeamCity) && isEmpty(homeTeamName))
-            ||
-          (isEmpty(awayTeamName))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + homeTeamName + "\\s*" + interMediaryExpr + "\\s*" + awayTeamName + "$")
-        }
-      case 10 =>
-        if(
-          (isEmpty(homeTeamCity) && isEmpty(awayTeamCity))
-            ||
-          (isEmpty(homeTeamCity))
-            ||
-          (isEmpty(awayTeamCity))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + homeTeamCity + "\\s*" + interMediaryExpr + "\\s*" + awayTeamCity + ".*$")
-        }
-      case 11 =>
-        if(
-          (isEmpty(awayTeamCity) && isEmpty(homeTeamCity))
-            ||
-          (isEmpty(awayTeamCity))
-            ||
-          (isEmpty(homeTeamCity))
-        ) {
-          regexp = matchNothing
-        } else {
-          regexp = ("^" + startExpr + "\\s*" + awayTeamCity + "\\s*" + interMediaryExpr + "\\s*" + homeTeamCity + ".*$")
-        }
-     
-      case _ =>
-        regexp = matchNothing
-    }
-    regexp
-  }
-  //saerch for away vs home
-  val fullMatch = udf(regexpCreator(_: String, _: String, _: String, _: String, 0))
-  val partialWithAnHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 1))
-  val partialWithAtHcHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 2))
-  val partialWithAcAnHn = udf(regexpCreator(_: String, _: String, _: String, _: String, 3))
-  
-  val partialWithAcAnHc = udf(regexpCreator(_: String, _: String, _: String, _: String, 4))
-  val partialWithHcAnAc = udf(regexpCreator(_: String, _: String, _: String, _: String, 5))
-
-  //reverse the expressions to get home vs away
-  val fullMatch2 = udf(regexpCreator(_: String, _: String, _: String, _: String, 6))
-  val partialWithHnAn = udf(regexpCreator(_: String, _: String, _: String, _: String, 7))
-  val partialWithHtAcAn = udf(regexpCreator(_: String, _: String, _: String, _: String, 8))
-  val partialWithHcHnAn = udf(regexpCreator(_: String, _: String, _: String, _: String, 9))
-  
-  val partialWithHcHnAc = udf(regexpCreator(_: String, _: String, _: String, _: String, 10))
-  val partialWithAcHnHc = udf(regexpCreator(_: String, _: String, _: String, _: String, 11))
 
   //UDF definitions ends here
 
@@ -428,29 +256,163 @@ class ContentMatcher extends Serializable with Muncher {
     mlbScheduleDF34
   }
 
+  val regexpLookupMap = Map(
+    "homeTeamName"-> Map("awayTeamName" -> "^.*?\\s*#homeTeamName#\\s*(vs\\.|at)\\s*#awayTeamName#.*$",
+      "awayTeamCity" ->
+        Map("awayTeamName" -> "^.*?\\s*#homeTeamName#\\s*(vs\\.|at)\\s*#awayTeamCity#.*#awayTeamName#.*$"),
+      "homeTeamCity" ->
+        Map("awayTeamName" ->
+          Map("awayTeamCity" -> "^.*?\\s*#homeTeamName#.*#homeTeamCity#\\s*(vs\\.|at)\\s*#awayTeamName#.*#awayTeamCity#.*$" ))
+    ),
+    "homeTeamCity"-> Map("homeTeamName" ->
+      Map("awayTeamCity" ->
+        Map("awayTeamName" -> "^.*?\\s*#homeTeamCity#.*#homeTeamName#\\s*(vs\\.|at)\\s*#awayTeamCity#.*#awayTeamName#.*$" ),
+        "awayTeamName" -> "^.*?\\s*#homeTeamCity#.*#homeTeamName#\\s*(vs\\.|at)\\s*#awayTeamName#.*$"),
+      "awayTeamCity" -> "^.*?\\s*#homeTeamCity#\\s*(vs\\.|at)\\s*#awayTeamCity#.*$"
+    ),
+    "awayTeamName"-> Map("homeTeamName" ->  "^.*?\\s*#awayTeamName#\\s*(vs\\.|at)\\s*#homeTeamName#.*$",
+      "homeTeamCity" ->
+        Map("homeTeamName" -> "^.*?\\s*#awayTeamName#\\s*(vs\\.|at)\\s*#homeTeamCity#.*#homeTeamName#.*$"),
+      "awayTeamCity" ->
+        Map("homeTeamName" ->
+          Map("homeTeamCity" -> "^.*?\\s*#awayTeamName#.*#awayTeamCity#\\s*(vs\\.|at)\\s*#homeTeamName#.*#homeTeamCity#.*$" ))
+    ),
+    "awayTeamCity"-> Map("awayTeamName" ->
+      Map("homeTeamName" -> "^.*?\\s*#awayTeamCity#.*#awayTeamName#\\s*(vs\\.|at)\\s*#homeTeamName#.*$",
+        "homeTeamCity" ->
+          Map("homeTeamName" -> "^.*?\\s*#awayTeamCity#.*#awayTeamName#\\s*(vs\\.|at)\\s*#homeTeamCity#.*#homeTeamName#.*$")),
+      "homeTeamCity" -> "^.*?\\s*#awayTeamCity#\\s*(vs\\.|at)\\s*#homeTeamCity#.*$"
+    )
+  )
+
+
+
+
+  val regexpMapTransformer:((ListBuffer[(Seq[String],String)] ,Map[String,Object] ) => ( ListBuffer[(Seq[String],String)]))  = (acc: ListBuffer[(Seq[String],String)] ,inputMap: Map[String,Object] ) => {
+
+    var level=0
+    var allColsFlattened: ListBuffer[String] = ListBuffer()
+    def decomposeMap(acc: ListBuffer[(Seq[String],String)] ,inputMap: Map[String,Object]): ListBuffer[(Seq[String],String)] = {
+      level+=1;
+      for((name,value) <- inputMap  ) yield {
+        allColsFlattened = (allColsFlattened take level-1) ++ ListBuffer(name)
+        value match {
+          case y:String =>
+            acc += ((allColsFlattened.toSeq ,y))
+          case y:Object => decomposeMap(acc,y.asInstanceOf[Map[String,Object]])
+        }
+      }
+      level-=1
+      allColsFlattened = allColsFlattened take level
+      acc
+    }
+
+    decomposeMap(acc,inputMap)
+
+
+  }
+
+
+  val flattenedRegexpMap = regexpMapTransformer(ListBuffer(),regexpLookupMap)
+  val allPossibleTotalRegexps = flattenedRegexpMap.size
+
+  val fetchMaxTotalColumns:(List[(Seq[String],String)]=>Int)  =  (inputList: List[(Seq[String],String)]) => {
+
+    def fetchMax(inputList: List[(Seq[String],String)],acc:Int):Int = {
+      inputList match {
+        case List() => acc
+        case x:List[(Seq[String],String)] => {
+          val currSize = x.take(1)(0)._1.size
+          val max = if(currSize>acc) currSize else acc
+          fetchMax(x.drop(1),max)
+        }
+      }
+    }
+    fetchMax(inputList,0)
+  }
+
+  val maxTotalColumns = fetchMaxTotalColumns(flattenedRegexpMap.toList)
+
+
+  val getMapValueRecursively:(List[String],Map[String,Object])=>(String) = (colNames:List[String],inputMap:Map[String,Object]) => {
+    colNames match {
+      case Nil =>
+        "(?!.*)" //return empty regexp value if key is not found
+      case x :: xs =>
+        val regexpLookBack = inputMap(x)
+        println(regexpLookBack)
+        regexpLookBack match {
+          case y:Object => if(y.isInstanceOf[String]) y.asInstanceOf[String] else  getMapValueRecursively(xs, y.asInstanceOf[Map[String,Object]])
+        }
+
+    }
+  }
+
+
+  val replaceTemplate: ((List[String],List[String],String)=>String)  = (columnNames:List[String],columns:List[String], regexpTemplate:String) => {
+    var regexp=regexpTemplate
+    columnNames zip columns map {
+      it =>
+        it match {
+          case (colName,colValue) => {
+            regexp = regexp.replaceAll("#"+colName+"#",colValue)
+          }
+        }
+    }
+    regexp
+  }
+
+  def lookupAndCreateColumn(allColNames:List[String],column4:String,column3:String,column2:String,column1:String):String = {
+    val columns =List(column1, column2,column3,column4) filter { _ != "column_not_defined" }
+    val allColumnEntries:ListBuffer[String] = ListBuffer()
+    var i=0
+    allColNames map {
+      colName =>
+        val col = columns(i)
+        allColumnEntries += (if(isEmpty(col)) "" else colName)
+        i +=1
+    }
+    val regexp = getMapValueRecursively(allColumnEntries.toList,regexpLookupMap withDefaultValue "(?!.*)" )
+    replaceTemplate(allColNames.toList,columns,regexp)
+  }
+
+  val addColumnsToDF: (DataFrame,ListBuffer[(Seq[String],String)])=>DataFrame = (inputDF:DataFrame,allColNames:ListBuffer[(Seq[String],String)]) => {
+    var j=0
+    var finalDF = inputDF
+    flattenedRegexpMap map {
+      it =>
+        j += 1
+        val allColNames = it._1
+        val regexp = it._2
+        val allCols = allColNames map { col => if(isEmpty(col)) lit("") else inputDF(col)  }
+        val totalCols = allCols size
+        val colsNotDefined = maxTotalColumns - totalCols
+        var lookupAndCreateColUDF = null:org.apache.spark.sql.expressions.UserDefinedFunction
+        colsNotDefined match {
+          case 0 => lookupAndCreateColUDF = udf(lookupAndCreateColumn(allColNames.toList,_:String,_:String,_:String,_:String))
+          case 1 => lookupAndCreateColUDF = udf(lookupAndCreateColumn(allColNames.toList,"not_defined",_:String,_:String,_:String))
+          case 2 => lookupAndCreateColUDF = udf(lookupAndCreateColumn(allColNames.toList,"not_defined","not_defined",_:String,_:String))
+          case 3 => lookupAndCreateColUDF = udf(lookupAndCreateColumn(allColNames.toList,"not_defined","not_defined","not_defined",_:String))
+          case _ => throw new IllegalArgumentException("Cannot be this number")
+        }
+        finalDF=finalDF.withColumn("regexp"+j,lookupAndCreateColUDF(allCols reverse :_*))
+    }
+
+    finalDF
+  }
+
   def contentMatch(gameScheduleDF: DataFrame, inputKafkaTopic: String, domain: String = "slingtv"): DataFrame = {
     //Fetch from thuuz and update 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val mlbScheduleDF41 = gameScheduleDF.withColumn("regexp1", fullMatch($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-    val mlbScheduleDF42 = mlbScheduleDF41.withColumn("regexp2", partialWithAnHn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-    val mlbScheduleDF43 = mlbScheduleDF42.withColumn("regexp3", partialWithAtHcHn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-    val mlbScheduleDF44 = mlbScheduleDF43.withColumn("regexp4", partialWithAcAnHn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
 
-    
-    val mlbScheduleDF45 = mlbScheduleDF44.withColumn("regexp5", partialWithAcAnHc($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-    val mlbScheduleDF46 = mlbScheduleDF45.withColumn("regexp6", partialWithHcAnAc($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-    
-    //add reverse regular expressions
-    val mlbScheduleDF47 = mlbScheduleDF46.
-    withColumn("regexp7", fullMatch2($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName")).
-    withColumn("regexp8", partialWithHnAn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName")).
-    withColumn("regexp9", partialWithHtAcAn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName")).
-    withColumn("regexp10", partialWithHcHnAn($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName")).
-    withColumn("regexp11", partialWithHcHnAc($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName")).
-    withColumn("regexp12", partialWithAcHnHc($"awayTeamCity", $"awayTeamName", $"homeTeamCity", $"homeTeamName"))
-
+    val mlbScheduleDF47 = addColumnsToDF(gameScheduleDF,flattenedRegexpMap)
     val mlbScheduleDF5 = mlbScheduleDF47.coalesce(4)
+
+
+
+
+
 
     //val gameScheduleDF=mlbScheduleDF5
     //val targetProgramsToMatch = programScheduleChannelJoin
@@ -459,37 +421,24 @@ class ContentMatcher extends Serializable with Muncher {
     val programScheduleChannelJoin2 = spark.sql("select * from programSchedules").toDF
     CMHolder.log.trace("Joining with target programs using a cross join")
     val statsTargetProgramsJoin = mlbScheduleDF5.crossJoin(programScheduleChannelJoin2)
-
+    val rlikExpr= new StringBuilder()
+    for(i <- 1 to allPossibleTotalRegexps) rlikExpr.
+      append("(program_title rlike ").
+      append("regexp"+i).
+      append(")").
+      append(if(i!=allPossibleTotalRegexps) " OR " else "" )
     val statsTargetProgramsJoin1 = statsTargetProgramsJoin.where(
-      """( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 ) 
+      s"""( startTimeEpoch < game_date_epoch + 3600 AND startTimeEpoch > game_date_epoch - 3600 )
       AND
-      ((program_title rlike regexp1) OR 
-      (program_title rlike regexp2) OR 
-      (program_title rlike regexp3) OR 
-      (program_title rlike regexp4) OR 
-      (program_title rlike regexp5) OR 
-      (program_title rlike regexp6) OR
-      (program_title rlike regexp7) OR
-      (program_title rlike regexp8) OR
-      (program_title rlike regexp9) OR
-      (program_title rlike regexp10) OR
-      (program_title rlike regexp11) OR
-      (program_title rlike regexp12))""".stripMargin.replaceAll("\n", " "))
+      (${rlikExpr.toString()}) """.stripMargin.replaceAll("\n", " "))
     CMHolder.log.trace("Matched with stats data");
-    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.drop("regexp1",
-      "regexp2",
-      "regexp3",
-      "regexp4",
-      "regexp5",
-      "regexp6",
-      "regexp7",
-      "regexp8",
-      "regexp9",
-      "regexp10",
-      "regexp11",
-      "regexp12",
-      "subpack_int_id",
-      "date")
+    val dropCols =  ListBuffer[String]()
+    for(i <- 1 to allPossibleTotalRegexps) dropCols += ("regexp"+i)
+    val statsTargetProgramsJoin2 = statsTargetProgramsJoin1.
+      drop(dropCols.toList:_*).
+      drop(
+        "subpack_int_id",
+        "date")
 
     val gameScheduleOrig = fetchMLBSchedule(inputKafkaTopic).coalesce(4)
     val allStatsNullFills = Map(

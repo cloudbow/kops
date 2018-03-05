@@ -30,6 +30,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpContentCompressor;
 
 /**
  * Channel initializer for Sports cloud service layers
@@ -51,7 +52,8 @@ public class SportsCloudServerInitializer extends ChannelInitializer<Channel> {
 		final ChannelPipeline pipeline = channel.pipeline();
 		pipeline.addLast("codec", new HttpServerCodec());
 		pipeline.addLast("inflator", new HttpContentDecompressor());
-		pipeline.addLast("aggregator", new HttpObjectAggregator(512 * 1024));
+		pipeline.addLast("aggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
+		pipeline.addLast("deflater", new HttpContentCompressor(1));
 		pipeline.addLast("handler", new SportsCloudRestDecoder());
 	}
 

@@ -37,6 +37,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			rm -rf /tmp/micro-content-matcher
 			cp -rf $BASE_PATH/../../micro-content-matcher  .
 			cd micro-content-matcher
+			sbt test && \
 			sbt clean assembly
 			mkdir -p $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars
 			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars/all-spark-jobs.jar
@@ -46,6 +47,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			rm -rf /tmp/micro-content-matcher
 			cp -rf $BASE_PATH/../../micro-content-matcher  .
 			cd micro-content-matcher
+			sbt test && \
 			sbt clean assembly
 			mkdir -p $BASE_PATH/docker/containers/Docker-SparkJob/jars
 			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-SparkJob/jars/all-spark-jobs.jar

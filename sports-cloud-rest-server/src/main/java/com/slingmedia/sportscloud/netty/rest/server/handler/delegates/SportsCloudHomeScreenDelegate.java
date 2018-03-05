@@ -79,17 +79,12 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 							.get("top_hits_by_batch_time").getAsJsonObject()
 							.get("buckets").getAsJsonArray();
 					for (JsonElement maxBatchTimeDoc : groupedMaxBatchTimeDocs) {
-						JsonArray groupedDocs  =  maxBatchTimeDoc.getAsJsonObject()
-								.get("top_game_hits").getAsJsonObject()
-								.get("hits").getAsJsonObject()
-								.get("hits").getAsJsonArray();
-						for (JsonElement groupedDocSrc : groupedDocs) {
 
 							JsonObject mainObj = new JsonObject();
 						JsonObject solrDoc = null;
 						// get a list of subpackage ids
 
-						JsonArray homeScreenGameScheduleGroup = groupedDocSrc.getAsJsonObject().get("top_game_home_hits")
+						JsonArray homeScreenGameScheduleGroup = maxBatchTimeDoc.getAsJsonObject().get("top_game_hits")
 								.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
 						solrDoc = getMatchedGame(mainObj, homeScreenGameScheduleGroup);
 						JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
@@ -203,7 +198,7 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 						statsObj.add("homeTeam", statsHomeTeam);
 						statsObj.add("awayTeam", statsAwayTeam);
 						allGames.add(mainObj);
-					}
+
 				}
 			}
 			} catch (Exception e) {
