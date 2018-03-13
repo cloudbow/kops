@@ -334,17 +334,21 @@ class ContentMatcher extends Serializable with Muncher {
   val maxTotalColumns = fetchMaxTotalColumns(flattenedRegexpMap.toList)
 
 
+  val notMatchingRegexp =  "(?!.*)"
   val getMapValueRecursively:(List[String],Map[String,Object])=>(String) = (colNames:List[String],inputMap:Map[String,Object]) => {
     colNames match {
       case Nil =>
-        "(?!.*)" //return empty regexp value if key is not found
+        notMatchingRegexp //return empty regexp value if key is not found
       case x :: xs =>
-        val regexpLookBack = inputMap(x)
-        println(regexpLookBack)
-        regexpLookBack match {
-          case y:Object => if(y.isInstanceOf[String]) y.asInstanceOf[String] else  getMapValueRecursively(xs, y.asInstanceOf[Map[String,Object]])
+        try {
+          val regexpLookBack = inputMap(x)
+          println(regexpLookBack)
+          regexpLookBack match {
+            case y:Object => if(y.isInstanceOf[String]) y.asInstanceOf[String] else  getMapValueRecursively(xs, y.asInstanceOf[Map[String,Object]])
+          }
+        } catch {
+          case e:java.util.NoSuchElementException =>  notMatchingRegexp
         }
-
     }
   }
 

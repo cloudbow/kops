@@ -4,14 +4,15 @@ echo "Going to work on Docker image type $DOCKER_IMAGE_TYPE"
 
 case "$DOCKER_IMAGE_TYPE" in
         sports-cloud-rest)
-        	cd /tmp
-        	rm -rf /tmp/sports-cloud-rest-server
-			cp -rf $BASE_PATH/../../sports-cloud-rest-server .
-			cd sports-cloud-rest-server
-			mvn clean package
-			echo "Creating the jars directory"
-			mkdir -p $BASE_PATH/docker/containers/Docker-Rest/jars
-			echo "Copying to jars directory"
+        	cd /tmp && \
+        	rm -rf /tmp/sports-cloud-rest-server && \
+			cp -rf $BASE_PATH/../../sports-cloud-rest-server . && \
+			cd sports-cloud-rest-server && \
+			mvn test && \
+			mvn clean package && \
+			echo "Creating the jars directory" && \
+			mkdir -p $BASE_PATH/docker/containers/Docker-Rest/jars && \
+			echo "Copying to jars directory" && \
 			cp /tmp/sports-cloud-rest-server/target/sports-cloud-rest-server*.jar $BASE_PATH/docker/containers/Docker-Rest/jars/sports-cloud-rest-server.jar
             ;;
         sc-cp-connect)
@@ -33,23 +34,23 @@ case "$DOCKER_IMAGE_TYPE" in
 			cp target/scala-2.11/kafka-schedule-parser-assembly-*.jar $BASE_PATH/docker/containers/Docker-ConfluentConnect/jars/kafka-schedule-parser-assembly.jar
 			;;
 		spark-worker)
-			cd /tmp
-			rm -rf /tmp/micro-content-matcher
-			cp -rf $BASE_PATH/../../micro-content-matcher  .
-			cd micro-content-matcher
+			cd /tmp && \
+			rm -rf /tmp/micro-content-matcher && \
+			cp -rf $BASE_PATH/../../micro-content-matcher  . && \
+			cd micro-content-matcher && \
 			sbt test && \
-			sbt clean assembly
-			mkdir -p $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars
+			sbt clean assembly && \
+			mkdir -p $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars && \
 			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-Spark/spark-worker/jars/all-spark-jobs.jar
 			;;
 		spark-job)
-			cd /tmp
-			rm -rf /tmp/micro-content-matcher
-			cp -rf $BASE_PATH/../../micro-content-matcher  .
-			cd micro-content-matcher
+			cd /tmp && \
+			rm -rf /tmp/micro-content-matcher && \
+			cp -rf $BASE_PATH/../../micro-content-matcher  . && \
+			cd micro-content-matcher && \
 			sbt test && \
-			sbt clean assembly
-			mkdir -p $BASE_PATH/docker/containers/Docker-SparkJob/jars
+			sbt clean assembly && \
+			mkdir -p $BASE_PATH/docker/containers/Docker-SparkJob/jars && \
 			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-SparkJob/jars/all-spark-jobs.jar
 			;;
 		sc-job-scheduler)

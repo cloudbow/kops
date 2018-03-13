@@ -164,5 +164,5 @@ spec:
       volumes:
       - name: datadir
         hostPath:
-          path: {{ .Values.deployment.volumes.hostPath }}
+          path: /data/apps/sports-cloud/{{ .Release.Name }}/kafka/data
           type: DirectoryOrCreate

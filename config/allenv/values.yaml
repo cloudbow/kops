@@ -240,8 +240,6 @@ sc-services:
                 minMem: "1G"
                 maxCpu: "0.5"
                 maxMem: "3G"
-              volumes:
-                hostPath: /data/apps/sports-cloud/kafka/data
           ## The kafka connect deployment and service
           connect:
             image:

@@ -157,4 +157,17 @@ class TestContentMatcher extends FlatSpec {
   }
 
 
+  //13.
+  //homeTeamName | homeTeamCity | awayTeamName | awayTeamCity
+  //Raptors     |Toronto     |Trail Blazers|Portland
+  "A content match dataframe with homeTeamName and empty awayTeamName" should
+    "generate regexp (?!.*)" in {
+    val regexp = testContentMatcherTarget.lookupAndCreateColumn(
+      List("homeTeamName", "awayTeamName"),
+      "not_defined", "not_defined", " ", "Raptors")
+    assert(regexp == "(?!.*)")
+  }
+
+
+
 }
