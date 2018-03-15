@@ -31,6 +31,8 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.util.concurrent.EventExecutorGroup;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
 
 /**
  * Channel initializer for Sports cloud service layers
@@ -40,7 +42,11 @@ import io.netty.handler.codec.http.HttpContentCompressor;
  * @since 1.0
  */
 public class SportsCloudServerInitializer extends ChannelInitializer<Channel> {
+	private EventExecutorGroup executorGroup;
 
+	public SportsCloudServerInitializer() {
+		executorGroup = new DefaultEventExecutorGroup(10);
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -54,7 +60,7 @@ public class SportsCloudServerInitializer extends ChannelInitializer<Channel> {
 		pipeline.addLast("inflator", new HttpContentDecompressor());
 		pipeline.addLast("aggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
 		pipeline.addLast("deflater", new HttpContentCompressor(1));
-		pipeline.addLast("handler", new SportsCloudRestDecoder());
+		pipeline.addLast(executorGroup, "handler", new SportsCloudRestDecoder());
 	}
 
 }

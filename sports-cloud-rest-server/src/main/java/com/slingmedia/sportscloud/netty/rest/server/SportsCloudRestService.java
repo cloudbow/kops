@@ -24,6 +24,7 @@ written consent of Sling Media, Inc.
  ***********************************************************************/
 package com.slingmedia.sportscloud.netty.rest.server;
 
+import io.netty.buffer.PooledByteBufAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,9 +125,18 @@ public class SportsCloudRestService extends AbstractSportsCloudRestDelegate {
 			bossGroup = new NioEventLoopGroup();
 			workerGroup = new NioEventLoopGroup();
 			// @formatter:off
-			batchBootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+			batchBootstrap
+					.group(bossGroup, workerGroup)
+					.channel(NioServerSocketChannel.class)
+					.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+					.option(ChannelOption.SO_BACKLOG, SportsCloudRestConfig.getSocketBacklog())
 					.childHandler(new SportsCloudServerInitializer())
-					.option(ChannelOption.SO_BACKLOG, SportsCloudRestConfig.getSocketBacklog());
+					.childOption(ChannelOption.SO_SNDBUF,10485760)
+					.childOption(ChannelOption.SO_RCVBUF,10485760)
+					.childOption(ChannelOption.TCP_NODELAY,true)
+					.childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
+					.childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
+					.childOption(ChannelOption.ALLOCATOR,PooledByteBufAllocator.DEFAULT);
 			// @formatter:on
 			ChannelFuture f = null;
 			try {

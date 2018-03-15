@@ -144,6 +144,18 @@ object SportsDataGamesFacade {
 			                }
 			              }
 			            }
+			          ],
+			          "must_not": [
+			            {
+			              "term": {
+			                "homeTeamName.keyword": ""
+			              }
+			            },
+			            {
+			              "term": {
+			                "awayTeamName.keyword": ""
+			              }
+			            }
 			          ]
 			        }
 			      }

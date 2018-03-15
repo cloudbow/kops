@@ -324,6 +324,7 @@ sc-services:
                 -XX:+UseG1GC  \
                 -XX:G1MixedGCLiveThresholdPercent=25 \
                 -XX:InitiatingHeapOccupancyPercent=10 \
+                -XX:MaxMetaspaceSize=256m \
                 -Xmx2g"
       deployment:
         containerPort: 9080

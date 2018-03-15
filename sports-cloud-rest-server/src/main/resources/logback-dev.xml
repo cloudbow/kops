@@ -22,7 +22,7 @@
   </appender>
   
   <logger name="pns.alltypes" level="INFO" />
-  <logger name="com.slingmedia" level="ERROR" />
+  <logger name="com.slingmedia" level="TRACE" />
  
   <logger name="org.springframework" level="INFO" />
   

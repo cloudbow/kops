@@ -36,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.slingmedia.sportscloud.netty.rest.model.League;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -51,11 +52,9 @@ import com.slingmedia.sportscloud.netty.rest.model.Role;
 import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudHomeScreenDelegate;
 import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudMCDelegate;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.buffer.ByteBuf; 
+
 
 /**
  * Handles REST services and dispatches the request details to Delegate services
@@ -64,6 +63,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @version 1.0
  * @since 1.0
  */
+@Sharable
 public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttpRequest> {
 
 	/** The Constant LOGGER. */
@@ -166,24 +166,24 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 
 			}
 
-
 			response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
 
-			// response.headers().set(HttpHeaders.Names.CONNECTION,
-			// HttpHeaders.Values.CLOSE);
-
 			ctx.write(response);
-
 			buf.writeBytes(bytes);
 
-		} catch (
-
-		Exception e) {
+		} catch (Exception e) {
 			LOGGER.error("Error occurred during encoding", e);
 		} finally {
-			final ChannelFuture future = ctx.writeAndFlush(new DefaultLastHttpContent(buf));
-			future.addListener(ChannelFutureListener.CLOSE);
+			final ChannelFuture future = ctx.write(new DefaultLastHttpContent(buf));
+			if (!keepAlive) {
+				future.addListener(ChannelFutureListener.CLOSE);
+			}
 		}
+	}
+
+
+	public void channelReadComplete(ChannelHandlerContext ctx) {
+		ctx.flush();
 	}
 
 	/**
