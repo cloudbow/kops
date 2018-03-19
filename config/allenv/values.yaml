@@ -217,9 +217,35 @@ sc-services:
           ## Kafka deployment 
           kafka:
             image:
-              repository: gcr.io/google_containers
-              tag: kubernetes-kafka:1.0-10.2.1
-              pullPolicy: IfNotPresent 
+              tag: sc-cp-kafka:0.0.1-alpha.13
+              env:
+                KAFKA_HEAP_OPTS:  "-Xmx2g -Xms1g"
+                KAFKA_OPTS: "-Dlogging.level=INFO"
+                KAFKA_LOG_DIRS: "/var/lib/kafka/data/topics"
+                KAFKA_NUM_PARTITIONS: "3"
+                KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+                KAFKA_MIN_INSYNC_REPLICAS: "2"
+                KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+                KAFKA_NUM_RECOVERY_THREADS_PER_DATA_DIR: "1"
+                KAFKA_LISTENERS: "PLAINTEXT://:9092"
+                KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://:9092"
+                KAFKA_NUM_NETWORK_THREADS: "3"
+                KAFKA_NUM_IO_THREADS: "8"
+                KAFKA_SOCKET_SEND_BUFFER_BYTES: "1024000"
+                KAFKA_SOCKET_RECEIVE_BUFFER_BYTES: "1024000"
+                KAFKA_SOCKET_REQUEST_MAX_BYTES: "104857600"
+                KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "2"
+                KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "2"
+                KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+                KAFKA_LOG_RETENTION_HOURS: "60"
+                KAFKA_LOG_ROLL_HOURS: "60"
+                KAFKA_LOG_RETENTION_BYTES: "1073741824"
+                KAFKA_LOG_SEGMENT_BYTES: "1073741824"
+                KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: "300000"
+                KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "6000"
+                KAFKA_DELETE_TOPIC_ENABLE: "true"
+                KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "3"  
+              pullPolicy: IfNotPresent       
             pdb:
               maxUnavailable: 1
             service:
@@ -230,9 +256,6 @@ sc-services:
               internalPort: 9092
             deployment:
               containerPort: 9092
-              env:
-                KAFKA_HEAP_OPTS:  "-Xmx2g -Xms1g"
-                KAFKA_OPTS: "-Dlogging.level=INFO"
               terminationGracePeriodSeconds: 300
               replicas: 3
               resources:
@@ -240,75 +263,75 @@ sc-services:
                 minMem: "1G"
                 maxCpu: "0.5"
                 maxMem: "3G"
-          ## The kafka connect deployment and service
-          connect:
-            image:
-              tag: sc-cp-connect:0.0.1-alpha.13
-              env:
-                CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
-                CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
-                CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-                CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-                CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
-                CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-                CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
-                CONNECT_PLUGIN_PATH: "/data/kafka/connect/libs"
-                CONNECT_REST_PORT: "8083"
-                CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
-                CONNECT_GROUP_ID: "sc-connect-group"
-                CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-                CONNECT_STATUS_STORAGE_TOPIC: "connect-sc-status"
-                CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-                CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
-                CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
-                KAFKA_HEAP_OPTS: "-XX:+PrintGCDetails \
-                -XX:+PrintGCTimeStamps \
-                -XX:+PrintReferenceGC   \
-                -XX:+ParallelRefProcEnabled \
-                -XX:+PrintAdaptiveSizePolicy  \
-                -XX:+UnlockExperimentalVMOptions \
-                -XX:+UseG1GC  \
-                -XX:G1MixedGCLiveThresholdPercent=25 \
-                -XX:InitiatingHeapOccupancyPercent=10 \
-                -Xmx3g"
-                CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-                CONNECT_OFFSET_STORAGE_TOPIC: "connect-sc-offsets"
-                CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
-              pullPolicy: IfNotPresent 
-            deployment:
-              readinessProbe:
-                initialDelaySeconds: 120
-                periodSeconds: 20
-                timeoutSeconds: 10
-              containerPort: 8083
-              replicas: 3   
-              resources:
-                maxMem: "4G"
-                minMem: "1G"
-                maxCpu: "2"
-                minCpu: "0.5"
-            service:
-              name: kafka-connect
-              type: NodePort
-              externalPort: 8083
-              internalPort: 8083
-          rest-proxy:
-            image: 
-              repository: confluentinc
-              tag: cp-kafka-rest:3.2.0
-              env:
-              pullPolicy: IfNotPresent 
-            deployment:
-              containerPort: 8082
-              replicas: 1   
-              resources:
-                maxMem: "768M"
-                minMem: "512M"
-            service:
-              name: kafka-rest-proxy
-              type: NodePort
-              externalPort: 8082
-              internalPort: 8082
+            ## The kafka connect deployment and service
+            connect:
+              image:
+                tag: sc-cp-connect:0.0.1-alpha.13
+                env:
+                  CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+                  CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+                  CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+                  CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+                  CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
+                  CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                  CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.marathon.l4lb.thisdcos.directory:8081"
+                  CONNECT_PLUGIN_PATH: "/data/kafka/connect/libs"
+                  CONNECT_REST_PORT: "8083"
+                  CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+                  CONNECT_GROUP_ID: "sc-connect-group-v2"
+                  CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                  CONNECT_STATUS_STORAGE_TOPIC: "connect-sc-status"
+                  CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                  CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
+                  CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+                  KAFKA_HEAP_OPTS: "-XX:+PrintGCDetails \
+                  -XX:+PrintGCTimeStamps \
+                  -XX:+PrintReferenceGC   \
+                  -XX:+ParallelRefProcEnabled \
+                  -XX:+PrintAdaptiveSizePolicy  \
+                  -XX:+UnlockExperimentalVMOptions \
+                  -XX:+UseG1GC  \
+                  -XX:G1MixedGCLiveThresholdPercent=25 \
+                  -XX:InitiatingHeapOccupancyPercent=10 \
+                  -Xmx3g"
+                  CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+                  CONNECT_OFFSET_STORAGE_TOPIC: "connect-sc-offsets"
+                  CONNECT_CONFIG_STORAGE_TOPIC: "connect-sc-configs"
+                pullPolicy: IfNotPresent 
+              deployment:
+                readinessProbe:
+                  initialDelaySeconds: 120
+                  periodSeconds: 20
+                  timeoutSeconds: 10
+                containerPort: 8083
+                replicas: 3   
+                resources:
+                  maxMem: "4G"
+                  minMem: "1G"
+                  maxCpu: "2"
+                  minCpu: "0.5"
+              service:
+                name: kafka-connect
+                type: NodePort
+                externalPort: 8083
+                internalPort: 8083
+            rest-proxy:
+              image: 
+                repository: confluentinc
+                tag: cp-kafka-rest:4.0.0
+                env:
+                pullPolicy: IfNotPresent 
+              deployment:
+                containerPort: 8082
+                replicas: 1   
+                resources:
+                  maxMem: "768M"
+                  minMem: "512M"
+              service:
+                name: kafka-rest-proxy
+                type: NodePort
+                externalPort: 8082
+                internalPort: 8082
   online:
     sc-rest-layer:
       image:

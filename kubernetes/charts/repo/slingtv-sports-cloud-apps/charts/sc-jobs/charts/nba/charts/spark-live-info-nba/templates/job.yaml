@@ -3,10 +3,18 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ template "spark-live-info-nba.fullname" . }}-{{ randAlphaNum 5 | lower }}
+  labels:
+    app: {{ template "spark-live-info-nba.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}  
 spec:
   template:
     metadata:
       name: {{ template "spark-live-info-nba.fullname" . }}
+    labels:
+      app: {{ template "spark-live-info-nba.name" . }}
+      chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+      release: {{ .Release.Name }}   
     spec:
       containers:
       - name: {{ .Chart.Name }}

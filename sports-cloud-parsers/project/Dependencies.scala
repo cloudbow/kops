@@ -8,4 +8,6 @@ object Dependencies {
   lazy val kafkalib = "org.apache.kafka" % "connect-api" % "0.10.2.0" % "provided"
   lazy val ftpKafka = "com.eneco" % "kafka-connect-ftp" % "0.0.0-unspecified"
   lazy val scalaXML = "org.scala-lang.modules" %% "scala-xml" % "1.0.2"
+  lazy val commonsNet = "commons-net" % "commons-net" % "3.5"
+  lazy val commonsCodec = "commons-codec" % "commons-codec" % "1.10"
 }

@@ -24,7 +24,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			$MAVEN_HOME/bin/mvn install:install-file -DgroupId=com.eneco  \
 			-DartifactId=kafka-connect-ftp  \
 			-Dversion=0.0.0-unspecified  \
-			-Dfile=/tmp/sports-cloud-parsers/libs/kafka-connect-ftp-0.1.7-8-kafka-0.10.2.0.jar  \
+			-Dfile=/tmp/sports-cloud-parsers/libs/kafka-connect-ftp-0.1.7-8-kafka-1.0.1.jar  \
 			-Dpackaging=jar \
 			-DgeneratePom=true
 
