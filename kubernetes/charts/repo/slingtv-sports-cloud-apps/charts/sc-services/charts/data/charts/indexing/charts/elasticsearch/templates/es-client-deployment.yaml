@@ -33,6 +33,13 @@ spec:
               - SYS_RESOURCE
         image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          limits:  
+            cpu: {{ .Values.deployment.client.resources.maxCpu }}
+            memory: {{ .Values.deployment.client.resources.maxMem }}
+          requests:
+            memory: {{ .Values.deployment.client.resources.minMem }}
+            cpu: {{ .Values.deployment.client.resources.minCpu }}         
         env:
         - name: NAMESPACE
           valueFrom:

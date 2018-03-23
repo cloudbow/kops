@@ -1,12 +1,20 @@
-# ------------------- Spark job for live info nfl for slingtv ------------------- #
-apiVersion: batch/v1
-kind: Job
+# ------------------- Connect for live info nba for slingtv ------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: {{ template "spark-live-info-nfl.fullname" . }}-{{ randAlphaNum 5 | lower }}
+  name: {{ template "spark-live-info-nba.fullname" . }}
+  labels:
+    app: {{ template "spark-live-info-nba.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
 spec:
+  replicas: {{ .Values.Job.replicas }}
   template:
     metadata:
-      name: {{ template "spark-live-info-nfl.fullname" . }}
+      labels:
+        app: {{ template "spark-live-info-nba.name" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        release: {{ .Release.Name }}   
     spec:
       containers:
       - name: {{ .Chart.Name }}

@@ -90,6 +90,11 @@ sc-services:
           master:
             role: master
             replicas: 3
+            resources:
+              minCpu: 500m
+              maxCpu: 2
+              minMem: 3Gi
+              maxMem: 3.5Gi          
             livenessProbe:
               port: transport
             ports:
@@ -101,10 +106,15 @@ sc-services:
               NODE_INGEST: "false"
               NODE_DATA: "false"
               HTTP_ENABLE: "false"
-              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+              ES_JAVA_OPTS: "-Xms1g -Xmx1g"
           client:
             role: client
             replicas: 2
+            resources:
+              minCpu: 500m
+              maxCpu: 2
+              minMem: 3G
+              maxMem: 3.5Gi               
             livenessProbe:
               port: transport
             readinessProbe:
@@ -119,10 +129,15 @@ sc-services:
               NODE_MASTER: "false"
               NODE_DATA: "false"
               HTTP_ENABLE: "true"
-              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+              ES_JAVA_OPTS: "-Xms1g -Xmx1g"
           data:
             role: data
             replicas: 3
+            resources:
+              minCpu: 500m
+              maxCpu: 2
+              minMem: 3Gi
+              maxMem: 3.5Gi
             livenessProbe: 
               initialDelaySeconds: 20
               periodSeconds: 10
@@ -135,7 +150,7 @@ sc-services:
               NODE_MASTER: "false"
               NODE_INGEST: "false"
               HTTP_ENABLE: "true"
-              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+              ES_JAVA_OPTS: "-Xms2g -Xmx2g"
   offline:
     zookeeper:
       image:
@@ -737,6 +752,7 @@ sc-jobs:
         - "live_info_nfl"
         - "live_info"
       Job:
+        replicas: 1        
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
@@ -907,6 +923,7 @@ sc-jobs:
         - "live_info_mlb"
         - "live_info"
       Job:
+        replicas: 1
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
@@ -1053,7 +1070,8 @@ sc-jobs:
         execArgs:
         - "live_info_ncaaf"
         - "live_info"
-      cronJob:
+      Job:
+        replicas: 1        
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
@@ -1224,7 +1242,8 @@ sc-jobs:
         execArgs:
         - "live_info_nba"
         - "live_info"
-      cronJob:
+      Job:
+        replicas: 1        
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
@@ -1395,7 +1414,8 @@ sc-jobs:
         execArgs:
         - "live_info_ncaab"
         - "live_info"
-      cronJob:
+      Job:
+        replicas: 1        
         command: 
         type: ClusterIP
         restartPolicy: OnFailure
@@ -1485,7 +1505,8 @@ sc-jobs:
         execArgs:
         - "live_info_soccer"
         - "live_info"
-      cronJob:
+      Job:
+        replicas: 1        
         command: 
         type: ClusterIP
         restartPolicy: Never
@@ -1633,7 +1654,8 @@ sc-jobs:
         execArgs:
         - "live_info_nhl"
         - "live_info"
-      cronJob:
+      Job:
+        replicas: 1        
         command: 
         type: ClusterIP
         restartPolicy: Never

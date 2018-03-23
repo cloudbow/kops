@@ -42,6 +42,13 @@ spec:
       containers:
       - name: {{ .Chart.Name }}-data
         image: quay.io/pires/docker-elasticsearch-kubernetes:6.0.0
+        resources:
+          limits:  
+            cpu: {{ .Values.deployment.data.resources.maxCpu }}
+            memory: {{ .Values.deployment.data.resources.maxMem }}
+          requests:
+            memory: {{ .Values.deployment.data.resources.minMem }}
+            cpu: {{ .Values.deployment.data.resources.minCpu }}         
         env:
         - name: NAMESPACE
           valueFrom:

@@ -1,20 +1,20 @@
-# ------------------- Connect for live info ncaaf for slingtv ------------------- #
-apiVersion: batch/v1
-kind: Job
+# ------------------- Connect for live info ncaab for slingtv ------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: {{ template "spark-live-info-nba.fullname" . }}-{{ randAlphaNum 5 | lower }}
+  name: {{ template "spark-live-info-ncaab.fullname" . }}
   labels:
-    app: {{ template "spark-live-info-nba.name" . }}
+    app: {{ template "spark-live-info-ncaab.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}  
+    release: {{ .Release.Name }}
 spec:
+  replicas: {{ .Values.Job.replicas }}
   template:
     metadata:
-      name: {{ template "spark-live-info-nba.fullname" . }}
-    labels:
-      app: {{ template "spark-live-info-nba.name" . }}
-      chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-      release: {{ .Release.Name }}   
+      labels:
+        app: {{ template "spark-live-info-ncaab.name" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        release: {{ .Release.Name }}      
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -65,4 +65,4 @@ spec:
           value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
         - name: ARTIFACT_SERVER_EP
           value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
-      restartPolicy: {{ .Values.cronJob.restartPolicy }}
+      restartPolicy: {{ .Values.Job.restartPolicy }}

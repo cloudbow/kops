@@ -1,12 +1,20 @@
 # ------------------- Spark job for live info nfl for slingtv ------------------- #
-apiVersion: batch/v1
-kind: Job
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: {{ template "spark-live-info-mlb.fullname" . }}-{{ randAlphaNum 5 | lower }}
+  name: {{ template "spark-live-info-nfl.fullname" . }}
+  labels:
+    app: {{ template "spark-live-info-nfl.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
 spec:
+  replicas: {{ .Values.Job.replicas }}
   template:
     metadata:
-      name: {{ template "spark-live-info-mlb.fullname" . }}
+      labels:
+        app: {{ template "spark-live-info-nfl.name" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        release: {{ .Release.Name }} 
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -15,7 +23,7 @@ spec:
         command:
           - "/opt/spark/bin/spark-submit"
           - "--master"
-          - "local[4]"
+          - "local[2]"
           - "--deploy-mode"
           - "client"
           - "--name"
