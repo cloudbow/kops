@@ -270,9 +270,12 @@ sc-services:
               externalPort: 9092
               internalPort: 9092
             deployment:
+              affineapp: "zookeeper"
               containerPort: 9092
               terminationGracePeriodSeconds: 300
               replicas: 3
+              data:
+                storage: 80Gi
               resources:
                 minCpu: "0.5"
                 minMem: "1G"
@@ -1467,8 +1470,6 @@ sc-jobs:
         restartPolicy: Never
         schedule: "40 0/7 * * *"
     connect-live-info-soccer:
-      ingress: {}
-      service: {}
       deployment:
         resources:
           minCpu: 100m
@@ -1479,15 +1480,13 @@ sc-jobs:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
-        args: 
+      Job:
+        replicas: 1
+        command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "rest-parser-jobs"
         - "com.slingmedia.sportscloud.rest.parsers.leagues.soccer.SoccerLiveParser"
         - "live_info_soccer"
-        type: ClusterIP
-        restartPolicy: OnFailure
-        concurrencyPolicy: Replace
     spark-live-info-soccer:
       ingress: {}
       service: {}

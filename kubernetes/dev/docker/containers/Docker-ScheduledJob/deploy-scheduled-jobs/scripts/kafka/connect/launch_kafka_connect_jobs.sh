@@ -1,4 +1,8 @@
 #!/bin/bash
+
+set -x
+
+
 topicName=$1
 start=$2
 stop=$3
@@ -36,7 +40,7 @@ function breakOnStatus {
 
 function getValForProp {
 	TEMPFILE=mktemp
-	curl  $1 > $TEMPFILE
+	curl -m 10 $1 > $TEMPFILE
 	STATUS=`cat $TEMPFILE  | jq -r "$2"`
 	rm -rf $TEMPFILE
 	echo $STATUS
@@ -52,7 +56,35 @@ function restartOnError() {
     	echo "The kafka job $topicName is not running."
     	/deploy-scheduled-jobs/scripts/kafka/connect/connect-start.sh $connectConfig
     else
-       echo "There is a status for this job"     
+        CONNECTOR_STATE=`getValForProp "http://$CONNECT_EP/connectors/$connectId/status" ".connector.state"`
+       	if [ "$CONNECTOR_STATE" == "RUNNING" ]
+	    then
+	    	echo "The kafka job $connectId is running"
+	    	echo "Checking for tasks!"
+	    	TASK_STATES=`getValForProp "http://$CONNECT_EP/connectors/$connectId/status" ".tasks[].state"`
+	    	COUNTER=0
+	    	arr=($(getValForProp "http://$CONNECT_EP/connectors/$connectId/status" ".tasks[].state"))
+	    	for TASK_STATE in "${arr[@]}"
+			do
+			  	if [ "$TASK_STATE" == "FAILED" ]
+		    	then
+		    		echo "Task $COUNTER failed"	    		
+		    		##Refactor this wheb bug  KAFKA-6252 fixed
+		    		echo "Restarting task"
+		    		curl -XPOST "http://$CONNECT_EP/connectors/$connectId/tasks/$COUNTER/restart"
+		    		break
+		    	else
+		    		echo "Task has state $TASK_STATE"
+		    	fi
+		    	COUNTER=$((COUNTER+1))
+			done
+	    elif [ "$CONNECTOR_STATE" == "FAILED" ]
+		then
+			echo "Deleting connector as it failed"
+   			curl -XDELETE "http://$CONNECT_EP/connectors/$connectId"
+	    else
+	       	echo "There is a state for this connector: $CONNECTOR_STATE"     
+	    fi	
     fi
     STATUS=`getValForProp "http://$CONNECT_EP/connectors/$connectId/status" ".connector.state"`
 	echo "Only checking current status -  $STATUS"

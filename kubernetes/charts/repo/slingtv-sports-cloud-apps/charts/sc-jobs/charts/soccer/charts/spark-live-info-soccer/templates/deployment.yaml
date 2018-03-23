@@ -7,6 +7,7 @@ metadata:
     app: {{ template "spark-live-info-soccer.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
+    jobtype: live-info
 spec:
   replicas: {{ .Values.Job.replicas }}
   template:
@@ -15,6 +16,7 @@ spec:
         app: {{ template "spark-live-info-soccer.name" . }}
         chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
         release: {{ .Release.Name }} 
+        jobtype: live-info
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -65,4 +67,3 @@ spec:
           value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
         - name: ARTIFACT_SERVER_EP
           value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
-      restartPolicy: {{ .Values.Job.restartPolicy }}

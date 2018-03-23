@@ -37,7 +37,7 @@ spec:
                       - key: "app"
                         operator: In
                         values:
-                        - {{ template "zookeeper.name" . }}
+                        - {{ .Values.deployment.affineapp }}
                  topologyKey: "kubernetes.io/hostname"
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
       containers:
@@ -66,10 +66,14 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         volumeMounts:
-        - name: datadir
+        - name: {{ template "kafka.fullname" . }}-data
           mountPath: /var/lib/kafka/data
-      volumes:
-      - name: datadir
-        hostPath:
-          path: /data/apps/sports-cloud/{{ .Release.Name }}/kafka/data
-          type: DirectoryOrCreate
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ template "kafka.fullname" . }}-data
+    spec:
+      storageClassName: {{ .Release.Name }}-datastore
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: {{ .Values.deployment.data.storage }}
