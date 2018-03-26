@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Connect mlb batch job
+name: connect-batch-job-mlb
+version: 0.1.0

@@ -1,4 +1,4 @@
-# ------------------- Connect for meta-batch-nfl for slingtv ------------------- #
+# ------------------- Connect for meta-batch-nhl for slingtv ------------------- #
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:

@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Connect nhl batch job
+name: connect-batch-job-nhl
+version: 0.1.0

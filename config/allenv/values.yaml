@@ -635,23 +635,44 @@ sc-jobs:
       restartPolicy: Never
       schedule: "40 0/5 * * *"
   nfl:    
-    connect-meta-batch-nfl:
-      ingress: {}
-      service: {}
+    connect-batch-job-nfl:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectBatchJobs"
         - "nfl"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
+        - "900000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+    connect-live-info-nfl:
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.13
+        pullPolicy: IfNotPresent
+        env:
+      Job:
+        replicas: 1
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "nfl"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-nfl:
       ingress: {}
       service: {}
@@ -675,23 +696,6 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "20 5 * * *"
-    connect-content-match-nfl:
-      ingress: {}
-      service: {}
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
-        - "nfl"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
     spark-content-match-nfl:
       ingress: {}
       service: {}
@@ -714,29 +718,6 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "40 7 * * *"
-    connect-live-info-nfl:
-      ingress: {}
-      service: {}
-      deployment:
-        resources:
-          minCpu: 100m
-          maxCpu: 100m
-          minMem: 64Mi
-          maxMem: 64Mi
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
-        - "nfl"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/3 * * * *"
     spark-live-info-nfl:
       ingress: {}
       service: {}
@@ -783,23 +764,44 @@ sc-jobs:
         restartPolicy: Never
         schedule: "0 8 * * *"
   mlb:    
-    connect-meta-batch-mlb:
-      ingress: {}
-      service: {}
+    connect-batch-job-mlb:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectBatchJobs"
         - "mlb"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
+        - "900000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+    connect-live-info-mlb:
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.13
+        pullPolicy: IfNotPresent
+        env:
+      Job:
+        replicas: 1
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "mlb"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-ts-mlb:
       ingress: {}
       service: {}
@@ -846,23 +848,6 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "15 * * * *"
-    connect-content-match-mlb:
-      ingress: {}
-      service: {}
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
-        - "mlb"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
     spark-content-match-mlb:
       ingress: {}
       service: {}
@@ -885,29 +870,6 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "5 8 * * *"
-    connect-live-info-mlb:
-      ingress: {}
-      service: {}
-      deployment:
-        resources:
-          minCpu: 100m
-          maxCpu: 100m
-          minMem: 64Mi
-          maxMem: 64Mi
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
-        - "mlb"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/3 * * * *"
     spark-live-info-mlb:
       ingress: {}
       service: {}
@@ -954,23 +916,44 @@ sc-jobs:
         restartPolicy: Never
         schedule: "5 8 * * *"
   ncaaf:    
-    connect-meta-batch-ncaaf:
-      ingress: {}
-      service: {}
+    connect-batch-job-ncaaf:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectBatchJobs"
         - "ncaaf"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
+        - "900000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+    connect-live-info-ncaaf:
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.13
+        pullPolicy: IfNotPresent
+        env:
+      Job:
+        replicas: 1
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "ncaaf"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-ncaaf:
       ingress: {}
       service: {}
@@ -994,23 +977,6 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "20 5 * * *"
-    connect-content-match-ncaaf:
-      ingress: {}
-      service: {}
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
-        - "ncaaf"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
     spark-content-match-ncaaf:
       ingress: {}
       service: {}
@@ -1033,29 +999,6 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "30 7 * * *"
-    connect-live-info-ncaaf:
-      ingress: {}
-      service: {}
-      deployment:
-        resources:
-          minCpu: 100m
-          maxCpu: 100m
-          minMem: 64Mi
-          maxMem: 64Mi
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
-        - "ncaaf"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/3 * * * *"
     spark-live-info-ncaaf:
       ingress: {}
       service: {}
@@ -1103,63 +1046,44 @@ sc-jobs:
         restartPolicy: Never
         schedule: "3 8 * * *"
   nba:
-    connect-content-match-nba:
-      ingress: {}
-      service: {}
+    connect-batch-job-nba:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectBatchJobs"
         - "nba"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
-    connect-meta-batch-nba:
-      ingress: {}
-      service: {}
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
-        - "nba"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
-    connect-live-info-nba:
-      ingress: {}
-      service: {}
+        - "900000"
       deployment:
         resources:
           minCpu: 100m
           maxCpu: 100m
           minMem: 64Mi
           maxMem: 64Mi
+    connect-live-info-nba:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
         - "nba"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/3 * * * *"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-ts-nba:
       ingress: {}
       service: {}
@@ -1275,63 +1199,44 @@ sc-jobs:
         restartPolicy: Never
         schedule: "5 8 * * *"
   ncaab:
-    connect-content-match-ncaab:
-      ingress: {}
-      service: {}
+    connect-batch-job-ncaab:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectBatchJobs"
         - "ncaab"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
-    connect-meta-batch-ncaab:
-      ingress: {}
-      service: {}
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
-        - "ncaab"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
-    connect-live-info-ncaab:
-      ingress: {}
-      service: {}
+        - "900000"
       deployment:
         resources:
           minCpu: 100m
           maxCpu: 100m
           minMem: 64Mi
           maxMem: 64Mi
+    connect-live-info-ncaab:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
         - "ncaab"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/3 * * * *"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-ts-ncaab:
       ingress: {}
       service: {}
@@ -1511,63 +1416,44 @@ sc-jobs:
         restartPolicy: Never
         schedule: "30 7 * * *"
   nhl:
-    connect-content-match-nhl:
-      ingress: {}
-      service: {}
+    connect-batch-job-nhl:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectContentMatchJob"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectBatchJobs"
         - "nhl"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
-    connect-meta-batch-nhl:
-      ingress: {}
-      service: {}
-      image:
-        tag: sc-job-scheduler:0.0.1-alpha.13
-        pullPolicy: IfNotPresent
-        env:
-      cronJob:
-        command: 
-        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
-        - "connect-jobs"
-        - "com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob"
-        - "nhl"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/15 * * * *"
-    connect-live-info-nhl:
-      ingress: {}
-      service: {}
+        - "900000"
       deployment:
         resources:
           minCpu: 100m
           maxCpu: 100m
           minMem: 64Mi
           maxMem: 64Mi
+    connect-live-info-nhl:
       image:
         tag: sc-job-scheduler:0.0.1-alpha.13
         pullPolicy: IfNotPresent
         env:
-      cronJob:
+      Job:
+        replicas: 1
         command: 
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
         - "nhl"
-        type: ClusterIP
-        restartPolicy: Never
-        concurrencyPolicy: Replace
-        schedule: "0/3 * * * *"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-ts-nhl:
       ingress: {}
       service: {}

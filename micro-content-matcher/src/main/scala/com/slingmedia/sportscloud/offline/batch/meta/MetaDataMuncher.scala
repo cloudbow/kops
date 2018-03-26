@@ -29,47 +29,51 @@ object MDMHolder extends Serializable {
 trait MetaDataMuncher extends Muncher {
 
  override def munch(arg0: String, arg1:String, arg2: String): Unit = {
-    var schema: StructType = null
-   val mucherType = MetaBatchJobType.withName(arg0.toUpperCase)
-    val batchTimeStamp = Instant.now().getEpochSecond
-    mucherType match {
-      case MetaBatchJobType.PLAYERSTATS =>
-        var finalSchema = commonStructFields()
-        finalSchema = getLeagueSpecificPlayerStatsSchema(finalSchema)
-        schema = StructType(finalSchema.toList)
-        MDMHolder.log.info(s"Final schema used is $schema")
-        //"meta_batch", "player_stats", "localhost:9983"
-        process(batchTimeStamp, "sc-player-stats", arg1, arg2, schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
-      case MetaBatchJobType.TEAMSTANDINGS =>
-        schema = StructType(StructField("league", StringType, true) ::
-          StructField("alias", StringType, true) ::
-          StructField("subLeague", StringType, true) ::
-          StructField("division", StringType, true) ::
-          StructField("teamName", StringType, true) ::
-          StructField("teamCity", StringType, true) ::
-          StructField("teamCode", StringType, true) ::
-          StructField("wins", IntegerType, true) ::
-          StructField("losses", IntegerType, true) ::
-          StructField("pct", FloatType, true) :: Nil)
-        //"meta_batch", "team_standings", "localhost:9983"
-        process(batchTimeStamp, "sc-team-standings", arg1, arg2, schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
-      case MetaBatchJobType.LIVEINFO =>
-        //live_info, live_info, localhost:9983
-        new MlbLiveDataMuncher().munch(arg1, arg2)
-      case MetaBatchJobType.NCAAFLIVEINFO =>
-        //live_info, live_info, localhost:9983
-        new NflLiveDataMuncher().munch(arg1, arg2)
-      case MetaBatchJobType.NFLLIVEINFO =>
-        //live_info, live_info, localhost:9983
-        new NflLiveDataMuncher().munch(arg1, arg2)
-      case MetaBatchJobType.NBALIVEINFO =>
-        //live_info, live_info, localhost:9983
-        new NbaLiveDataMuncher().munch(arg1, arg2)
-      case MetaBatchJobType.NCAABLIVEINFO =>
-        //live_info, live_info, localhost:9983
-        new NbaLiveDataMuncher().munch(arg1, arg2)
-
-    }
+   val spark = SparkSession.builder().getOrCreate()
+   try {
+     var schema: StructType = null
+     val mucherType = MetaBatchJobType.withName(arg0.toUpperCase)
+     val batchTimeStamp = Instant.now().getEpochSecond
+     mucherType match {
+       case MetaBatchJobType.PLAYERSTATS =>
+         var finalSchema = commonStructFields()
+         finalSchema = getLeagueSpecificPlayerStatsSchema(finalSchema)
+         schema = StructType(finalSchema.toList)
+         MDMHolder.log.info(s"Final schema used is $schema")
+         //"meta_batch", "player_stats", "localhost:9983"
+         process(batchTimeStamp, "sc-player-stats", arg1, arg2, schema, false, col("playerCode"), "key like '%PLAYER_STATS%.XML%'", col("playerCode").isNotNull)
+       case MetaBatchJobType.TEAMSTANDINGS =>
+         schema = StructType(StructField("league", StringType, true) ::
+           StructField("alias", StringType, true) ::
+           StructField("subLeague", StringType, true) ::
+           StructField("division", StringType, true) ::
+           StructField("teamName", StringType, true) ::
+           StructField("teamCity", StringType, true) ::
+           StructField("teamCode", StringType, true) ::
+           StructField("wins", IntegerType, true) ::
+           StructField("losses", IntegerType, true) ::
+           StructField("pct", FloatType, true) :: Nil)
+         //"meta_batch", "team_standings", "localhost:9983"
+         process(batchTimeStamp, "sc-team-standings", arg1, arg2, schema, true, col("teamCode"), "key like '%TEAM_STANDINGS.XML%'", col("league").isNotNull)
+       case MetaBatchJobType.LIVEINFO =>
+         //live_info, live_info, localhost:9983
+         new MlbLiveDataMuncher().munch(arg1, arg2)
+       case MetaBatchJobType.NCAAFLIVEINFO =>
+         //live_info, live_info, localhost:9983
+         new NflLiveDataMuncher().munch(arg1, arg2)
+       case MetaBatchJobType.NFLLIVEINFO =>
+         //live_info, live_info, localhost:9983
+         new NflLiveDataMuncher().munch(arg1, arg2)
+       case MetaBatchJobType.NBALIVEINFO =>
+         //live_info, live_info, localhost:9983
+         new NbaLiveDataMuncher().munch(arg1, arg2)
+       case MetaBatchJobType.NCAABLIVEINFO =>
+         //live_info, live_info, localhost:9983
+         new NbaLiveDataMuncher().munch(arg1, arg2)
+     }
+   } finally {
+     spark.close
+   }
   }
 
   def getLeagueSpecificPlayerStatsSchema(initFields: ListBuffer[StructField]) :ListBuffer[StructField] = {

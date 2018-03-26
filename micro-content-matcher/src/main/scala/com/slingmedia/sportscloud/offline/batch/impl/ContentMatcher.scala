@@ -45,25 +45,29 @@ class ContentMatcher extends Serializable with Muncher {
 
 
   override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
+    val spark = SparkSession.builder().getOrCreate()
+    try {
+      //fetch thuuz games
+      fetchThuuzGames(System.getenv("ARTIFACT_SERVER_EP"))
 
-    //fetch thuuz games
-    fetchThuuzGames(System.getenv("ARTIFACT_SERVER_EP"))
+      //fetch sports channels
+      val summaryJson6 = fetchSportsChannels(System.getenv("ARTIFACT_SERVER_EP"))
 
-    //fetch sports channels
-    val summaryJson6 = fetchSportsChannels(System.getenv("ARTIFACT_SERVER_EP"))
+      //fetch program schedules
+      fetchProgramSchedules(summaryJson6, System.getenv("ARTIFACT_SERVER_EP"))
 
-    //fetch program schedules
-    fetchProgramSchedules(summaryJson6, System.getenv("ARTIFACT_SERVER_EP"))
+      //Fetch MLB schedule
+      val mlbScheduleDF32 = fetchMLBSchedule(inputKafkaTopic)
 
-    //Fetch MLB schedule
-    val mlbScheduleDF32 = fetchMLBSchedule(inputKafkaTopic)
+      //get the matched data
+      val programsJoin3 = contentMatch(mlbScheduleDF32, inputKafkaTopic)
 
-    //get the matched data
-    val programsJoin3 = contentMatch(mlbScheduleDF32, inputKafkaTopic)
+      //Write delta back to mongo
 
-    //Write delta back to mongo
-
-    writeData(outputCollName, programsJoin3)
+      writeData(outputCollName, programsJoin3)
+    } finally {
+      spark.close
+    }
 
   }
 
@@ -342,7 +346,6 @@ class ContentMatcher extends Serializable with Muncher {
       case x :: xs =>
         try {
           val regexpLookBack = inputMap(x)
-          println(regexpLookBack)
           regexpLookBack match {
             case y:Object => if(y.isInstanceOf[String]) y.asInstanceOf[String] else  getMapValueRecursively(xs, y.asInstanceOf[Map[String,Object]])
           }

@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit
 import sys.process._
 import java.net.URL
 import scala.io.Source
-import scala.util.Properties
+import scala.util.{ Properties , Try }
 import scala.language.postfixOps
 import collection.JavaConverters._
 
@@ -28,16 +28,19 @@ object Holder extends Serializable {
   @transient lazy val log = LoggerFactory.getLogger("SportsCloudSchedulers")
 }
 
-object KafkaConnectContentMatchJob  {
+
+
+object KafkaConnectBatchJobs  {
   def main(args: Array[String]) {
-    new KafkaConnectContentMatchJob().execute(args)
+    new KafkaConnectBatchJobs().execute(args)
   }
 }
 
-class KafkaConnectContentMatchJob {
-  private val log = LoggerFactory.getLogger("KafkaConnectContentMatchJob")
-  def execute(args: Array[String]) {
-    val league = args(0)
+
+class KafkaConnectBatchJobs {
+  private val log = LoggerFactory.getLogger("KafkaConnectBatchJobs")
+
+  val contentMatchJob:(String=>Unit) = (league: String) => {
     Seq(s"/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
       s"content_match_$league",
       "5",
@@ -49,32 +52,38 @@ class KafkaConnectContentMatchJob {
       s"/var/log/sports-cloud-kafka-jobs/cs-content-match-kafka-connect-$league.log",
       s"ftp-content-match-$league") !
   }
-}
-
-
-
-object KafkaConnectMetaBatchJob  {
-  def main(args: Array[String]) {
-    new KafkaConnectMetaBatchJob().execute(args)
+  val metaBatchJob:(String=>Unit)  = (league: String) => {
+    Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+      s"meta_batch_$league",
+      "5",
+      "15",
+      "unused",
+      "36000000",
+      "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
+      s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-meta-batch-$league.json",
+      s"/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-$league.log",
+      s"ftp-meta-batch-$league") !
   }
-}
 
-class KafkaConnectMetaBatchJob {
-  private val log = LoggerFactory.getLogger("KafkaConnectMetaBatchJob")
-   def execute(args: Array[String]) {
-     val league = args(0)
-     Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-       s"meta_batch_$league",
-       "5",
-       "15",
-       "unused",
-       "36000000",
-       "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-meta-batch.properties",
-       s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-meta-batch-$league.json",
-       s"/var/log/sports-cloud-kafka-jobs/cs-meta-batch-kafka-connect-$league.log",
-       s"ftp-meta-batch-$league") !
+  val executeBatchJob = (job:String=>Unit,league:String) => {
+    job(league)
+  }
 
-    
+  def execute(args: Array[String]) {
+    val league = args(0)
+    val timeToSleep = args(1).toLong
+    while(true) {
+      executeBatchJob(metaBatchJob,league)
+      executeBatchJob(contentMatchJob,league)
+      this.synchronized {
+        try {
+          wait(timeToSleep)
+        } catch {
+          case e:InterruptedException =>  Holder.log.info("Interrupted from wait")
+        }
+      }
+    }
+
   }
 }
 
@@ -89,17 +98,28 @@ class KafkaConnectLiveInfoJob {
   private val log = LoggerFactory.getLogger("KafkaConnectLiveInfoJob")
   def execute(args: Array[String]) {
     val league = args(0)
-    log.trace("Executing task: KafkaConnectLiveInfoJob")
-    Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
-      s"live_info_$league",
-      "0",
-      "0",
-      "unused",
-      "1800000",
-      "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
-      s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-live-info-$league.json",
-      s"/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-$league.log",
-      s"ftp-live-info-$league") !
+    val timeToSleep = args(1).toLong
+    while(true) {
+      log.trace("Executing task: KafkaConnectLiveInfoJob")
+      Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+        s"live_info_$league",
+        "0",
+        "0",
+        "unused",
+        "1800000",
+        "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/cs-live-info.properties",
+        s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-live-info-$league.json",
+        s"/var/log/sports-cloud-kafka-jobs/cs-live-info-kafka-connect-$league.log",
+        s"ftp-live-info-$league") ! ;
+
+      this.synchronized {
+        try {
+          wait(timeToSleep)
+        } catch {
+          case e:InterruptedException =>  Holder.log.info("Interrupted from wait")
+        }
+      }
+    }
 
   }
 }

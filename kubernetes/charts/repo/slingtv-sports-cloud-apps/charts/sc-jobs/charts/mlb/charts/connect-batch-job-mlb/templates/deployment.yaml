@@ -1,21 +1,21 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "connect-live-info-nba.fullname" . }}
+  name: {{ template "connect-batch-job-mlb.fullname" . }}
   labels:
-    app: {{ template "connect-live-info-nba.name" . }}
+    app: {{ template "connect-batch-job-mlb.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
-    jobtype: connect-monit-job
+    jobtype: connect-monit-job 
 spec:
   replicas: {{ .Values.Job.replicas }}
   template:
     metadata:
       labels:
-        app: {{ template "connect-live-info-nba.name" . }}
+        app: {{ template "connect-batch-job-mlb.name" . }}
         chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
         release: {{ .Release.Name }} 
-        jobtype: connect-monit-job
+        jobtype: connect-monit-job    
     spec:
       containers:
       - name: {{ .Chart.Name }}

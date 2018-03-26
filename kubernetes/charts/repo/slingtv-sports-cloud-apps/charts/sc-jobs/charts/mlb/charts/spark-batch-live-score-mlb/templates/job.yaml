@@ -1,4 +1,4 @@
-# ------------------- Spark job for box-score-nfl for slingtv ------------------- #
+# ------------------- Spark job for box-score-mlb for slingtv ------------------- #
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
