@@ -243,7 +243,12 @@ class ContentMatcher extends Serializable with Muncher {
       withColumn("homeTeamImg", makeImgUrl($"homeTeamExternalId", $"league")).
       withColumn("awayTeamImg", makeImgUrl($"awayTeamExternalId", $"league"))
 
-    val mlbScheduleDF32 = mlbScheduleDF311.distinct.toDF.na.fill(0L, Seq("homeTeamScore")).na.fill(0L, Seq("awayTeamScore"))
+    val mlbScheduleDF32 = mlbScheduleDF311.distinct.toDF.
+      na.fill(0L, Seq("homeTeamScore")).
+      na.fill(0L, Seq("awayTeamScore")).
+      na.fill("TBA", Seq("homeTeamName")).
+      na.fill("TBA", Seq("awayTeamName"))
+
     mlbScheduleDF32
 
   }

@@ -366,6 +366,8 @@ public class SportsCloudRestGamesHandler {
 		finalResponse = sportsCloudGamesDelegate.prepareJsonResponseMCForGame(gameId, gameCategory,
 				new HashSet<String>());
 		String output = transformToClientFormatForMediaCard(finalResponse, gameCategory, serverHost);
+		JsonParser parser = new JsonParser();
+		JsonObject parsedJsonObj = parser.parse(output).getAsJsonObject();
 
         JsonArray homeScreenGameScheduleGroup = sportsCloudMCDelegate.getGameForGameId(gameId);
         JsonObject solrDoc = sportsCloudMCDelegate.getMatchedGame(new JsonObject(), homeScreenGameScheduleGroup);
@@ -373,20 +375,28 @@ public class SportsCloudRestGamesHandler {
                 solrDoc.get("awayTeamExternalId").getAsString(),
                 homeScreenGameScheduleGroup);
 
-        JsonParser parser = new JsonParser();
-		JsonObject parsedJsonObj  = parser.parse(output).getAsJsonObject();
-        JsonObject teamStatsObj = new JsonObject();
-        parsedJsonObj.add("teamStats",teamStatsObj);
-        sportsCloudMCDelegate.preparePlayerStats(
-                solrDoc.get("homeTeamExternalId").getAsString(),
-                solrDoc.get("awayTeamExternalId").getAsString(),
-                teamStatsObj);
-        JsonObject standings = new JsonObject();
-        parsedJsonObj.add("standings",standings);
-        sportsCloudMCDelegate.prepareMCTeamStandings(
-                activeTeamGame,
-                standings,
-                solrDoc.get("league").getAsString().toLowerCase());
+		String sport = "-";
+		if(solrDoc.has("sport")) {
+			sport = solrDoc.get("sport").getAsString().toLowerCase();
+		}
+		if("soccer".equalsIgnoreCase(sport)) {
+			LOGGER.trace("No teamstandings or playerstats for soccer league");
+		} else {
+
+			JsonObject teamStatsObj = new JsonObject();
+			parsedJsonObj.add("teamStats", teamStatsObj);
+			sportsCloudMCDelegate.preparePlayerStats(
+					solrDoc.get("homeTeamExternalId").getAsString(),
+					solrDoc.get("awayTeamExternalId").getAsString(),
+					teamStatsObj);
+			JsonObject standings = new JsonObject();
+			parsedJsonObj.add("standings", standings);
+
+			sportsCloudMCDelegate.prepareMCTeamStandings(
+					activeTeamGame,
+					standings,
+					solrDoc.get("league").getAsString().toLowerCase());
+		}
         sportsCloudMCDelegate.mergeLiveInfoToMediaCard(activeTeamGame,parsedJsonObj,solrDoc,new JsonObject());
         return parsedJsonObj.toString();
 	}
