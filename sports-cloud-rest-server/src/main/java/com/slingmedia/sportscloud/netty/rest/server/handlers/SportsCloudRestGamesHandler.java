@@ -245,7 +245,7 @@ public class SportsCloudRestGamesHandler {
 
 		switch (restName) {
 		case CATEGORIES:
-			LOGGER.info("This is CATEGORIES " + uri);
+			LOGGER.info("This is CATEGORIES - " + uri);
 			finalResponse = handleCategories(host, params);
 			break;
 		case GAMES:

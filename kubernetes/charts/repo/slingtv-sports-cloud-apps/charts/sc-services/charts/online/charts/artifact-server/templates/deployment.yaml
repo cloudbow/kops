@@ -12,6 +12,7 @@ spec:
   selector:
     matchLabels:
       app: {{ template "artifact-server.name" . }}
+      chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
       release: {{ .Release.Name }}
   strategy:
     rollingUpdate:
@@ -21,6 +22,7 @@ spec:
     metadata:
       labels:
         app: {{ template "artifact-server.name" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
         release: {{ .Release.Name }}
     spec:
       containers:

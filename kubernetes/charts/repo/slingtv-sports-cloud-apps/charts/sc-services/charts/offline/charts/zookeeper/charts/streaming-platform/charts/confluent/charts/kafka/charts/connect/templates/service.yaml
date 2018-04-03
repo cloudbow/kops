@@ -10,6 +10,7 @@ metadata:
 spec:
   selector:
     app: {{ template "connect.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
   clusterIP: {{ .Values.service.clusterIP }}
   type: {{ .Values.service.type }}

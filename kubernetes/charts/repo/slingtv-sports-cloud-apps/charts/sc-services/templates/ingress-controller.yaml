@@ -6,6 +6,8 @@ kind: Deployment
 metadata:
   labels:
     app: {{ .Release.Name }}-alb-ingress-controller
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
   name: {{ .Release.Name }}-alb-ingress-controller
   # Namespace the ALB Ingress Controller should run in. Does not impact which
   # namespaces it's able to resolve ingress resource for. For limiting ingress
@@ -16,6 +18,8 @@ spec:
   selector:
     matchLabels:
       app: {{ .Release.Name }}-alb-ingress-controller
+      chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+      release: {{ .Release.Name }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -26,6 +30,8 @@ spec:
       creationTimestamp: null
       labels:
         app: {{ .Release.Name }}-alb-ingress-controller
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        release: {{ .Release.Name }}
     spec:
       containers:
       - args:
