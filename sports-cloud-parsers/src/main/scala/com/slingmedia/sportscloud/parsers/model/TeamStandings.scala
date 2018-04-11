@@ -2,7 +2,6 @@ package com.slingmedia.sportscloud.parsers.model
 
 import scala.xml.Elem
 import org.apache.kafka.connect.source.SourceRecord
-import com.slingmedia.sportscloud.parsers.model.League
 import scala.collection.JavaConverters._
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.data.Struct

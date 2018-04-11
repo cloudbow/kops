@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 
 import com.google.gson.*;
 import com.slingmedia.sportscloud.facade.ExternalHttpClient$;
+import com.slingmedia.sportscloud.netty.rest.model.ActiveTeamGame;
+import com.slingmedia.sportscloud.netty.rest.server.handler.delegates.SportsCloudMCDelegate;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -93,6 +95,9 @@ public class SportsCloudRestGamesHandler {
 
 	/** Delegate Service for Sling TV Sports */
 	private SportsCloudGamesDelegate sportsCloudGamesDelegate = new SportsCloudGamesDelegate();
+
+    private SportsCloudMCDelegate sportsCloudMCDelegate = new SportsCloudMCDelegate();
+
 
     private static final String nagaraTeamList = "http://gwserv-mobileprod.echodata.tv/Gamefinder/api/team/list?leagueAlias=";
 
@@ -361,7 +366,39 @@ public class SportsCloudRestGamesHandler {
 		finalResponse = sportsCloudGamesDelegate.prepareJsonResponseMCForGame(gameId, gameCategory,
 				new HashSet<String>());
 		String output = transformToClientFormatForMediaCard(finalResponse, gameCategory, serverHost);
-		return output;
+		JsonParser parser = new JsonParser();
+		JsonObject parsedJsonObj = parser.parse(output).getAsJsonObject();
+
+        JsonArray homeScreenGameScheduleGroup = sportsCloudMCDelegate.getGameForGameId(gameId);
+        JsonObject solrDoc = sportsCloudMCDelegate.getMatchedGame(new JsonObject(), homeScreenGameScheduleGroup);
+        final ActiveTeamGame activeTeamGame = sportsCloudMCDelegate.getActiveTeamGame(
+                solrDoc.get("awayTeamExternalId").getAsString(),
+                homeScreenGameScheduleGroup);
+
+		String sport = "-";
+		if(solrDoc.has("sport")) {
+			sport = solrDoc.get("sport").getAsString().toLowerCase();
+		}
+		if("soccer".equalsIgnoreCase(sport)) {
+			LOGGER.trace("No teamstandings or playerstats for soccer league");
+		} else {
+
+			JsonObject teamStatsObj = new JsonObject();
+			parsedJsonObj.add("teamStats", teamStatsObj);
+			sportsCloudMCDelegate.preparePlayerStats(
+					solrDoc.get("homeTeamExternalId").getAsString(),
+					solrDoc.get("awayTeamExternalId").getAsString(),
+					teamStatsObj);
+			JsonObject standings = new JsonObject();
+			parsedJsonObj.add("standings", standings);
+
+			sportsCloudMCDelegate.prepareMCTeamStandings(
+					activeTeamGame,
+					standings,
+					solrDoc.get("league").getAsString().toLowerCase());
+		}
+        sportsCloudMCDelegate.mergeLiveInfoToMediaCard(activeTeamGame,parsedJsonObj,solrDoc,new JsonObject());
+        return parsedJsonObj.toString();
 	}
 
 	/**

@@ -22,12 +22,12 @@
   </appender>
   
   <logger name="pns.alltypes" level="INFO" />
-  <logger name="com.slingmedia" level="TRACE" />
+  <logger name="com.slingmedia" level="ERROR" />
  
   <logger name="org.springframework" level="INFO" />
   
 
-  <root level="TRACE">
+  <root level="ERROR">
     <appender-ref ref="FILE" />
     <appender-ref ref="STDOUT" />
   </root>

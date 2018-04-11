@@ -1,6 +1,6 @@
 package com.slingmedia.sportscloud.parsers.factory
 import com.slingmedia.sportscloud.parsers.leagues.impl.{ScheduleParser,PlayerStatsParser}
-import com.slingmedia.sportscloud.parsers.leagues.impl.nba.{ NbaTeamStandingsParser ,NbaBoxScoreParser }
+import com.slingmedia.sportscloud.parsers.leagues.impl.nba.{ NbaTeamStandingsParser, NbaBoxScoreParser, NbaPlayerStatsParser }
 import com.slingmedia.sportscloud.parsers.leagues.impl.ncaab.{ NcaabTeamStandingsParser, NcaabBoxScoreParser }
 import com.slingmedia.sportscloud.parsers.leagues.impl.mlb.{ MlbBoxScoreParser, MlbTeamStandingsParser}
 import com.slingmedia.sportscloud.parsers.leagues.impl.nfl.{ NflTeamStandingsParser,NflBoxScoreParser }
@@ -72,10 +72,11 @@ object Parsers {
       case ParserType.NhlTeamStandingsParser =>
         new NhlTeamStandingsParser()
       case ParserType.MlbPlayerStatsParser
-           | ParserType.NbaPlayerStatsParser
-           | ParserType.NcaabPlayerStatsParser
            | ParserType.NhlPlayerStatsParser =>
         new PlayerStatsParser()
+      case ParserType.NbaPlayerStatsParser
+           | ParserType.NcaabPlayerStatsParser =>
+        new NbaPlayerStatsParser()
       case ParserType.NbaTeamStandingsParser =>
         new NbaTeamStandingsParser()
       case ParserType.NcaabTeamStandingsParser =>

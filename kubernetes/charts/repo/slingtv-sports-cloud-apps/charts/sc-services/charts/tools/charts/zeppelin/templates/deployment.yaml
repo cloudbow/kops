@@ -13,6 +13,8 @@ spec:
     matchLabels:
       app: {{ template "zeppelin.name" . }}
       release: {{ .Release.Name }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -41,13 +43,12 @@ spec:
           org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,{{ "" -}}
           org.apache.spark:spark-streaming-kafka-0-10_2.11:2.1.1,{{ "" -}}
           org.apache.spark:spark-sql-kafka-0-10_2.11:2.1.1,{{ "" -}}
+          org.scala-lang.modules:scala-parser-combinators_2.11:1.0.4,{{ "" -}}
+          org.scala-lang.modules:scala-xml_2.11:1.0.2,{{ "" -}}
+          org.apache.kafka:connect-api:0.10.2.0,{{ "" -}}
           com.databricks:spark-csv_2.10:1.5.0,{{ "" -}} 
           ch.qos.logback:logback-classic:1.1.7,{{ "" -}}
-          org.scala-lang.modules:scala-parser-combinators:1.0.4,{{ "" -}}
-          org.scala-lang.modules:scala-xml:1.0.2,{{ "" -}}
           org.elasticsearch:elasticsearch-spark-20_2.11:6.0.0"
-        - name: APP_SPARK_MASTERS_EPS
-          value: "local[2]"  
         - name: APP_SPARK_ZOOKEEPER_EP
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
         volumeMounts:
@@ -56,8 +57,12 @@ spec:
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         resources:
-            requests:
-              cpu: {{ .Values.deployment.resources.cpu }}
+          limits:  
+            cpu: {{ .Values.deployment.resources.maxCpu }}
+            memory: {{ .Values.deployment.resources.maxMem }}
+          requests:
+            cpu: {{ .Values.deployment.resources.minCpu }}
+            memory: {{ .Values.deployment.resources.minMem }}
       volumes:
       - name: {{ template "zeppelin.fullname" . }}-note-store
         persistentVolumeClaim:

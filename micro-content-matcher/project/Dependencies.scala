@@ -9,6 +9,7 @@ object Dependencies {
   lazy val kafkaSparkSql = "org.apache.spark" % "spark-sql-kafka-0-10_2.11" % "2.1.1"
   lazy val databricksCSV = "com.databricks" % "spark-csv_2.10" % "1.5.0"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
-  lazy val elastic = "org.elasticsearch" % "elasticsearch-spark-20_2.11" % "6.0.0"
+  lazy val elastic = "org.elasticsearch" % "elasticsearch-hadoop" % "6.2.2"
+  lazy val scalaTest = "org.scalatest" % "scalatest_2.11" % "3.0.5" % "test"
 
 }

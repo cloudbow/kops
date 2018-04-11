@@ -24,6 +24,7 @@ class NbaTeamStandingsParserDelegate extends ParsedItem {
   private val log = LoggerFactory.getLogger("NbaTeamStandingsParserDelegate")
 
   override def generateRows(data: Elem, in: SourceRecord, xmlRoot: scala.xml.NodeSeq): java.util.List[SourceRecord] = {
+    log.info("Parsing rows for nba teamstandings parsing")
     var teamStandingsRows = scala.collection.mutable.ListBuffer.empty[SourceRecord]
     xmlRoot.map { leagueStandings =>
       val subLeague = (leagueStandings \ "@conference").text
@@ -33,6 +34,8 @@ class NbaTeamStandingsParserDelegate extends ParsedItem {
           (mlbDivisionStandings \\ "nba-team-standings").map {
             teamStandings =>
               val commonFields = new TeamStandingsDataExtractor(data,teamStandings)
+              commonFields.subLeague=subLeague
+              commonFields.division=division
               val message = TeamStandings(commonFields)
               teamStandingsRows += new SourceRecord(
                 in.sourcePartition,

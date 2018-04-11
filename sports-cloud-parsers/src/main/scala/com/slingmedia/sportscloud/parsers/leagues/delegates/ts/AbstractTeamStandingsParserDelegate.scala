@@ -14,6 +14,9 @@ class TeamStandingsDataExtractor(data:Elem, rowData: Node) extends ParsedItem {
 
   //allow edit of teamname & team city for college leagues
   val league = (data \\ "league" \ "@alias").text
+  //assigned from derived classes
+  var subLeague = ""
+  var division = ""
   var teamName = (rowData \\ "team-name" \ "@name").text
   val alias = (rowData \\ "team-name" \ "@alias").text
   var teamCity = (rowData \\ "team-city" \ "@city").text
@@ -31,6 +34,8 @@ case class TeamStandingsSchemaGenerator(schemaBuilder: SchemaBuilder) {
   schemaBuilder
     .field("alias", Schema.STRING_SCHEMA)
     .field("league", Schema.STRING_SCHEMA)
+    .field("subLeague", Schema.STRING_SCHEMA)
+    .field("division", Schema.STRING_SCHEMA)
     .field("teamName", Schema.STRING_SCHEMA)
     .field("teamCity", Schema.STRING_SCHEMA)
     .field("teamCode", Schema.STRING_SCHEMA)
@@ -44,6 +49,8 @@ case class TeamStandingsStructGenerator(struct: Struct, boxScoreExtractor: TeamS
   struct
     .put("alias", boxScoreExtractor.alias)
     .put("league", boxScoreExtractor.league)
+    .put("subLeague", boxScoreExtractor.subLeague)
+    .put("division", boxScoreExtractor.division)
     .put("teamName", boxScoreExtractor.teamName)
     .put("teamCity", boxScoreExtractor.teamCity)
     .put("teamCode", boxScoreExtractor.teamCode)

@@ -1,4 +1,4 @@
-# ------------------- Connect for meta-batch-nfl for slingtv ------------------- #
+# ------------------- Connect for meta-batch-mlb for slingtv ------------------- #
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -16,7 +16,7 @@ spec:
             command:
               - "/opt/spark/bin/spark-submit"
               - "--master"
-              - "local[4]"
+              - "spark://{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"
               - "--deploy-mode"
               - "client"
               - "--name"

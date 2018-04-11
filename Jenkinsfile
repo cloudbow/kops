@@ -100,7 +100,8 @@ podTemplate(
                         slackSend channel: '#jenkins-builds', color: 'good', message: "Deploying app for tag ${REAL_VERSION} or branch ${BRANCH_TO_RUN} "
                         sh """                      
                               helm init && \
-                              helm upgrade --install -f ${PWD}/config/charts/${ENV}/values.yaml sc-apps-${ENV} ${PWD}/kubernetes/charts/repo/slingtv-sports-cloud-apps --version ${REAL_VERSION}
+                              sleep 5 && \
+                              helm upgrade --install -f ${PWD}/config/allenv/values.yaml -f ${PWD}/config/${ENV}/k8s/per-env-values.yaml  -f ${PWD}/config/${ENV}/k8s/overridden-values.yaml  sc-apps-${ENV} ${PWD}/kubernetes/charts/repo/slingtv-sports-cloud-apps --version ${REAL_VERSION}
                            """
                         slackSend channel: '#jenkins-builds', color: 'good', message: "Deployed sports cloud app for version ${REAL_VERSION} or branch ${BRANCH_TO_RUN}"
                         slackSend channel: '#jenkins-builds', color: 'good', message: "Last commit line - ${LAST_COMMIT_LINE}"

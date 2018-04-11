@@ -117,6 +117,12 @@ object SportsDataGamesFacade {
 			    {
 			      "game_date_epoch": {
 			        "order": "asc"
+			      },
+			      "channel_no": {
+			        "order": "asc"
+			      },
+			      "id.keyword": {
+			        "order": "asc"
 			      }
 			    }
 			  ],
@@ -134,8 +140,20 @@ object SportsDataGamesFacade {
 			              "range": {
 			                "game_date_epoch": {
 			                   "gte": $startDate,
-                  				"lte": $endDate
+	              				"lte": $endDate
 			                }
+			              }
+			            }
+			          ],
+			          "must_not": [
+			            {
+			              "term": {
+			                "homeTeamName.keyword": ""
+			              }
+			            },
+			            {
+			              "term": {
+			                "awayTeamName.keyword": ""
 			              }
 			            }
 			          ]
@@ -144,23 +162,36 @@ object SportsDataGamesFacade {
 			    }
 			  },
 			  "aggs": {
-			    "top_tags": {
+			    "group_by_gameId": {
 			      "terms": {
 			        "field": "gameId.keyword",
-			        "size": 500,
-			        "order": {
-			          "order_agg": "asc"
-			        }
+			        "size": 500
 			      },
 			      "aggs": {
-			        "order_agg": {
+			        "order_by_game_date_agg": {
 			          "max": {
 			            "field": "game_date_epoch"
 			          }
-			        },
-			        "top_game_home_hits": {
-			          "top_hits": {
-			            "size": 10
+			        },			      	
+			        "top_hits_by_batch_time": {
+			          "terms": {
+			            "field": "batchTime",
+			            "size": 1,
+			            "order": {
+			              "order_agg": "desc"
+			            }
+			          },
+			          "aggs": {
+			            "order_agg": {
+			              "max": {
+			                "field": "batchTime"
+			              }
+			            },
+			            "top_game_hits": {
+			              "top_hits": {
+			                "size": 10
+			              }
+			            }
 			          }
 			        }
 			      }
@@ -190,23 +221,36 @@ object SportsDataGamesFacade {
 			    }
 			  },
 			  "aggs": {
-			    "top_tags": {
+			    "group_by_gameId": {
 			      "terms": {
 			        "field": "gameId.keyword",
-			        "size": 500,
-			        "order": {
-			          "order_agg": "asc"
-			        }
+			        "size": 500
 			      },
 			      "aggs": {
-			        "order_agg": {
+			        "order_by_game_date_agg": {
 			          "max": {
 			            "field": "game_date_epoch"
 			          }
-			        },
-			        "game_info": {
-			          "top_hits": {
-			            "size": 10
+			        },			      	
+			        "top_hits_by_batch_time": {
+			          "terms": {
+			            "field": "batchTime",
+			            "size": 1,
+			            "order": {
+			              "order_agg": "desc"
+			            }
+			          },
+			          "aggs": {
+			            "order_agg": {
+			              "max": {
+			                "field": "batchTime"
+			              }
+			            },
+			            "top_game_hits": {
+			              "top_hits": {
+			                "size": 10
+			              }
+			            }
 			          }
 			        }
 			      }

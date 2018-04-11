@@ -11,7 +11,7 @@
     "ftp.file.maxage": "P2D",
     "ftp.monitor.update": "/:content_match_nba",
     "ftp.keystyle": "string",
-    "tasks.max": "3",
+    "tasks.max": "2",
     "topics": "content_match_nba"
   }
 }

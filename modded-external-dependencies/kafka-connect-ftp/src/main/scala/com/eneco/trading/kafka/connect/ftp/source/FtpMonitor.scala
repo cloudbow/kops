@@ -147,7 +147,7 @@ class FtpMonitor(settings:FtpMonitorSettings, fileConverter: FileConverter) exte
       }
       )
 
-      logger.info(s"connect ${settings.host}:${settings.port}")
+      logger.info(s"new connect ${settings.host}:${settings.port}")
       var ftpConnector:Try[Unit] = null
       settings.port match {
         case Some(explicitPort) => 

@@ -13,12 +13,26 @@ spec:
     matchLabels:
       app: {{ template "spark-worker.name" . }}
       release: {{ .Release.Name }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: {{ template "spark-worker.name" . }}
         release: {{ .Release.Name }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - {{ template "spark-worker.name" . }}
+              topologyKey: "kubernetes.io/hostname"
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
@@ -30,7 +44,7 @@ spec:
         - name: APP_SPARK_MASTERS_EPS
           value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
         - name: APP_SPARK_ZOOKEEPER_EP
-          value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"  
+          value: "{{ .Release.Name }}-zookeeper-0.{{ .Release.Name }}-zookeeper-headless.default.svc.cluster.local:2181,{{ .Release.Name }}-zookeeper-1.{{ .Release.Name }}-zookeeper-headless.default.svc.cluster.local:2181,{{ .Release.Name }}-zookeeper-2.{{ .Release.Name }}-zookeeper-headless.default.svc.cluster.local:2181"  
         - name: KAFKA_BROKER_EP
           value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
         - name: ARTIFACT_SERVER_EP
@@ -47,6 +61,13 @@ spec:
         resources:
           requests:
             cpu: {{ .Values.deployment.resources.cpu }}
+        livenessProbe:
+          exec:
+            command:
+            - /scripts/liveness
+          initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
       volumes:
       - name: workdir
         hostPath:

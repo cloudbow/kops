@@ -108,6 +108,7 @@ trait LiveDataMuncher extends Muncher {
           lit(zeroPadTimeOffsetUDF($"srcUtcHour",$"srcUtcMinute"))))).
       filter(col("gameId").isNotNull).
       withColumn("rStatusId", getReorderedStatusIdUDF($"statusId")).
+      withColumn("league", normalizeLeagueUDF($"league")).
       coalesce(4).
       withColumn("id", $"gameId").
       withColumn("date",
@@ -187,11 +188,15 @@ trait LiveDataMuncher extends Muncher {
   override def munch(inputKafkaTopic: String, outputCollName: String): Unit = {
 
     val spark = SparkSession.builder().getOrCreate()
-    import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", System.getenv("KAFKA_BROKER_EP")).option("subscribe", inputKafkaTopic).load()
-    val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
-    val kafkaLiveInfoT1DF1 = ds2.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
-    mergeLiveInfo(kafkaLiveInfoT1DF1)
+    try {
+      import spark.implicits._
+      val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", System.getenv("KAFKA_BROKER_EP")).option("subscribe", inputKafkaTopic).load()
+      val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
+      val kafkaLiveInfoT1DF1 = ds2.select(from_json($"key", StructType(StructField("payload", StringType, true) :: Nil)) as "fileName", from_json($"value", StructType(StructField("payload", StringType, true) :: Nil)) as "payloadStruct")
+      mergeLiveInfo(kafkaLiveInfoT1DF1)
+    } finally {
+      spark.close
+    }
 
   }
 }

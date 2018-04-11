@@ -122,6 +122,17 @@ object SportsDataFacade {
 		elasticSearchClient.search("POST",getTeamStandingsURLBase(), Map[String, String](),searchTemplate)
   	
   	}
+
+
+	def getTeamStatsFromPlayerStats(teamCode: String) : JsonElement = {
+		val searchTemplate =  s"""{
+	       "size" : 500,
+				 "query": {
+					 "term": {"teamCode.keyword":"$teamCode"}
+				 }
+	      }""".stripMargin.replaceAll("\n", " ")
+		elasticSearchClient.search("POST",getPlayerStatsURLBase(), Map[String, String](),searchTemplate)
+	}
   	
   	/**
 	  * Fetches sub leagues grouped for league
@@ -129,36 +140,52 @@ object SportsDataFacade {
 	  * @param subLeague the sub league
 	  * @return the result in JSON format
 	  */
-  	def getSubLeagues(subLeague: String):JsonElement = {
+  	def getSubLeagues(league:String, subLeague: String):JsonElement = {
   		val searchTemplate =  s"""{
-		  "size": 0,
-		  "query": {
-		    "term": {
-		      "subLeague.keyword": "$subLeague"
-		    }
-		  },
-		  "aggs": {
-		        "top_tags": {
-		            "terms": {
-		                "field": "division.keyword",
-        				"size" : 100
-		            },"aggs": {
-		                "top_division_hits": {
-		                    "top_hits": {
-		                        "sort": [
-		                            {
-		                                "date": {
-		                                    "order": "desc"
-		                                }
-		                            }
-		                        ],
-		                        "size" : 100
-		                    }
-		                }
-		            }
-		        }
-		    }
-		}""".stripMargin.replaceAll("\n", " ")  	
+			"size": 0,
+			"query": {
+				"constant_score": {
+					"filter": {
+						"bool": {
+							"must": [
+								{
+									"term": {
+										"league.keyword": "$league"
+									}
+								},
+								{
+									"term": {
+										"subLeague.keyword": "$subLeague"
+									}
+								}
+							]
+						}
+					}
+				}
+			},
+			"aggs": {
+				"top_tags": {
+					"terms": {
+						"field": "division.keyword",
+						"size": 100
+					},
+					"aggs": {
+						"top_division_hits": {
+							"top_hits": {
+								"sort": [
+									{
+										"teamName.keyword": {
+											"order": "desc"
+										}
+									}
+								],
+								"size": 100
+							}
+						}
+					}
+				}
+			}
+		}""".stripMargin.replaceAll("\n", " ")
 		elasticSearchClient.search("POST",getTeamStandingsURLBase(), Map[String, String](),searchTemplate)
   	
   	}

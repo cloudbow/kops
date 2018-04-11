@@ -32,6 +32,8 @@ spec:
           value: "{{ .Release.Name }}-spark-master-0.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077,{{ .Release.Name }}-spark-master-1.{{ .Release.Name }}-spark-master-hs.default.svc.cluster.local:7077"  
         - name: APP_SPARK_ZOOKEEPER_EP
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
+        - name: SPARK_DAEMON_JAVA_OPTS
+          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url={{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: 
         {{- range .Values.deployment.command }}
@@ -44,6 +46,13 @@ spec:
         resources:
           requests:
             cpu: {{ .Values.deployment.resources.minCpu }}
+        livenessProbe:
+          httpGet:
+            path: /applications
+            port: {{ .Values.deployment.livenessProbe.port }}
+          initialDelaySeconds: {{ .Values.deployment.livenessProbe.initialDelaySeconds }}
+          timeoutSeconds: {{ .Values.deployment.livenessProbe.timeoutSeconds }}
+          periodSeconds: {{ .Values.deployment.livenessProbe.periodSeconds }}
         volumeMounts:
         - name: workdir
           mountPath: /spark/work

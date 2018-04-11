@@ -36,6 +36,8 @@ class NcaafTeamStandingsParserDelegate extends ParsedItem {
             (mlbDivisionStandings \\ "cfb-team-standings").map {
               teamStandings =>
                 val commonFields = new TeamStandingsDataExtractor(data,teamStandings)
+                commonFields.subLeague=subLeague
+                commonFields.division=division
                 //swap team name and city
                 var teamName =  commonFields.teamName
                 var teamCity = (teamStandings \\ "college-name" \ "@name").text

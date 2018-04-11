@@ -70,128 +70,137 @@ public class SportsCloudHomeScreenDelegate extends AbstractSportsCloudRestDelega
 		if (gameSchedulesJson != null) {
 			JsonArray allGames = new JsonArray();
 			try {
-				JsonArray groupedDocs = gameSchedulesJson.getAsJsonObject().get("aggregations").getAsJsonObject()
-						.get("top_tags").getAsJsonObject().get("buckets").getAsJsonArray();
-				for (JsonElement groupedDocSrc : groupedDocs) {
-					JsonObject mainObj = new JsonObject();
-					JsonObject solrDoc = null;
-					// get a list of subpackage ids
+				JsonArray groupedDocsByGameId = gameSchedulesJson.getAsJsonObject()
+						.get("aggregations").getAsJsonObject()
+						.get("group_by_gameId").getAsJsonObject()
+						.get("buckets").getAsJsonArray();
+				for(JsonElement groupByGameId : groupedDocsByGameId) {
+					JsonArray groupedMaxBatchTimeDocs = groupByGameId.getAsJsonObject()
+							.get("top_hits_by_batch_time").getAsJsonObject()
+							.get("buckets").getAsJsonArray();
+					for (JsonElement maxBatchTimeDoc : groupedMaxBatchTimeDocs) {
 
-					JsonArray homeScreenGameScheduleGroup = groupedDocSrc.getAsJsonObject().get("top_game_home_hits")
-							.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
-					solrDoc = getMatchedGame(mainObj, homeScreenGameScheduleGroup);
-					JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
-					String gameId = solrDoc.get("gameId").getAsString();
+							JsonObject mainObj = new JsonObject();
+						JsonObject solrDoc = null;
+						// get a list of subpackage ids
+
+						JsonArray homeScreenGameScheduleGroup = maxBatchTimeDoc.getAsJsonObject().get("top_game_hits")
+								.getAsJsonObject().get("hits").getAsJsonObject().get("hits").getAsJsonArray();
+						solrDoc = getMatchedGame(mainObj, homeScreenGameScheduleGroup);
+						JsonObject gameScheduleJson = solrDoc.getAsJsonObject();
+						String gameId = solrDoc.get("gameId").getAsString();
 
 
-					mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
-					mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
-					mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
-					mainObj.add("id", new JsonPrimitive(gameScheduleJson.get("gameId").getAsString()));
-					mainObj.add("sport", new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
-					mainObj.add("league",
-							new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
-					addGameScheduleDates(mainObj, gameScheduleJson);
+						mainObj.add("channelGuid", new JsonPrimitive(gameScheduleJson.get("channel_guid").getAsString()));
+						mainObj.add("programGuid", new JsonPrimitive(gameScheduleJson.get("program_guid").getAsString()));
+						mainObj.add("assetGuid", new JsonPrimitive(gameScheduleJson.get("asset_guid").getAsString()));
+						mainObj.add("id", new JsonPrimitive(gameScheduleJson.get("gameId").getAsString()));
+						mainObj.add("sport", new JsonPrimitive(gameScheduleJson.get("sport").getAsString()));
+						mainObj.add("league",
+								new JsonPrimitive(gameScheduleJson.get("league").getAsString().toLowerCase()));
+						addGameScheduleDates(mainObj, gameScheduleJson);
 
-					// let mainObj fill with game_date_epoch and call liveScores
-					updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
+						// let mainObj fill with game_date_epoch and call liveScores
+						updateScoreStatusFromLive(liveResponseJson, mainObj, gameId);
 
-					// title
-					mainObj.add("anons_title",
-							new JsonPrimitive(solrDoc.getAsJsonObject().get("anonsTitle").getAsString()));
+						// title
+						mainObj.add("anons_title",
+								new JsonPrimitive(solrDoc.getAsJsonObject().get("anonsTitle").getAsString()));
 
-					// collection
-					mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
+						// collection
+						mainObj.add("rating", new JsonPrimitive(gameScheduleJson.get("gexPredict").getAsString()));
 
-					// Sling TV ratings
-					if (gameScheduleJson.has("ratings")) {
-						mainObj.add("ratings", gameScheduleJson.get("ratings").getAsJsonArray());
-					}
+						// Sling TV ratings
+						if (gameScheduleJson.has("ratings")) {
+							mainObj.add("ratings", gameScheduleJson.get("ratings").getAsJsonArray());
+						}
 
-					String teaser = "-";
-					if (gameScheduleJson.has("preGameTeaser")) {
-						teaser = gameScheduleJson.get("preGameTeaser").getAsString();
-					}
-					mainObj.add("teaser", new JsonPrimitive(teaser));
+						String teaser = "-";
+						if (gameScheduleJson.has("preGameTeaser")) {
+							teaser = gameScheduleJson.get("preGameTeaser").getAsString();
+						}
+						mainObj.add("teaser", new JsonPrimitive(teaser));
 
-					// anons
-					mainObj.add("anons", new JsonPrimitive(teaser));
+						// anons
+						mainObj.add("anons", new JsonPrimitive(teaser));
 
-					JsonObject homeTeam = new JsonObject();
-					JsonObject awayTeam = new JsonObject();
-					JsonObject homeTeamRecord = new JsonObject();
-					JsonObject awayTeamRecord = new JsonObject();
+						JsonObject homeTeam = new JsonObject();
+						JsonObject awayTeam = new JsonObject();
+						JsonObject homeTeamRecord = new JsonObject();
+						JsonObject awayTeamRecord = new JsonObject();
 
-					mainObj.add("homeTeam", homeTeam);
-					homeTeam.add("name", new JsonPrimitive(gameScheduleJson.get("homeTeamName").getAsString()));
-					String homeTeamAlias = "-";
-					if (solrDoc.has("homeTeamAlias")) {
-						homeTeamAlias = solrDoc.get("homeTeamAlias").getAsString();
-						homeTeam.add("alias", new JsonPrimitive(homeTeamAlias));
-					}
-					// Added for city
-					String homeTeamCity = "-";
-					if (solrDoc.has("homeTeamCity")) {
-						homeTeamCity = solrDoc.get("homeTeamCity").getAsString();
-						homeTeam.add("city", new JsonPrimitive(homeTeamCity));
-					}
+						mainObj.add("homeTeam", homeTeam);
+						homeTeam.add("name", new JsonPrimitive(gameScheduleJson.get("homeTeamName").getAsString()));
+						String homeTeamAlias = "-";
+						if (solrDoc.has("homeTeamAlias")) {
+							homeTeamAlias = solrDoc.get("homeTeamAlias").getAsString();
+							homeTeam.add("alias", new JsonPrimitive(homeTeamAlias));
+						}
+						// Added for city
+						String homeTeamCity = "-";
+						if (solrDoc.has("homeTeamCity")) {
+							homeTeamCity = solrDoc.get("homeTeamCity").getAsString();
+							homeTeam.add("city", new JsonPrimitive(homeTeamCity));
+						}
 
-					homeTeam.add("img", new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
-					homeTeam.add("id", new JsonPrimitive(gameScheduleJson.get("homeTeamExternalId").getAsString()));
-					mainObj.add("awayTeam", awayTeam);
-					awayTeam.add("name", new JsonPrimitive(gameScheduleJson.get("awayTeamName").getAsString()));
-					String awayTeamAlias = "-";
-					if (solrDoc.has("awayTeamAlias")) {
-						awayTeamAlias = solrDoc.get("awayTeamAlias").getAsString();
-						awayTeam.add("alias", new JsonPrimitive(awayTeamAlias));
-					}
-					// Added for city
-					String awayTeamCity = "-";
-					if (solrDoc.has("awayTeamCity")) {
-						awayTeamCity = solrDoc.get("awayTeamCity").getAsString();
-						awayTeam.add("city", new JsonPrimitive(awayTeamCity));
-					}
+						homeTeam.add("img", new JsonPrimitive(gameScheduleJson.get("homeTeamImg").getAsString()));
+						homeTeam.add("id", new JsonPrimitive(gameScheduleJson.get("homeTeamExternalId").getAsString()));
+						mainObj.add("awayTeam", awayTeam);
+						awayTeam.add("name", new JsonPrimitive(gameScheduleJson.get("awayTeamName").getAsString()));
+						String awayTeamAlias = "-";
+						if (solrDoc.has("awayTeamAlias")) {
+							awayTeamAlias = solrDoc.get("awayTeamAlias").getAsString();
+							awayTeam.add("alias", new JsonPrimitive(awayTeamAlias));
+						}
+						// Added for city
+						String awayTeamCity = "-";
+						if (solrDoc.has("awayTeamCity")) {
+							awayTeamCity = solrDoc.get("awayTeamCity").getAsString();
+							awayTeam.add("city", new JsonPrimitive(awayTeamCity));
+						}
 
-					awayTeam.add("img", new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
-					awayTeam.add("id", new JsonPrimitive(gameScheduleJson.get("awayTeamExternalId").getAsString()));
+						awayTeam.add("img", new JsonPrimitive(gameScheduleJson.get("awayTeamImg").getAsString()));
+						awayTeam.add("id", new JsonPrimitive(gameScheduleJson.get("awayTeamExternalId").getAsString()));
 
-					// populate default values
-					homeTeamRecord.add("wins", new JsonPrimitive(0l));
-					homeTeamRecord.add("losses", new JsonPrimitive(0l));
-					homeTeamRecord.add("ties", new JsonPrimitive(0l));
-					awayTeamRecord.add("wins", new JsonPrimitive(0l));
-					awayTeamRecord.add("losses", new JsonPrimitive(0l));
-					awayTeamRecord.add("ties", new JsonPrimitive(0l));
+						// populate default values
+						homeTeamRecord.add("wins", new JsonPrimitive(0l));
+						homeTeamRecord.add("losses", new JsonPrimitive(0l));
+						homeTeamRecord.add("ties", new JsonPrimitive(0l));
+						awayTeamRecord.add("wins", new JsonPrimitive(0l));
+						awayTeamRecord.add("losses", new JsonPrimitive(0l));
+						awayTeamRecord.add("ties", new JsonPrimitive(0l));
 
-					homeTeam.add("teamRecord", homeTeamRecord);
-					awayTeam.add("teamRecord", awayTeamRecord);
-					JsonArray contentIds = createContentIds(homeScreenGameScheduleGroup);
-					JsonObject contentIdChannelGuidMap = createContentIdAssetInfoMap(homeScreenGameScheduleGroup);
-					mainObj.add("cIdToAsstInfo", contentIdChannelGuidMap);
-					mainObj.add("contentId", contentIds);
+						homeTeam.add("teamRecord", homeTeamRecord);
+						awayTeam.add("teamRecord", awayTeamRecord);
+						JsonArray contentIds = createContentIds(homeScreenGameScheduleGroup);
+						JsonObject contentIdChannelGuidMap = createContentIdAssetInfoMap(homeScreenGameScheduleGroup);
+						mainObj.add("cIdToAsstInfo", contentIdChannelGuidMap);
+						mainObj.add("contentId", contentIds);
 
-					String callsign = "-";
-					if (gameScheduleJson.has("callsign")) {
-						callsign = gameScheduleJson.get("callsign").getAsString();
-					}
-					mainObj.add("callsign", new JsonPrimitive(callsign));
+						String callsign = "-";
+						if (gameScheduleJson.has("callsign")) {
+							callsign = gameScheduleJson.get("callsign").getAsString();
+						}
+						mainObj.add("callsign", new JsonPrimitive(callsign));
 
-					JsonArray subPackageTitles = new JsonArray();
-					if (gameScheduleJson.has("subpack_titles")) {
-						subPackageTitles = gameScheduleJson.get("subpack_titles").getAsJsonArray();
-					}
-					mainObj.add("subPackTitles", subPackageTitles);
-					JsonObject statsObj = new JsonObject();
-					JsonObject statsHomeTeam = new JsonObject();
-					JsonObject statsAwayTeam = new JsonObject();
-					JsonArray homeScoreArray = new JsonArray();
-					JsonArray awayScoreArray = new JsonArray();
-					statsHomeTeam.add("scoreDetails", homeScoreArray);
-					statsAwayTeam.add("scoreDetails", awayScoreArray);
-					statsObj.add("homeTeam", statsHomeTeam);
-					statsObj.add("awayTeam", statsAwayTeam);
-					allGames.add(mainObj);
+						JsonArray subPackageTitles = new JsonArray();
+						if (gameScheduleJson.has("subpack_titles")) {
+							subPackageTitles = gameScheduleJson.get("subpack_titles").getAsJsonArray();
+						}
+						mainObj.add("subPackTitles", subPackageTitles);
+						JsonObject statsObj = new JsonObject();
+						JsonObject statsHomeTeam = new JsonObject();
+						JsonObject statsAwayTeam = new JsonObject();
+						JsonArray homeScoreArray = new JsonArray();
+						JsonArray awayScoreArray = new JsonArray();
+						statsHomeTeam.add("scoreDetails", homeScoreArray);
+						statsAwayTeam.add("scoreDetails", awayScoreArray);
+						statsObj.add("homeTeam", statsHomeTeam);
+						statsObj.add("awayTeam", statsAwayTeam);
+						allGames.add(mainObj);
+
 				}
+			}
 			} catch (Exception e) {
 				LOGGER.error("Error occurred in parsing json", e);
 			} finally {

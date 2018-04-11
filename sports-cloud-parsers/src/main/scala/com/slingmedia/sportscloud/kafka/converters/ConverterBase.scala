@@ -62,21 +62,21 @@ trait ConverterBase {
         playerStatsParserType=ParserType.NbaPlayerStatsParser
         teamStandingsParserType=ParserType.NbaTeamStandingsParser
         teamStandingsRoot="nba-conference-standings"
-        playerStatsRoot="nba-player-split"
+        playerStatsRoot="nba-player-splits"
       case LeagueEnum.NCAAB =>
         teamStandings = ".*CBK_TEAM_STANDINGS\\.XML.*".r
         playerStats = ".*CBK_PLAYER_STATS.*\\.XML.*".r
         playerStatsParserType=ParserType.NcaabPlayerStatsParser
         teamStandingsParserType=ParserType.NcaabTeamStandingsParser
         teamStandingsRoot="cbk-conference-standings"
-        playerStatsRoot="cbk-player-stat"
+        playerStatsRoot="cbk-player-stats"
       case LeagueEnum.NHL =>
         teamStandings = ".*NHL_TEAM_STANDINGS\\.XML.*".r
         playerStats = ".*NHL_PLAYER_STATS.*\\.XML.*".r
         playerStatsParserType=ParserType.NhlPlayerStatsParser
         teamStandingsParserType=ParserType.NhlTeamStandingsParser
         teamStandingsRoot="hockey-nhl-standings"
-        playerStatsRoot="nhl-player-split-goalie"
+        playerStatsRoot="nhl-player-splits"
 
 
 
@@ -95,7 +95,7 @@ trait ConverterBase {
               Array[SourceRecord]().toList.asJava
             }
           case playerStats(_*) =>
-            Parsers(playerStatsParserType).generateRows(data, in, (data \\ playerStatsRoot))
+            Parsers(playerStatsParserType).generateRows(data, in, data \\ playerStatsRoot ,league.name, league.fullName)
           case finalBoxScores(_*) =>
             Parsers(boxScoreParserType).generateRows(data, in)
           case _ =>

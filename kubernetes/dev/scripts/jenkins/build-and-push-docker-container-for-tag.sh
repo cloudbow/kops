@@ -24,6 +24,10 @@ case "$DOCKER_IMAGE_TYPE" in
 			echo "Building job scheduler"
 			$BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-ScheduledJob "$TAG" "$DOCKER_ID"
             ;;
+        sc-cp-kafka)
+            echo "Build kafka"
+            $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Kafka "$TAG" "$DOCKER_ID"
+            ;;            
         sc-cp-connect)
             echo "Build kafka connect"
 			$BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-ConfluentConnect "$TAG" "$DOCKER_ID"
@@ -47,7 +51,11 @@ case "$DOCKER_IMAGE_TYPE" in
 		spark-job)
 			echo "Building spark job"
 			$BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-SparkJob "$TAG" "$DOCKER_ID"
-            ;;         
+            ;;
+        sc-monitoring)
+            echo "Build Monitoring"         
+            $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Monitoring "$TAG" "$DOCKER_ID"
+            ;;
         *)
             echo $"Invalid tag . Pass the right tag!! or configure here"
             exit 1

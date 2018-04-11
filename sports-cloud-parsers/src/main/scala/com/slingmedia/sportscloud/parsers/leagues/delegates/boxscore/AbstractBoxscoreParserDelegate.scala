@@ -47,7 +47,7 @@ class BoxScoreDataExtractor(data:Elem, rowData: Node) extends ParsedItem {
   val gameStatusId = toInt((rowData \\ "gamestate" \ "@status-id").text).getOrElse(0)
 
   val league = (data \\ "league" \ "@alias").text
-  val lastPlay = (rowData \\ "last-play" \ "@details").text
+  var lastPlay = (rowData \\ "last-play" \ "@details").text
 
 }
 

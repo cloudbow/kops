@@ -86,10 +86,17 @@ class SoccerContentMatcher extends ContentMatcher {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
-    val response = get("http://gwserv-mobileprod.echodata.tv/Gamefinder/api/game/search?page.size=300")
+    val pattern = "yyyy-dd-MM+Z"
 
-    val rdd = spark.sparkContext.parallelize(response:: Nil)
-    val nagraGameScheduleDF1 = spark.read.json(rdd)
+    val startOff = Instant.now.minus(1, ChronoUnit.DAYS)
+    val startUtc = startOff.atZone(ZoneId.of("UTC-07:00"))
+    val startTime = startUtc.format(DateTimeFormatter.ofPattern(pattern))
+
+    val endOff = Instant.now.plus(5, ChronoUnit.DAYS)
+    val endUtc = endOff.atZone(ZoneId.of("UTC-07:00"))
+    val endTime = endUtc.format(DateTimeFormatter.ofPattern(pattern))
+
+    val nagraGameScheduleDF1 = getDFFromHttp(s"http://gwserv-mobileprod.echodata.tv/Gamefinder/api/game/search?startDate=$startTime&endDate=$endTime&page.size=300")
     val nagraGameScheduleDF2 = nagraGameScheduleDF1.withColumn("content", explode(nagraGameScheduleDF1.col("content")));
     val nagraGameScheduleDF3 = nagraGameScheduleDF2.select(children("content", nagraGameScheduleDF2): _*)
 

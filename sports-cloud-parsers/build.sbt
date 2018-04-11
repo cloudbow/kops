@@ -23,6 +23,8 @@ lazy val root = (project in file(".")).
   		kafkalib,
   		ftpKafka,
   		scalaXML,
-  		scalaparser
+  		scalaparser,
+  		commonsNet,
+  		commonsCodec
 	)
   )
