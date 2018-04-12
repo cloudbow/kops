@@ -22,6 +22,18 @@ spec:
         backend:
           serviceName: {{ .Release.Name }}-sc-rest-layer
           servicePort: 9080
+  - host: intsc-prometheus.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-prometheus-server
+          servicePort: 80
+  - host: intsc-monitoring.slingbox.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-grafana
+          servicePort: 80
   - host: intsc-kibana.slingbox.com
     http:
       paths:

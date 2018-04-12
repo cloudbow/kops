@@ -19,7 +19,7 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.39
+        tag: sports-cloud-rest:0.0.1-alpha.40
 sc-jobs:
   thuuz-download-job:
     image:

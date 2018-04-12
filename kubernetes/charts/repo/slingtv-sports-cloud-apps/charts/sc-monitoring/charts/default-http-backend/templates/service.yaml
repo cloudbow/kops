@@ -10,6 +10,7 @@ metadata:
 spec:
   selector:
     app: {{ template "default-http-backend.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
   type: {{ .Values.service.type }}
   ports:

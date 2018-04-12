@@ -56,6 +56,14 @@ case "$DOCKER_IMAGE_TYPE" in
             echo "Build Monitoring"         
             $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Monitoring "$TAG" "$DOCKER_ID"
             ;;
+        sc-prometheus)
+            echo "Build Prometheus"         
+            $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Prometheus "$TAG" "$DOCKER_ID"
+            ;;
+        sc-grafana)
+            echo "Build Grafana"         
+            $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Grafana "$TAG" "$DOCKER_ID"
+            ;;
         *)
             echo $"Invalid tag . Pass the right tag!! or configure here"
             exit 1
