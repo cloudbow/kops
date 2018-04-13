@@ -662,32 +662,37 @@ public class AbstractSportsCloudRestDelegate {
 	public void addCurrentPlayerDetails(JsonObject mcSportData, JsonObject liveGameJsonObj) {
 		GameStatus status = GameStatus.getValue(liveGameJsonObj.get("statusId").getAsInt());
 		if (liveGameJsonObj.has("isHomePitching") && status != GameStatus.COMPLETED) {
-			JsonObject homeTeam = mcSportData.get("homeTeam").getAsJsonObject();
-			JsonObject awayTeam = mcSportData.get("awayTeam").getAsJsonObject();
-			Boolean isHomePitching = liveGameJsonObj.get("isHomePitching").getAsBoolean();
-			String homeCurrPlayer = "-";
-			if (liveGameJsonObj.has("hTCurrPlayer")) {
-				homeCurrPlayer = liveGameJsonObj.get("hTCurrPlayer").getAsString();
-			}
-			String awayCurrPlayer = "-";
-			if (liveGameJsonObj.has("hTCurrPlayer")) {
-				awayCurrPlayer = liveGameJsonObj.get("aTCurrPlayer").getAsString();
-			}
+			JsonElement homeTeamElement = mcSportData.get("homeTeam");
+			JsonElement awayTeamElement = mcSportData.get("awayTeam");
+			if (homeTeamElement != null && awayTeamElement!= null) { // Check is added for In-Progress mlb games, where team details were empty
+				JsonObject homeTeam = homeTeamElement.getAsJsonObject();
+				JsonObject awayTeam = awayTeamElement.getAsJsonObject();
 
-			String homePlayerRole = "-";
-			String awayPlayerRole = "-";
-			if (isHomePitching) {
-				homePlayerRole = "pitching";
-				awayPlayerRole = "atbat";
-			} else {
-				homePlayerRole = "atbat";
-				awayPlayerRole = "pitching";
-			}
-			homeTeam.add("player_name", new JsonPrimitive(homeCurrPlayer));
-			homeTeam.add("player_role", new JsonPrimitive(homePlayerRole));
+				Boolean isHomePitching = liveGameJsonObj.get("isHomePitching").getAsBoolean();
+				String homeCurrPlayer = "-";
+				if (liveGameJsonObj.has("hTCurrPlayer")) {
+					homeCurrPlayer = liveGameJsonObj.get("hTCurrPlayer").getAsString();
+				}
+				String awayCurrPlayer = "-";
+				if (liveGameJsonObj.has("aTCurrPlayer")) {
+					awayCurrPlayer = liveGameJsonObj.get("aTCurrPlayer").getAsString();
+				}
 
-			awayTeam.add("player_name", new JsonPrimitive(awayCurrPlayer));
-			awayTeam.add("player_role", new JsonPrimitive(awayPlayerRole));
+				String homePlayerRole = "-";
+				String awayPlayerRole = "-";
+				if (isHomePitching) {
+					homePlayerRole = "pitching";
+					awayPlayerRole = "atbat";
+				} else {
+					homePlayerRole = "atbat";
+					awayPlayerRole = "pitching";
+				}
+				homeTeam.add("player_name", new JsonPrimitive(homeCurrPlayer));
+				homeTeam.add("player_role", new JsonPrimitive(homePlayerRole));
+
+				awayTeam.add("player_name", new JsonPrimitive(awayCurrPlayer));
+				awayTeam.add("player_role", new JsonPrimitive(awayPlayerRole));
+			}
 		}
 	}
 
