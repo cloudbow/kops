@@ -674,6 +674,7 @@ public class AbstractSportsCloudRestDelegate {
 					homeCurrPlayer = liveGameJsonObj.get("hTCurrPlayer").getAsString();
 				}
 				String awayCurrPlayer = "-";
+
 				if (liveGameJsonObj.has("aTCurrPlayer")) {
 					awayCurrPlayer = liveGameJsonObj.get("aTCurrPlayer").getAsString();
 				}
