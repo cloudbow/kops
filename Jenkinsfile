@@ -71,7 +71,7 @@ podTemplate(
             }
         }
 
-        if (env.TAG_NAME =~ "^release/.*" || env.TAG_NAME =~ "^dev/.*" || env.TAG_NAME =~ "^qa/.*" || env.BRANCH_NAME =~ "^feature/.*") {
+        if (env.TAG_NAME =~ "^release/.*" || env.TAG_NAME =~ "^dev/.*" || env.TAG_NAME =~ "^qa/.*" || env.BRANCH_NAME =~ "^feature/.*" || env.BRANCH_NAME =~ "^bugfix/.*") {
             stage('Deploy Image')
             {
 
