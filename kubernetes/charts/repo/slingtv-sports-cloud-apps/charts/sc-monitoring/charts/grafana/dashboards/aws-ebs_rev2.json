@@ -1,7 +1,7 @@
 {
   "__inputs": [
     {
-      "name": "DS_CLOUDWATCH",
+      "name": "CloudWatch",
       "label": "cloudwatch",
       "description": "",
       "type": "datasource",
@@ -56,7 +56,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": "${DS_CLOUDWATCH}",
+          "datasource": CloudWatch",
           "editable": true,
           "error": false,
           "fill": 1,
@@ -173,7 +173,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": "${DS_CLOUDWATCH}",
+          "datasource": CloudWatch",
           "editable": true,
           "error": false,
           "fill": 1,
@@ -352,7 +352,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": "${DS_CLOUDWATCH}",
+          "datasource": CloudWatch",
           "editable": true,
           "error": false,
           "fill": 1,
@@ -504,7 +504,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": "${DS_CLOUDWATCH}",
+          "datasource": CloudWatch",
           "editable": true,
           "error": false,
           "fill": 1,
@@ -671,7 +671,7 @@
     "list": [
       {
         "current": {},
-        "datasource": "${DS_CLOUDWATCH}",
+        "datasource": CloudWatch",
         "hide": 0,
         "includeAll": false,
         "label": "Region",
@@ -684,7 +684,7 @@
       },
       {
         "current": {},
-        "datasource": "${DS_CLOUDWATCH}",
+        "datasource": CloudWatch",
         "hide": 0,
         "includeAll": false,
         "label": "VolumeId",
