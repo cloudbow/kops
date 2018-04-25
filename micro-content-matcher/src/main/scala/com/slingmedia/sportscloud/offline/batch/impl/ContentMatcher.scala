@@ -539,9 +539,11 @@ class ContentMatcher extends Serializable with Muncher {
     //Total Channels == 9210
     val channelsSummaryJsonDF5 = channelsSummaryJsonDF4.withColumn("genreExploded", explode($"genre")).drop("genre")
     //Total Sports channels== 1357 (14%)
-    // Filter only sports channels
-    val channelsSummaryJsonDF6 = channelsSummaryJsonDF5.filter("genreExploded='Sports'").drop("genreExploded")
-    val summaryJson6 = channelsSummaryJsonDF6.join(subPackIds21, channelsSummaryJsonDF6("subpack_int_id") === subPackIds21("id"), "inner").drop("id")
+    val summaryJson6 = channelsSummaryJsonDF5.join(
+      subPackIds21, channelsSummaryJsonDF5("subpack_int_id") === subPackIds21("id"), "inner"
+    ).
+      drop("id").
+      drop("genreExploded")
     val summaryJson7 = summaryJson6.groupBy($"channel_guid", $"channel_no", $"callsign").agg(Map(
       "subpack_int_id" -> "collect_list",
       "subpackage_guid" -> "collect_list",
