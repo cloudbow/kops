@@ -11,6 +11,10 @@ spec:
   replicas: {{ .Values.deployment.client.replicas }}
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9200"
+        prometheus.io/path: "/_prometheus/metrics"
       labels:
         app: {{ template "elasticsearch.name" . }}
         release: {{ .Release.Name }}
@@ -31,7 +35,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
           limits:  

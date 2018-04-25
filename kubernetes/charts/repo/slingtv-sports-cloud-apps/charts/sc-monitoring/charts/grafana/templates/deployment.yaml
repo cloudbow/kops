@@ -39,22 +39,15 @@ spec:
 {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.global.repository }}/{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: config
               mountPath: "/etc/grafana/grafana.ini"
               subPath: grafana.ini
-{{- if .Values.dashboards }}
-  {{- range $key, $value := .Values.dashboards }}
-    {{ if hasKey $value "json" }}
             - name: dashboards-json
-              mountPath: "/var/lib/grafana/dashboards/{{ $key }}.json"
-              subPath: {{ $key }}.json
-    {{- end }}
-  {{- end }}
-{{- end -}}
 {{- if .Values.datasources }}
+              mountPath: "/var/lib/grafana/dashboards"
             - name: config
               mountPath: "/etc/grafana/provisioning/datasources/datasources.yaml"
               subPath: datasources.yaml

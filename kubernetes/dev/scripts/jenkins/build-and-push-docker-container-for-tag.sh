@@ -24,6 +24,10 @@ case "$DOCKER_IMAGE_TYPE" in
 			echo "Building job scheduler"
 			$BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-ScheduledJob "$TAG" "$DOCKER_ID"
             ;;
+        sc-elasticsearch)
+            echo "Build elasticsearch"
+            $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Elasticsearch "$TAG" "$DOCKER_ID"
+            ;;  
         sc-cp-kafka)
             echo "Build kafka"
             $BASE_PATH/scripts/docker/build-docker-container.sh  $BASE_PATH/docker/containers/Docker-Kafka "$TAG" "$DOCKER_ID"

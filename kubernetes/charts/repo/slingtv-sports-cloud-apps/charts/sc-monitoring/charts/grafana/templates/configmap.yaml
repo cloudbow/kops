@@ -27,11 +27,6 @@ data:
       url: http://{{ .Release.Name }}-prometheus-server.default.svc.cluster.local
       access: proxy
       isDefault: true
-    - name: {{ .Values.datasources.cloudwatchName }}
-      type: CloudWatch
-      url: http://{{ .Release.Name }}-prometheus-server.default.svc.cluster.local
-      url: http://{{ .Release.Name }}-prometheus-server.default.svc.cluster.local
-      access: proxy
 
 {{- if .Values.dashboardProviders }}
   {{- range $key, $value := .Values.dashboardProviders }}

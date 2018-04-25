@@ -46,7 +46,7 @@ spec:
         - name: CONNECT_ZOOKEEPER_CONNECT
           value: "{{ .Release.Name }}-zookeeper.default.svc.cluster.local:2181"
         - name: CONNECT_BOOTSTRAP_SERVERS
-          value: "{{ .Release.Name }}-kafka-0.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-1.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092,{{ .Release.Name }}-kafka-2.{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
+          value: "{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
         - name: CONNECT_REST_ADVERTISED_HOST_NAME
           valueFrom:
             fieldRef:

@@ -8,6 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
+{{ (.Files.Glob "dashboards/*").AsConfig | indent 2 }} 
 {{- if .Values.dashboards }}
   {{- range $key, $value := .Values.dashboards }}
     {{ if hasKey $value "json" }}

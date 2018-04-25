@@ -874,7 +874,18 @@ sc-monitoring:
                 regex: (.+)
                 target_label: __metrics_path__
                 replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
-
+            metric_relabel_configs:
+              - action: replace
+                source_labels: [id]
+                regex: '^/machine\.slice/machine-rkt\\x2d([^\\]+)\\.+/([^/]+)\.service$'
+                target_label: rkt_container_name
+                replacement: '${2}-${1}'
+              - action: replace
+                source_labels: [id]
+                regex: '^/system\.slice/(.+)\.service$'
+                target_label: systemd_service_name
+                replacement: '${1}'
+            
           # Scrape config for service endpoints.
           #
           # The relabeling allows the actual service scrape endpoint to be configured
@@ -1004,8 +1015,7 @@ sc-monitoring:
     replicas: 1
 
     image:
-      repository: grafana/grafana
-      tag: 5.0.4
+      tag: sc-grafana:0.0.1-alpha.1
       pullPolicy: IfNotPresent
 
     downloadDashboardsImage:
@@ -1091,22 +1101,23 @@ sc-monitoring:
     datasources:
       prometheusName: Prometheus
       cloudwatchName: CloudWatch
+      elasticSearchName: Elasticsearch
 
     ## Configure grafana dashboard providers
     ## ref: http://docs.grafana.org/administration/provisioning/#dashboards
     ##
-    dashboardProviders: {}
-    #  dashboardproviders.yaml:
-    #    apiVersion: 1
-    #    providers:
-    #    - name: 'default'
-    #      orgId: 1
-    #      folder: ''
-    #      type: file
-    #      disableDeletion: false
-    #      editable: true
-    #      options:
-    #        path: /var/lib/grafana/dashboards
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards
 
     ## Configure grafana dashboard to import
     ## NOTE: To use dashboards you must also enable/configure dashboardProviders
@@ -1154,8 +1165,7 @@ sc-services:
     indexing:
       elasticsearch:
         image:
-            repository: quay.io/pires
-            tag: docker-elasticsearch-kubernetes:6.0.0
+            tag: sc-elasticsearch:0.0.1-alpha.8
             pullPolicy: Always
         pdb:
           master:
@@ -1325,19 +1335,189 @@ sc-services:
         confluent:
           ## Kafka deployment 
           kafka:
+            # ------------------------------------------------------------------------------
+            # Kafka:
+            # ------------------------------------------------------------------------------
+
+            ## The StatefulSet installs 3 pods by default
+            replicas: 3
+
+            ## Specify a imagePullPolicy
+            ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+            imagePullPolicy: "IfNotPresent"
+
+            ## Configure resource requests and limits
+            ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+            resources: {}
+              # limits:
+              #   cpu: 200m
+              #   memory: 1536Mi
+              # requests:
+              #   cpu: 100m
+              #   memory: 1024Mi
+
+            ## The StatefulSet Update Strategy which Kafka will use when changes are applied.
+            ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+            updateStrategy:
+              type: "OnDelete"
+
+            ## The name of the storage class which the cluster should use.
+            # storageClass: default
+
+            ## The subpath within the Kafka container's PV where logs will be stored.
+            ## This is combined with `persistence.mountPath`, to create, by default: /opt/kafka/data/logs
+            logSubPath: "logs"
+
+            ## Use an alternate scheduler, e.g. "stork".
+            ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
+            ##
+            # schedulerName:
+
+            ## Pod scheduling preferences.
+            ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+            ##
+            affinity: {}
+
+            ## Node labels for pod assignment
+            ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+            nodeSelector: {}
+
+            ## Readiness probe config.
+            ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
+            ##
+            readinessProbe:
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              timeoutSeconds: 5
+              successThreshold: 1
+              failureThreshold: 3
+
+            # Tolerations for nodes that have taints on them.
+            # Useful if you want to dedicate nodes to just run kafka
+            # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+            tolerations: []
+            # tolerations:
+            # - key: "key"
+            #   operator: "Equal"
+            #   value: "value"
+            #   effect: "NoSchedule"
+
+            ## External access.
+            ##
+            external:
+              enabled: false
+              servicePort: 19092
+              firstListenerPort: 31090
+              domain: cluster.local
+              init:
+                image: "lwolf/kubectl_deployer"
+                imageTag: "0.4"
+                imagePullPolicy: "IfNotPresent"
+
+            ## Configuration Overrides. Specify any Kafka settings you would like set on the StatefulSet
+            ## here in map format, as defined in the official docs.
+            ## ref: https://kafka.apache.org/documentation/#brokerconfigs
+            ##
+            configurationOverrides: {}
+              # "offsets.topic.replication.factor": 3
+              # "auto.leader.rebalance.enable": true
+              # "auto.create.topics.enable": true
+
+              ## Options required for external access via NodePort
+              ## ref:
+              ## - http://kafka.apache.org/documentation/#security_configbroker
+              ## - https://cwiki.apache.org/confluence/display/KAFKA/KIP-103%3A+Separation+of+Internal+and+External+traffic
+              ##
+              ## Setting "advertised.listeners" here appends to "PLAINTEXT://${POD_IP}:9092,"
+              # "advertised.listeners": |-
+              #   EXTERNAL://kafka.cluster.local:$((31090 + ${KAFKA_BROKER_ID}))
+              # "listener.security.protocol.map": |-
+              #   PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+
+            ## A collection of additional ports to expose on brokers (formatted as normal containerPort yaml)
+            # Useful when the image exposes metrics (like prometheus, etc.) through a javaagent instead of a sidecar
+            additionalPorts: {}
+
+            ## Persistence configuration. Specify if and how to persist data to a persistent volume.
+            ##
+            persistence:
+              enabled: true
+
+              ## The size of the PersistentVolume to allocate to each Kafka Pod in the StatefulSet. For
+              ## production servers this number should likely be much larger.
+              ##
+              size: "80Gi"
+
+              ## The location within the Kafka container where the PV will mount its storage and Kafka will
+              ## store its logs.
+              ##
+              mountPath: "/opt/kafka/data"
+
+              ## Kafka data Persistent Volume Storage Class
+              ## If defined, storageClassName: <storageClass>
+              ## If set to "-", storageClassName: "", which disables dynamic provisioning
+              ## If undefined (the default) or set to null, no storageClassName spec is
+              ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+              ##   GKE, AWS & OpenStack)
+              ##
+              # storageClass:
+
+            ## Metrics
+            ##
+            metrics:
+
+              jmx:
+                enabled: true
+
+                # The image to use for the metrics collector
+                image: solsson/kafka-prometheus-jmx-exporter@sha256
+
+                # The image tag to use for the metrics collector
+                imageTag: a23062396cd5af1acdf76512632c20ea6be76885dfc20cd9ff40fb23846557e8
+
+                # The port to expose JMX metrics on
+                port: 5555
+
+                # Rules to apply to the Kafka JMX Exporter
+                kafkaConfig:
+                  lowercaseOutputName: true
+                  jmxUrl: service:jmx:rmi:///jndi/rmi://127.0.0.1:5555/jmxrmi
+                  ssl: false
+                  whitelistObjectNames: ["kafka.server:*", "kafka.controller:*", "java.lang:*"]
+                  rules:
+                    - pattern : kafka.server<type=ReplicaFetcherManager, name=MaxLag, clientId=(.+)><>Value
+                    - pattern : kafka.server<type=BrokerTopicMetrics, name=(BytesInPerSec|BytesOutPerSec|MessagesInPerSec), topic=(.+)><>OneMinuteRate
+                    - pattern : kafka.server<type=KafkaRequestHandlerPool, name=RequestHandlerAvgIdlePercent><>OneMinuteRate
+                    - pattern : kafka.server<type=Produce><>queue-size
+                    - pattern : kafka.server<type=ReplicaManager, name=(PartitionCount|UnderReplicatedPartitions)><>(Value|OneMinuteRate)
+                    - pattern : kafka.server<type=controller-channel-metrics, broker-id=(.+)><>(.*)
+                    - pattern : kafka.server<type=socket-server-metrics, networkProcessor=(.+)><>(.*)
+                    - pattern : kafka.server<type=Fetch><>queue-size
+                    - pattern : kafka.server<type=SessionExpireListener, name=(.+)><>OneMinuteRate
+                    - pattern : kafka.controller<type=KafkaController, name=(.+)><>Value
+                    - pattern : java.lang<type=OperatingSystem><>SystemCpuLoad
+                    - pattern : java.lang<type=Memory><HeapMemoryUsage>used
+                    - pattern : java.lang<type=OperatingSystem><>FreePhysicalMemorySize
+
+              kafka:
+                enabled: true
+
+                # The image to use for the metrics collector
+                image: danielqsj/kafka-exporter
+
+                # The image tag to use for the metrics collector
+                imageTag: v1.0.1
+            configurationOverrides: {}
             image:
               tag: sc-cp-kafka:0.0.1-alpha.13
               env:
                 KAFKA_HEAP_OPTS:  "-Xmx2g -Xms1g"
                 KAFKA_OPTS: "-Dlogging.level=INFO"
-                KAFKA_LOG_DIRS: "/var/lib/kafka/data/topics"
                 KAFKA_NUM_PARTITIONS: "3"
                 KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
                 KAFKA_MIN_INSYNC_REPLICAS: "2"
                 KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
                 KAFKA_NUM_RECOVERY_THREADS_PER_DATA_DIR: "1"
-                KAFKA_LISTENERS: "PLAINTEXT://:9092"
-                KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://:9092"
                 KAFKA_NUM_NETWORK_THREADS: "3"
                 KAFKA_NUM_IO_THREADS: "8"
                 KAFKA_SOCKET_SEND_BUFFER_BYTES: "1024000"
@@ -1354,27 +1534,7 @@ sc-services:
                 KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "6000"
                 KAFKA_DELETE_TOPIC_ENABLE: "true"
                 KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "3"  
-              pullPolicy: IfNotPresent       
-            pdb:
-              maxUnavailable: 1
-            service:
-              name: kafka
-              type: NodePort
-              clusterIP: None
-              externalPort: 9092
-              internalPort: 9092
-            deployment:
-              affineapp: "zookeeper"
-              containerPort: 9092
-              terminationGracePeriodSeconds: 300
-              replicas: 3
-              data:
-                storage: 80Gi
-              resources:
-                minCpu: "0.5"
-                minMem: "1G"
-                maxCpu: "0.5"
-                maxMem: "3G"
+              pullPolicy: IfNotPresent
             ## The kafka connect deployment and service
             connect:
               image:
@@ -1390,7 +1550,7 @@ sc-services:
                   CONNECT_PLUGIN_PATH: "/data/kafka/connect/libs"
                   CONNECT_REST_PORT: "8083"
                   CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
-                  CONNECT_GROUP_ID: "sc-connect-group-v2"
+                  CONNECT_GROUP_ID: "sc-connect-group-v3"
                   CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
                   CONNECT_STATUS_STORAGE_TOPIC: "connect-sc-status"
                   CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"

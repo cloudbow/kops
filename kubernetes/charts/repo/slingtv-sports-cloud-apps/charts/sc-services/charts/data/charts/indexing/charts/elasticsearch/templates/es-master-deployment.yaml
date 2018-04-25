@@ -31,7 +31,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: {{ .Values.image.repository }}/{{ .Values.image.tag }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
           limits:  
