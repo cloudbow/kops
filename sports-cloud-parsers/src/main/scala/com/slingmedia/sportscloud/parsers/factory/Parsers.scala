@@ -1,13 +1,11 @@
 package com.slingmedia.sportscloud.parsers.factory
-import com.slingmedia.sportscloud.parsers.leagues.impl.{ScheduleParser,PlayerStatsParser}
-import com.slingmedia.sportscloud.parsers.leagues.impl.nba.{ NbaTeamStandingsParser, NbaBoxScoreParser, NbaPlayerStatsParser }
-import com.slingmedia.sportscloud.parsers.leagues.impl.ncaab.{ NcaabTeamStandingsParser, NcaabBoxScoreParser }
-import com.slingmedia.sportscloud.parsers.leagues.impl.mlb.{ MlbBoxScoreParser, MlbTeamStandingsParser}
-import com.slingmedia.sportscloud.parsers.leagues.impl.nfl.{ NflTeamStandingsParser,NflBoxScoreParser }
-import com.slingmedia.sportscloud.parsers.leagues.impl.ncaaf.{ NcaafTeamStandingsParser, NcaafBoxScoreParser }
-import com.slingmedia.sportscloud.parsers.leagues.impl.nhl.{ NhlTeamStandingsParser, NhlBoxScoreParser, NhlScheduleParser }
-
-import com.slingmedia.sportscloud.parsers.{ DefaultParser }
+import com.slingmedia.sportscloud.parsers.leagues.impl.mlb.{MlbBoxScoreParser, MlbTeamStandingsParser}
+import com.slingmedia.sportscloud.parsers.leagues.impl.nba.{NbaBoxScoreParser, NbaPlayerGameStatsParser, NbaPlayerStatsParser, NbaTeamStandingsParser}
+import com.slingmedia.sportscloud.parsers.leagues.impl.ncaab.{NcaabBoxScoreParser, NcaabPlayerGameStatsParser, NcaabTeamStandingsParser}
+import com.slingmedia.sportscloud.parsers.leagues.impl.ncaaf.{NcaafBoxScoreParser, NcaafTeamStandingsParser}
+import com.slingmedia.sportscloud.parsers.leagues.impl.nfl.{NflBoxScoreParser, NflTeamStandingsParser}
+import com.slingmedia.sportscloud.parsers.leagues.impl.nhl.{NhlBoxScoreParser, NhlScheduleParser, NhlTeamStandingsParser}
+import com.slingmedia.sportscloud.parsers.leagues.impl.{PlayerStatsParser, ScheduleParser}
 
 object ParserType extends Enumeration {
   type ParserType = Value
@@ -29,16 +27,18 @@ object ParserType extends Enumeration {
   NbaPlayerStatsParser,
   NbaScheduleParser,
   NbaBoxScoreParser,
+  NbaPlayerGameStatsParser,
   NcaabTeamStandingsParser,
   NcaabPlayerStatsParser,
   NcaabScheduleParser,
   NcaabBoxScoreParser,
+  NcaabPlayerGameStatsParser,
   Default = Value
 
 }
 
-import ParserType._
 import com.slingmedia.sportscloud.parsers.DefaultParser
+import com.slingmedia.sportscloud.parsers.factory.ParserType._
 
 object Parsers {
   def apply(parserType: ParserType) = {
@@ -81,6 +81,10 @@ object Parsers {
         new NbaTeamStandingsParser()
       case ParserType.NcaabTeamStandingsParser =>
         new NcaabTeamStandingsParser()
+      case ParserType.NbaPlayerGameStatsParser =>
+        new NbaPlayerGameStatsParser()
+      case ParserType.NcaabPlayerGameStatsParser =>
+        new NcaabPlayerGameStatsParser()
       case ParserType.Default =>
         new DefaultParser()
       case _ =>

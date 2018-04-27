@@ -1,14 +1,9 @@
 package com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.impl.nfl
 
 import com.slingmedia.sportscloud.parsers.factory.ParsedItem
-import com.slingmedia.sportscloud.parsers.model.League
-import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreDataExtractor
-import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreStructGenerator
-import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.BoxScoreSchemaGenerator
-
+import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.{BoxScoreDataExtractor, BoxScoreSchemaGenerator, BoxScoreStructGenerator}
 import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
 import org.apache.kafka.connect.source.SourceRecord
-
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
