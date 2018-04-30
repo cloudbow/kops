@@ -2,7 +2,7 @@
   "name": "ftp-player-game-stats-nba",
   "config": {
     "connector.class": "com.eneco.trading.kafka.connect.ftp.source.FtpSourceConnector",
-    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.playergamestats.NbaSourceConverter",
+    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.live.PlayerGameStatsNbaSourceConverter",
     "ftp.address": "ftp.stats.com",
     "ftp.user": "DishSportsO",
     "ftp.password": "D1sh3325",
