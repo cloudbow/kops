@@ -90,7 +90,7 @@ function restartOnError() {
 	echo "Only checking current status -  $STATUS"
 }
 
-if [[ "$topicName" == *"live_info"* ]]
+if [[ "$topicName" == *"live_info"* ]] || [[ "$topicName" == *"player_game_stats"* ]]
 then
     restartOnError
 else
