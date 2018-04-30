@@ -1,17 +1,12 @@
 package com.slingmedia.sportscloud.kafka.converters
-import java.util
-
-import com.eneco.trading.kafka.connect.ftp.source.SourceRecordConverter
-
 import com.slingmedia.sportscloud.parsers.factory.{ParserType, Parsers}
-import com.slingmedia.sportscloud.parsers.model.{League, LeagueEnum }
-
+import com.slingmedia.sportscloud.parsers.model.{League, LeagueEnum}
 import org.apache.kafka.connect.source.SourceRecord
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
 
 
@@ -227,6 +222,52 @@ trait ConverterBase {
       //case _ =>
       //Array[SourceRecord]().toList.asJava
       //}
+      case Failure(e) =>
+        log.error("Error occurred in parsing xml ", e)
+        Array[SourceRecord]().toList.asJava
+    }
+  }
+
+  /**
+    * Factory method to generate source record containing Player stats of Live/Completed Game
+    *
+    * @param in Structure containing data, offset, topic etc
+    * @param league Name of league
+    * @return List of SourceRecord
+    */
+  def generatePlayerGameStatsData(in: SourceRecord, league: League): java.util.List[SourceRecord] = {
+    log.info("Converting source for content match info")
+    val line = new String(in.value.asInstanceOf[Array[Byte]])
+    val dataElem: Try[Elem] = loadXML(line)
+
+    var boxScore:Regex = null
+    var boxScoreRoot = ""
+    var parserType = ParserType.Default
+
+    league match {
+      // BoxScore contains the tabulated results of a game, which is updated periodically
+      // It contains statistics given for each player's and team's performance
+      case LeagueEnum.NBA =>
+        boxScore = ".*NBA.*_BOXSCORE.*\\.XML.*".r
+        boxScoreRoot="nba-boxscore"
+        parserType=ParserType.NbaPlayerGameStatsParser
+      case LeagueEnum.NCAAB =>
+        boxScore = ".*CBK.*_BOXSCORE.*\\.XML.*".r
+        boxScoreRoot="cbk-boxscore"
+        parserType=ParserType.NcaabPlayerGameStatsParser
+
+      case _ => throw new UnsupportedOperationException()
+    }
+    dataElem match {
+      case Success(data) =>
+        val fileName = in.key
+        fileName match {
+          case boxScore(_*) =>
+            Parsers(parserType).generateRows(data, in, data \\ boxScoreRoot)
+          case _ =>
+            log.info(s"Not matching the fileName $fileName")
+            Array[SourceRecord]().toList.asJava
+        }
       case Failure(e) =>
         log.error("Error occurred in parsing xml ", e)
         Array[SourceRecord]().toList.asJava

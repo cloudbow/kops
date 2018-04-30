@@ -1,10 +1,10 @@
 package com.slingmedia.sportscloud.parsers.factory
 
 import org.apache.kafka.connect.source.SourceRecord
-import scala.xml.Elem
-import scala.xml.NodeSeq
+import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConverters._
-import org.slf4j.LoggerFactory;
+import scala.xml.{Elem, NodeSeq};
 
 
 trait ParsedItem {

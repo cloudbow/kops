@@ -2338,6 +2338,25 @@ sc-jobs:
           maxCpu: 100m
           minMem: 64Mi
           maxMem: 64Mi
+    connect-player-game-stats-nba:
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.13
+        pullPolicy: IfNotPresent
+        env:
+      Job:
+        replicas: 1
+        command: 
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectPlayerGameStatsJob"
+        - "nba"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
     spark-meta-batch-ts-nba:
       ingress: {}
       service: {}
@@ -2483,6 +2502,25 @@ sc-jobs:
         - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
         - "connect-jobs"
         - "com.slingmedia.sportscloud.schedulers.KafkaConnectLiveInfoJob"
+        - "ncaab"
+        - "180000"
+      deployment:
+        resources:
+          minCpu: 100m
+          maxCpu: 100m
+          minMem: 64Mi
+          maxMem: 64Mi
+    connect-player-game-stats-ncaab:
+      image:
+        tag: sc-job-scheduler:0.0.1-alpha.13
+        pullPolicy: IfNotPresent
+        env:
+      Job:
+        replicas: 1
+        command:
+        - "/deploy-scheduled-jobs/scheduled-job-driver.sh"
+        - "connect-jobs"
+        - "com.slingmedia.sportscloud.schedulers.KafkaConnectPlayerGameStatsJob"
         - "ncaab"
         - "180000"
       deployment:
