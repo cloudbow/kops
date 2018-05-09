@@ -32,11 +32,13 @@ kafka-topics --if-not-exists --topic  meta_batch_ncaaf --create --zookeeper $ZOO
 kafka-topics --if-not-exists --topic  content_match_ncaab --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
 kafka-topics --if-not-exists --topic  live_info_ncaab --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
 kafka-topics --if-not-exists --topic  meta_batch_ncaab --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS
+kafka-topics --if-not-exists --topic  player_game_stats_ncaab --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS
 
 # Create all nba topics
 kafka-topics --if-not-exists --topic  content_match_nba --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
 kafka-topics --if-not-exists --topic  live_info_nba --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
 kafka-topics --if-not-exists --topic  meta_batch_nba --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS
+kafka-topics --if-not-exists --topic  player_game_stats_nba --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS
 
 
 # Create all nfl topics
@@ -54,4 +56,4 @@ kafka-topics --if-not-exists --topic  live_info_soccer --create --zookeeper $ZOO
 
 
 ## Create confluent topic
-kafka-topics --if-not-exists --topic  _confluent-monitoring --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS 
+kafka-topics --if-not-exists --topic  _confluent-monitoring --create --zookeeper $ZOOKEEPER --replication-factor $DEFAULT_REPLICATION_FACTOR --partitions $MINIMUM_NUM_PARTITIONS

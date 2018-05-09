@@ -266,3 +266,38 @@ class  DownloadSummaryJob {
 
 }
 
+object KafkaConnectPlayerGameStatsJob  {
+  def main(args: Array[String]) {
+    new KafkaConnectPlayerGameStatsJob().execute(args)
+  }
+}
+
+class KafkaConnectPlayerGameStatsJob {
+  private val log = LoggerFactory.getLogger("KafkaConnectPlayerGameStatsJob")
+  def execute(args: Array[String]) {
+    val league = args(0)
+    val timeToSleep = args(1).toLong
+    while(true) {
+      log.trace("Executing task: KafkaConnectPlayerGameStatsJob")
+      Seq("/deploy-scheduled-jobs/scripts/kafka/connect/launch_kafka_connect_jobs.sh",
+        s"player_game_stats_$league",
+        "0",
+        "0",
+        "unused",
+        "1800000",
+        "/project/sports-cloud-parsers/src/main/resources/kafka-standalone/sc-player-game-stats.properties",
+        s"/deploy-scheduled-jobs/scripts/kafka/connect/worker-config/$league/ftp-player-game-stats-$league.json",
+        s"/var/log/sports-cloud-kafka-jobs/sc-player-game-stats-kafka-connect-$league.log",
+        s"ftp-player-game-stats-$league") ! ;
+
+      this.synchronized {
+        try {
+          wait(timeToSleep)
+        } catch {
+          case e:InterruptedException =>  Holder.log.info("Interrupted from wait")
+        }
+      }
+    }
+  }
+}
+
