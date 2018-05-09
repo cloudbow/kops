@@ -1960,7 +1960,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
         jobName: NflContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -1971,7 +1971,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 7 * * *"
+        schedule: "40 8 * * *"
     spark-live-info-nfl:
       ingress: {}
       service: {}
@@ -2112,7 +2112,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
         jobName: MlbContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -2123,7 +2123,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "5 8 * * *"
+        schedule: "40 8 * * *"
     spark-live-info-mlb:
       ingress: {}
       service: {}
@@ -2241,7 +2241,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
         jobName: NcaafContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -2252,7 +2252,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "30 7 * * *"
+        schedule: "40 8 * * *"
     spark-live-info-ncaaf:
       ingress: {}
       service: {}
@@ -2413,7 +2413,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
         jobName: NbaContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -2424,7 +2424,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 7 * * *"
+        schedule: "40 8 * * *"
     spark-live-info-nba:
       ingress: {}
       service: {}
@@ -2585,7 +2585,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
         jobName: NcaabContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -2596,7 +2596,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 7 * * *"
+        schedule: "40 8 * * *"
     spark-live-info-ncaab:
       ingress: {}
       service: {}
@@ -2654,7 +2654,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.leagues.SoccerContentMatcher
         jobName: SoccerContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -2665,7 +2665,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 0/7 * * *"
+        schedule: "40 0/8 * * *"
     connect-live-info-soccer:
       deployment:
         resources:
@@ -2802,7 +2802,7 @@ sc-jobs:
       sparkJobArgs:
         className: com.slingmedia.sportscloud.offline.batch.impl.ContentMatcher
         jobName: NhlContentDataMuncher
-        driverMem: 2G
+        driverMem: 3G
         executorMem: 2G
         executorCores: 2
         parallelism: 4
@@ -2813,7 +2813,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 7 * * *"
+        schedule: "40 8 * * *"
     spark-live-info-nhl:
       ingress: {}
       service: {}

@@ -165,8 +165,7 @@ class DownloadSchedulesJob {
           
          });				
 				val ctx:ReadContext = JsonPath.using(conf).parse(it)
-				val  sportsGenreFilter:Filter = Filter.filter(Criteria.where("metadata.genre").contains("Sports"))
-				val filteredChannels:String = ctx.read("$.channels[?]", sportsGenreFilter).toString
+				val filteredChannels:String = ctx.read("$.channels[*]").toString
 				Configuration.setDefaults(new Configuration.Defaults() {
           		val  jsonProviderObj:JsonProvider = new GsonJsonProvider();
           		val  mappingProviderObj:MappingProvider = new JacksonMappingProvider();

@@ -3,7 +3,7 @@ package com.slingmedia.sportscloud.offline.batch.impl
 import com.slingmedia.sportscloud.offline.batch.Muncher
 
 import org.apache.spark.sql.{ SQLContext, SparkSession, DataFrame, Row, Column }
-import org.apache.spark.sql.functions.{ concat_ws, concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list }
+import org.apache.spark.sql.functions.{ concat_ws, concat, lit, coalesce, max, min, udf, col, explode, from_json, collect_list, broadcast }
 import org.apache.spark.sql.types.{ StructType, StructField, StringType, IntegerType, LongType, ArrayType }
 
 import sys.process._
@@ -149,7 +149,10 @@ class ContentMatcher extends Serializable with Muncher {
   val fetchMLBSchedule: (String => DataFrame) = (inputKafkaTopic: String) => {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val ds1 = spark.read.format("kafka").option("kafka.bootstrap.servers", System.getenv("KAFKA_BROKER_EP")).option("subscribe", inputKafkaTopic).load()
+    val ds1 = spark.read.format("kafka").
+      option("kafka.bootstrap.servers", System.getenv("KAFKA_BROKER_EP")).
+      option("subscribe", inputKafkaTopic).
+      load()
     val ds2 = ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").as[(String, String)]
 
     val scoreSchema = StructType(StructField("score", StringType, true) :: Nil)
@@ -247,7 +250,9 @@ class ContentMatcher extends Serializable with Muncher {
       na.fill(0L, Seq("homeTeamScore")).
       na.fill(0L, Seq("awayTeamScore")).
       na.fill("TBA", Seq("homeTeamName")).
-      na.fill("TBA", Seq("awayTeamName"))
+      na.fill("TBA", Seq("awayTeamName")).
+      coalesce(4)
+
 
     mlbScheduleDF32
 
@@ -260,7 +265,10 @@ class ContentMatcher extends Serializable with Muncher {
     val thuuzGamesDF2 = spark.sql("select * from thuuzGames").toDF
 
     CMHolder.log.trace("Joining thuuzgames with stats data")
-    val mlbScheduleDF33 = mlbScheduleDF32.join(thuuzGamesDF2, mlbScheduleDF32("gameId") === thuuzGamesDF2("statsGameId"), "left").drop("statsGameId")
+    val mlbScheduleDF33 = mlbScheduleDF32.
+      join(broadcast(thuuzGamesDF2), mlbScheduleDF32("gameId") === thuuzGamesDF2("statsGameId"), "left").
+      coalesce(4).
+      drop("statsGameId")
     val mlbScheduleDF34 = mlbScheduleDF33.na.fill(0L, Seq("gexPredict"))
     mlbScheduleDF34
   }
@@ -432,7 +440,9 @@ class ContentMatcher extends Serializable with Muncher {
 
     val programScheduleChannelJoin2 = spark.sql("select * from programSchedules").toDF
     CMHolder.log.trace("Joining with target programs using a cross join")
-    val statsTargetProgramsJoin = mlbScheduleDF5.crossJoin(programScheduleChannelJoin2)
+    val statsTargetProgramsJoin = programScheduleChannelJoin2.
+      crossJoin(broadcast(mlbScheduleDF5)).
+      coalesce(4)
     val rlikExpr= new StringBuilder()
     for(i <- 1 to allPossibleTotalRegexps) rlikExpr.
       append("(program_title rlike ").
@@ -472,6 +482,7 @@ class ContentMatcher extends Serializable with Muncher {
     //deselect duplicate columns by selecting the columns from 
     val statsTargetProgramsJoin4 = gameScheduleOrig.coalesce(4).
       join(statsTargetProgramsJoin2, gameScheduleOrig("gameId").equalTo(statsTargetProgramsJoin2("gameId")), "left_outer").
+      coalesce(4).
       select(allSelectedColumns: _*).
       na.fill(allStatsNullFills)
     //fill array columns with empty array
@@ -486,9 +497,8 @@ class ContentMatcher extends Serializable with Muncher {
 
     val columns = statsTargetProgramsJoin6.columns
     scala.util.Sorting.quickSort(columns)
-    val programsJoin1 = statsTargetProgramsJoin6.select(columns.head, columns.tail: _*)
-    val programsJoin2 = programsJoin1.coalesce(4)
-    programsJoin2
+    val programsJoin1 = statsTargetProgramsJoin6.select(columns.head, columns.tail: _*).coalesce(4)
+    programsJoin1
   }
 
   def getStats(statsTargetProgramsJoin1: DataFrame, statsTargetProgramsJoin: DataFrame, domain: String = "slingtv"): (Long, Long, Float) = {
@@ -514,7 +524,13 @@ class ContentMatcher extends Serializable with Muncher {
     val thuuzGamesDF = getDFFromHttp("http://api.thuuz.com/2.2/games?auth_code=6adf97f8142118ba&type=normal&status=5&days=5&sport_leagues=baseball.mlb,basketball.nba,basketball.ncaa,football.nfl,football.ncaa,hockey.nhl,golf.pga,soccer.mwc,soccer.chlg,soccer.epl,soccer.seri,soccer.liga,soccer.bund,soccer.fran,soccer.mls,soccer.wwc,soccer.ligamx,soccer.ered,soccer.ch-uefa2,soccer.eng2,soccer.prt1,soccer.sco1,soccer.tur1,soccer.rus1,soccer.bel1,soccer.euro&limit=999")
     val thuuzGamesDF1 = thuuzGamesDF.withColumn("gamesExp", explode(thuuzGamesDF.col("ratings"))).drop("ratings")
     val thuuzGamesDF11 = thuuzGamesDF1.select($"gamesExp.gex_predict" as "gexPredict", $"gamesExp.pre_game_teaser" as "preGameTeaser", $"gamesExp.external_ids.stats.game" as "statsGameId")
-    val thuuzGamesDF20 = thuuzGamesDF11.withColumn("gameIdTmp", thuuzGamesDF11("statsGameId").cast(LongType)).drop("statsGameId").withColumnRenamed("gameIdTmp", "statsGameId")
+    val thuuzGamesDF20 = thuuzGamesDF11.
+      withColumn("gameIdTmp", thuuzGamesDF11("statsGameId").cast(LongType)).
+      drop("statsGameId").
+      withColumnRenamed("gameIdTmp", "statsGameId")
+
+    CMHolder.log.info(s"total no of partitions is ${thuuzGamesDF20.rdd.getNumPartitions}")
+
     thuuzGamesDF20.createOrReplaceTempView("thuuzGames")
 
   }
@@ -538,6 +554,7 @@ class ContentMatcher extends Serializable with Muncher {
     val channelsSummaryJsonDF4 = channelsSummaryJsonDF3.withColumn("subPackExploded", explode($"subscriptionpack_ids")).drop("subscriptionpack_ids").withColumnRenamed("subPackExploded", "subpack_int_id")
     //Total Channels == 9210
     val channelsSummaryJsonDF5 = channelsSummaryJsonDF4.withColumn("genreExploded", explode($"genre")).drop("genre")
+
     //Total Sports channels== 1357 (14%)
     val summaryJson6 = channelsSummaryJsonDF5.join(
       subPackIds21, channelsSummaryJsonDF5("subpack_int_id") === subPackIds21("id"), "inner"
@@ -550,7 +567,9 @@ class ContentMatcher extends Serializable with Muncher {
       "subpack_title" -> "collect_list")).
       withColumnRenamed("collect_list(subpack_int_id)", "subpack_int_ids").
       withColumnRenamed("collect_list(subpackage_guid)", "subpackage_guids").
-      withColumnRenamed("collect_list(subpack_title)", "subpack_titles")
+      withColumnRenamed("collect_list(subpack_title)", "subpack_titles").
+      coalesce(4)
+
     summaryJson7
   }
 
@@ -586,7 +605,7 @@ class ContentMatcher extends Serializable with Muncher {
 
 
 
-    val programScheduleJoinDF = programsDF31.join(schedulesDF3, programsDF31("program_channel_guid_key_left") === schedulesDF3("program_channel_guid_key_right"), "inner").
+    val programScheduleJoinDF = programsDF31.join(broadcast(schedulesDF3), programsDF31("program_channel_guid_key_left") === schedulesDF3("program_channel_guid_key_right"), "inner").
     drop("s_program_id").
     drop("program_channel_guid_key_left").
     drop("program_channel_guid_key_right")
@@ -596,7 +615,7 @@ class ContentMatcher extends Serializable with Muncher {
     //fetch the channel_guid from self 
     val programScheduleJoinDF4 = programScheduleJoinDF1.coalesce(4)
     CMHolder.log.trace("Joining summary linear channels with program schedule")
-    val programScheduleChannelJoin = summaryJson6.join(programScheduleJoinDF4, summaryJson6("channel_guid") === programScheduleJoinDF4("channel_guid_extr"), "inner").drop("channel_guid_extr")
+    val programScheduleChannelJoin = summaryJson6.join(broadcast(programScheduleJoinDF4), summaryJson6("channel_guid") === programScheduleJoinDF4("channel_guid_extr"), "inner").drop("channel_guid_extr")
     val programScheduleChannelJoin0 = programScheduleChannelJoin.coalesce(4)
 
     programScheduleChannelJoin0.createOrReplaceTempView("programSchedules")

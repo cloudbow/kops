@@ -119,8 +119,8 @@ trait Muncher {
   val getReorderedStatusIdUDF = udf(getReorderedStatusId(_: Int))
 
   def get(url: String,
-          connectTimeout: Int = 5000,
-          readTimeout: Int = 5000,
+          connectTimeout: Int = 60000,
+          readTimeout: Int = 50000,
           requestMethod: String = "GET") =
   {
     val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
