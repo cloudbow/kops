@@ -108,12 +108,6 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 			}else {
 				String uri = request.uri();
 
-
-				String pattern = "/dish/v1/mc/(.*)\\?+";
-				Pattern r = Pattern.compile(pattern);
-				// Now create matcher object.
-				Matcher m = r.matcher(uri);
-
 				if (uri.startsWith("/dish/v1/sport")) {
 					QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 					Map<String, List<String>> params = queryStringDecoder.parameters();
@@ -129,29 +123,34 @@ public class SportsCloudRestDecoder extends SimpleChannelInboundHandler<FullHttp
 					Set<String> subpackIds = getSubPackIdsFromParam(params);
 
 					finalResponse = prepareGameScheduleDataForHomeScreen(finalResponse, startDate, endDate, subpackIds);
-				}
-				if (uri.startsWith("/api/slingtv/airtv/v1/game")) {
+				} else if (uri.startsWith("/api/slingtv/airtv/v1/game") || uri.startsWith("/api/slingtv/airtv/poc")) {
 
 					QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
 					Map<String, List<String>> params = queryStringDecoder.parameters();
 
 					finalResponse = sportsCloudRestGamesHandler.handle(request.headers().getAsString("Host"), uri, params);
 
-				} else if (m.find()) {
-					try {
-						String league = m.group(1);
-						QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
-						Map<String, List<String>> params = queryStringDecoder.parameters();
-						String gameScheduleId = null;
-						if (params.get("gameId") != null) {
-							gameScheduleId = params.get("gameId").get(0);
-						}
-						String teamId = params.get("teamId").get(0);
-						Set<String> subpackIds = getSubPackIdsFromParam(params);
+				} else {
+					String pattern = "/dish/v1/mc/(.*)\\?+";
+					Pattern r = Pattern.compile(pattern);
+					// Now create matcher object.
+					Matcher m = r.matcher(uri);
+					if (m.find()) {
+						try {
+							String league = m.group(1);
+							QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.uri());
+							Map<String, List<String>> params = queryStringDecoder.parameters();
+							String gameScheduleId = null;
+							if (params.get("gameId") != null) {
+								gameScheduleId = params.get("gameId").get(0);
+							}
+							String teamId = params.get("teamId").get(0);
+							Set<String> subpackIds = getSubPackIdsFromParam(params);
 
-						finalResponse = prepareMCData(gameScheduleId, teamId, subpackIds, league);
-					} catch (Exception e) {
-						LOGGER.error("Error occurred in parsing json", e);
+							finalResponse = prepareMCData(gameScheduleId, teamId, subpackIds, league);
+						} catch (Exception e) {
+							LOGGER.error("Error occurred in parsing json", e);
+						}
 					}
 
 				}

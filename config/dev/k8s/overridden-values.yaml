@@ -7,7 +7,7 @@ sc-services:
             tag: spark-master:0.0.1-alpha.3
         spark-worker:
           image:
-            tag: spark-worker:0.0.1-alpha.24
+            tag: spark-worker:0.0.1-alpha.31
       streaming-platform:
         confluent:
           kafka:
@@ -19,153 +19,159 @@ sc-services:
   online:
     sc-rest-layer:
       image:
-        tag: sports-cloud-rest:0.0.1-alpha.41
+        tag: sports-cloud-rest:0.0.1-alpha.47
 sc-jobs:
   thuuz-download-job:
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.22
+      tag: sc-job-scheduler:0.0.1-alpha.24
   summary-download-job:
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.22
+      tag: sc-job-scheduler:0.0.1-alpha.24
   schedules-download-job:
     image:
-      tag: sc-job-scheduler:0.0.1-alpha.22
+      tag: sc-job-scheduler:0.0.1-alpha.24
   nfl:    
     connect-batch-job-nfl:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-live-info-nfl:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-meta-batch-nfl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-content-match-nfl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-live-info-nfl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-batch-live-score-nfl:
       image:
-        tag: spark-job:0.0.1-alpha.27
-  mlb:    
+        tag: spark-job:0.0.1-alpha.39
+  mlb:
     connect-batch-job-mlb:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-live-info-mlb:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-meta-batch-ts-mlb:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-meta-batch-ps-mlb:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-content-match-mlb:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-live-info-mlb:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-batch-live-score-mlb:
       image:
-        tag: spark-job:0.0.1-alpha.27
-  ncaaf:    
+        tag: spark-job:0.0.1-alpha.39
+  ncaaf:
     connect-batch-job-ncaaf:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-live-info-ncaaf:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-meta-batch-ncaaf:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-content-match-ncaaf:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-live-info-ncaaf:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-batch-live-score-ncaaf:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
   nba:
     connect-batch-job-nba:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-live-info-nba:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-player-game-stats-nba:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-meta-batch-ts-nba:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-meta-batch-pstats-nba:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-content-match-nba:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-live-info-nba:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-batch-live-score-nba:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
+    spark-player-game-stats-nba:
+      image:
+        tag: spark-job:0.0.1-alpha.39
   ncaab:
     connect-batch-job-ncaab:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-live-info-ncaab:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-player-game-stats-ncaab:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-meta-batch-ts-ncaab:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-meta-batch-pstats-ncaab:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-content-match-ncaab:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-live-info-ncaab:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-batch-live-score-ncaab:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
+    spark-player-game-stats-ncaab:
+      image:
+        tag: spark-job:0.0.1-alpha.39
   soccer:
     spark-content-match-soccer:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     connect-live-info-soccer:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-live-info-soccer:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
   nhl:
     connect-batch-job-nhl:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     connect-live-info-nhl:
       image:
-        tag: sc-job-scheduler:0.0.1-alpha.22
+        tag: sc-job-scheduler:0.0.1-alpha.24
     spark-meta-batch-ts-nhl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-meta-batch-pstats-nhl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-content-match-nhl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
     spark-live-info-nhl:
       image:
-        tag: spark-job:0.0.1-alpha.27
+        tag: spark-job:0.0.1-alpha.39
