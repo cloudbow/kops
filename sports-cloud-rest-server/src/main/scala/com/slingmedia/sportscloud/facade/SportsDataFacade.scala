@@ -56,15 +56,8 @@ object SportsDataFacade {
 
 
 	private val INDEX_VERB="_search"
-  	private val INDEX_HOST = if(System.getProperty("ELASTIC_SEARCH_URL") == null)  "localhost" else System.getProperty("ELASTIC_SEARCH_URL")
-	private val INDEX_PORT = if(System.getProperty("ELASTIC_SEARCH_PORT")==null) "9200" else System.getProperty("ELASTIC_SEARCH_PORT")
-	
-	private val INDEX_HOST_SECONDAY = if(System.getProperty("indexingHostSec") == null)  "localhost" else System.getProperty("indexingHostSec")
-	private val INDEX_PORT_SECONDARY = if(System.getProperty("indexingPortSec")==null) "9200" else System.getProperty("indexingPortSec")
-
-
 	private val GAME_SCHEDULE_FETCH_BASE_URL = "/"+GAME_SCHEDULE_INDEX_CONTEXT+"/"+GAME_SCHEDULE_INDEX_ENTITY+"/"+INDEX_VERB
-  	private val PLAYER_STATS_FETCH_BASE_URL = "/"+PLAYER_STATS_INDEX_CONTEXT+"/"+PLAYER_STATS_INDEX_ENTITY+"/"+INDEX_VERB
+	private val PLAYER_STATS_FETCH_BASE_URL = "/"+PLAYER_STATS_INDEX_CONTEXT+"/"+PLAYER_STATS_INDEX_ENTITY+"/"+INDEX_VERB
 	private val TEAM_STANDINGS_FETCH_BASE_URL = "/"+TEAM_STANDINGS_INDEX_CONTEXT+"/"+TEAM_STANDINGS_INDEX_ENTITY+"/"+INDEX_VERB
 	private val LIVE_INFO_FETCH_BASE_URL = "/"+LIVE_INFO_INDEX_CONTEXT+"/"+LIVE_INFO_INDEX_ENTITY+"/"+INDEX_VERB
 	private val SCORING_EVENTS_FETCH_BASE_URL = "/"+SCORING_EVENTS_INDEX_CONTEXT+"/"+SCORING_EVENTS_INDEX_ENTITY+"/"+INDEX_VERB

@@ -168,13 +168,19 @@ public class SportsCloudMCDelegate extends AbstractSportsCloudRestDelegate {
 			if (driveDoc.has("lastPlay")) {
 				scoringEventItem.add("comment", new JsonPrimitive(driveDoc.get("lastPlay").getAsString()));
 				scoringEventItem.add("img", new JsonPrimitive(driveDoc.get("img").getAsString()));
-				scoringEventItem.add("title", new JsonPrimitive(driveDoc.get("inningTitle").getAsString()));
+				JsonElement inningTitle= new JsonPrimitive("-");
+				if(driveDoc.has("inningTitle")) {
+					inningTitle=new JsonPrimitive(driveDoc.get("inningTitle").getAsString());
+				}
+				scoringEventItem.add("title", inningTitle);
 				String teamIdDrive = "0";
 				if (driveDoc.has("teamId")) {
 					teamIdDrive = driveDoc.get("teamId").getAsString();
 				}
 				scoringEventItem.add("teamId", new JsonPrimitive(teamIdDrive));
 				scoringEvents.add(scoringEventItem);
+				scoringEventItem.add("gameId", new JsonPrimitive(gameId));
+				scoringEventItem.add("srcTime", new JsonPrimitive(driveDoc.get("srcTime").getAsLong()));
 			}
 
 		}
