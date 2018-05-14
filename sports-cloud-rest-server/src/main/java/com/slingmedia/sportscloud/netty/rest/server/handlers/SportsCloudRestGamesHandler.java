@@ -78,6 +78,9 @@ public class SportsCloudRestGamesHandler {
 	/** The Regular expression for media card URL */
 	private static final String REGEX_MC_URL = "^/api/slingtv/airtv/v1/game/(.[^/]+)/(.[^/]+)/(.[^/]+)";
 
+	private static final String REGEX_POC_URL = "^/api/slingtv/airtv/poc/alpha/(.[^/]+)/sport_info.json";
+
+
 	/** The URL pattern for categories */
 	private static final Pattern REGEX_CATEGORIES_URL_PATTERN = Pattern.compile(REGEX_CATEGORIES_URL);
 
@@ -86,6 +89,10 @@ public class SportsCloudRestGamesHandler {
 
 	/** The URL pattern for media card */
 	private static final Pattern REGEX_MC_URL_PATTERN = Pattern.compile(REGEX_MC_URL);
+
+	/** Thr URL pattern for poc */
+	private static final Pattern REGEX_POC_URL_PATTERN = Pattern.compile(REGEX_POC_URL);
+
 
 	/** Provides APIs for finding key value for given JSON path */
 	private static Configuration jsonPathConf = Configuration.defaultConfiguration();
@@ -110,7 +117,7 @@ public class SportsCloudRestGamesHandler {
 	 *
 	 */
 	private enum RestName {
-		CATEGORIES, GAMES, MC, NONE
+		CATEGORIES, GAMES, MC, NONE, POC_AD_MC
 	}
 
 	/**
@@ -271,6 +278,18 @@ public class SportsCloudRestGamesHandler {
 			}
 			finalResponse = handleGameMediaCard(params, gameCategory, gameId, host);
 			break;
+
+		case POC_AD_MC:
+				LOGGER.info("This is MC " + uri);
+				Matcher pocMcMatcher = REGEX_POC_URL_PATTERN.matcher(uri);
+				if (pocMcMatcher.find()) {
+					gameId = pocMcMatcher.group(1);
+				} else {
+					gameId = "-";
+
+				}
+				finalResponse = handlePlayByPlay(gameId, host);
+				break;
 		default:
 			LOGGER.info("This is NONE " + uri);
 			finalResponse = "{}";
@@ -280,7 +299,14 @@ public class SportsCloudRestGamesHandler {
 		return finalResponse;
 	}
 
-	/**
+	private String handlePlayByPlay(String gameId, String host) {
+		String finalResponse = null;
+		JsonArray scoringEventsArray = new JsonArray();
+		sportsCloudMCDelegate.prepareMCDrives(gameId,"0",scoringEventsArray);
+		finalResponse = scoringEventsArray.toString();
+		return finalResponse;
+	}
+ 	/**
 	 * Handles Request and Response for Categories
 	 * 
 	 * @param serverHost
@@ -430,6 +456,8 @@ public class SportsCloudRestGamesHandler {
 			restName = RestName.GAMES;
 		} else if (isValid(uri, REGEX_MC_URL_PATTERN)) {
 			restName = RestName.MC;
+		} else if (isValid(uri, REGEX_POC_URL_PATTERN)) {
+			restName = RestName.POC_AD_MC;
 		} else {
 			restName = RestName.NONE;
 		}

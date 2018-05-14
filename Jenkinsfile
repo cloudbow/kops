@@ -5,7 +5,7 @@ podTemplate(
             // TODO: build custom containers that have everything we need
             containerTemplate(name: 'builder-docker', image: 'registry.sports-cloud.com:5000/builder-docker:latest', command: 'cat', ttyEnabled: true),
             containerTemplate(name: 'docker', image: 'docker', ttyEnabled: true, command: 'cat'),
-            containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:latest', command: 'cat', ttyEnabled: true)
+            containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:v2.8.1', command: 'cat', ttyEnabled: true)
         ],
         volumes:
         [
