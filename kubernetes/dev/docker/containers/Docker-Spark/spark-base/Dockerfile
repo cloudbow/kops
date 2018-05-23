@@ -9,14 +9,14 @@ RUN apk update && \
     apk --no-cache add procps && \
     mkdir -p /opt && \
     cd /opt && \
-    curl http://www.us.apache.org/dist/hadoop/common/hadoop-${hadoop_ver}/hadoop-${hadoop_ver}.tar.gz | \
-        tar -zx hadoop-${hadoop_ver}/lib/native && \
+    curl https://archive.apache.org/dist/hadoop/common/hadoop-${hadoop_ver}/hadoop-${hadoop_ver}.tar.gz | \
+    tar -zx hadoop-${hadoop_ver}/lib/native && \
     ln -s hadoop-${hadoop_ver} hadoop && \
-    echo Hadoop ${hadoop_ver} native libraries installed in /opt/hadoop/lib/native && \
+    echo "Hadoop ${hadoop_ver} native libraries installed in /opt/hadoop/lib/native" && \
     mkdir -p /opt && \
     cd /opt && \
     curl https://archive.apache.org/dist/spark/spark-${spark_ver}/spark-${spark_ver}-bin-hadoop2.7.tgz | \
-        tar -zx && \
+    tar -zx && \
     ln -s spark-${spark_ver}-bin-hadoop2.7 spark && \
     echo Spark ${spark_ver} installed in /opt && \
     echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \

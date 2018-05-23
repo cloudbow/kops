@@ -19,18 +19,13 @@ current_path := $(dir $(mkfile_path))
 TAG=sports-cloud-k8s
 NETWORK=sports-cloud-k8s-network
 
-
+## Creates the required public key for docker registry
 all-external-tools-once:
 	@$(current_path)/dev/scripts/application/external-tools-exactly-once.sh $(current_path)/dev
 
-## Create external tools required
 ## Create private docker registry
 all-external-tools:
 	@$(current_path)/dev/scripts/application/external-tools.sh $(current_path)/dev
-
-# Following actions needs to be done whenever any change in image happens to any of the docker images
-# Build Docker images for the required applicatons
-
 
 
 add-docker-artifacts-from-project-for-tag:

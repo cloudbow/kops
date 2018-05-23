@@ -28,3 +28,4 @@ sports-cloud-parsers/.idea
 modded-external-dependencies/kafka-connect-ftp/build
 sports-cloud-rest-parsers/.idea
 sports-cloud-keeper/.idea
+kubernetes/terraform/descriptors/.terraform
