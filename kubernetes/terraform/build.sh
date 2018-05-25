@@ -12,4 +12,4 @@ set -xe
 ###
 cd descriptors
 terraform init
-TF_VAR_aws_node_instance_nos=6 TF_VAR_aws_master_instance_nos=1 terraform apply
+TF_VAR_aws_node_instance_nos=9 TF_VAR_aws_master_instance_nos=1 terraform apply
