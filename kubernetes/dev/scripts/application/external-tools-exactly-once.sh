@@ -16,5 +16,5 @@ cp -rf ca.crt /etc/docker/certs.d/registry.sports-cloud.com:5000
 
 
 ## Create AWS related things
-$BASE_PATH/scripts/aws/post-create-config.sh $BASE_PATH
+##$BASE_PATH/scripts/aws/post-create-config.sh $BASE_PATH
 
