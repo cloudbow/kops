@@ -6,8 +6,8 @@ resource "aws_autoscaling_attachment" "master-us-east-2a-masters-sports-cloud-k8
 resource "aws_autoscaling_group" "master-us-east-2a-masters-sports-cloud-k8s-local" {
   name                 = "master-us-east-2a.masters.sports-cloud.k8s.local"
   launch_configuration = "${aws_launch_configuration.master-us-east-2a-masters-sports-cloud-k8s-local.id}"
-  max_size             = 1
-  min_size             = 1
+  max_size             = "${var.aws_master_instance_nos}"
+  min_size             = "${var.aws_master_instance_nos}"
   vpc_zone_identifier  = ["${aws_subnet.us-east-2a-sports-cloud-k8s-local.id}"]
 
   tag = {
@@ -41,8 +41,8 @@ resource "aws_autoscaling_group" "master-us-east-2a-masters-sports-cloud-k8s-loc
 resource "aws_autoscaling_group" "nodes-sports-cloud-k8s-local" {
   name                 = "nodes.sports-cloud.k8s.local"
   launch_configuration = "${aws_launch_configuration.nodes-sports-cloud-k8s-local.id}"
-  max_size             = 4
-  min_size             = 4
+  max_size             = "${var.aws_node_instance_nos}"
+  min_size             = "${var.aws_node_instance_nos}"
   vpc_zone_identifier  = ["${aws_subnet.us-east-2a-sports-cloud-k8s-local.id}", "${aws_subnet.us-east-2b-sports-cloud-k8s-local.id}"]
 
   tag = {

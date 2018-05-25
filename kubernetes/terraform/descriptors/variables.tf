@@ -36,9 +36,18 @@ variable "aws_node_instance_ebs_size" {
   description = "the node ebs size"
 }
 
+variable "aws_node_instance_nos" {
+  description = "the no of nodes required"
+}
+
+variable "aws_master_instance_nos" {
+  description = "the no of masters required"
+}
+
+
 variable "aws_disk_type" {
   default = "gp2"
-  description = "the node ebs size"
+  description = "the disk type for each instance"
 }
 
 

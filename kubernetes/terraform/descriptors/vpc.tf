@@ -25,3 +25,20 @@ resource "aws_vpc_dhcp_options_association" "sports-cloud-k8s-local" {
   vpc_id          = "${aws_vpc.sports-cloud-k8s-local.id}"
   dhcp_options_id = "${aws_vpc_dhcp_options.sports-cloud-k8s-local.id}"
 }
+
+resource "aws_route" "0-0-0-0--0" {
+  route_table_id         = "${aws_route_table.sports-cloud-k8s-local.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "${aws_internet_gateway.sports-cloud-k8s-local.id}"
+}
+
+resource "aws_route_table" "sports-cloud-k8s-local" {
+  vpc_id = "${aws_vpc.sports-cloud-k8s-local.id}"
+
+  tags = {
+    KubernetesCluster                              = "sports-cloud.k8s.local"
+    Name                                           = "sports-cloud.k8s.local"
+    "kubernetes.io/cluster/sports-cloud.k8s.local" = "owned"
+    "kubernetes.io/kops/role"                      = "public"
+  }
+}

@@ -27,13 +27,6 @@ all-external-tools-once:
 all-external-tools:
 	@$(current_path)/dev/scripts/application/external-tools.sh $(current_path)/dev
 
-## Has to be done on a machine with aws credentials configured using aws configure. cannot be aws itself. Can be moved to terraform
-provision-aws:
-	@$(current_path)/dev/scripts/aws/post-create-config.sh $(current_path)/dev
-# Following actions needs to be done whenever any change in image happens to any of the docker images
-# Build Docker images for the required applicatons
-
-
 
 add-docker-artifacts-from-project-for-tag:
 	@$(current_path)/dev/scripts/jenkins/burn-project-artifacts-for-docker-tag.sh

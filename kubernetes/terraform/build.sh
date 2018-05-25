@@ -7,9 +7,9 @@ set -xe
 
 ## Just add the environment variables that is required here. 
 ## A list can be create by appending TF_VAR_<varname> from variables.tf
-
+ 
 
 ###
 cd descriptors
 terraform init
-terraform apply
+TF_VAR_aws_node_instance_nos=9 TF_VAR_aws_master_instance_nos=1 terraform apply
