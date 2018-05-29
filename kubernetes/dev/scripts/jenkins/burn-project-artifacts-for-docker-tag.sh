@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+set -ex
 DOCKER_IMAGE_TYPE=`echo $INPUT_TAG | cut -f2 -d '/' | cut -f1 -d '_'`
 echo "Going to work on Docker image type $DOCKER_IMAGE_TYPE"
 
@@ -20,10 +21,10 @@ case "$DOCKER_IMAGE_TYPE" in
 			cp /tmp/sports-cloud-rest-server/target/sports-cloud-rest-server*.jar $BASE_PATH/docker/containers/Docker-Rest/jars/sports-cloud-rest-server.jar
             ;;
         sc-cp-connect)
-			cd /tmp
-			rm -rf /tmp/sports-cloud-parsers
-			cp -rf $BASE_PATH/../../sports-cloud-parsers  .
-			cd sports-cloud-parsers
+			cd /tmp && \
+			rm -rf /tmp/sports-cloud-parsers && \
+			cp -rf $BASE_PATH/../../sports-cloud-parsers  . && \
+			cd sports-cloud-parsers && \
 			### Add the eneco ftp jar to maven
 			docker run --rm --name=build-project  \
 			-v /root/.m2:/root/.m2 \
@@ -35,7 +36,7 @@ case "$DOCKER_IMAGE_TYPE" in
 			-Dversion=0.0.0-unspecified  \
 			-Dfile=/project/libs/kafka-connect-ftp-0.1.7-8-kafka-1.0.1.jar  \
 			-Dpackaging=jar \
-			-DgeneratePom=true'
+			-DgeneratePom=true' && \
 
 			### Build and generate the jar and copy to the image
 			docker run --rm --name=build-project  \
@@ -43,8 +44,8 @@ case "$DOCKER_IMAGE_TYPE" in
 			-v /root/.ivy2:/root/.ivy2 \
 			-v ${PWD}:/project \
 			-w "/project" \
-			-t registry.sports-cloud.com:5000/builder-docker:latest /bin/bash -c  'sbt clean assembly'
-			mkdir -p $BASE_PATH/docker/containers/Docker-ConfluentConnect/jars
+			-t registry.sports-cloud.com:5000/builder-docker:latest /bin/bash -c  'sbt clean assembly' && \
+			mkdir -p $BASE_PATH/docker/containers/Docker-ConfluentConnect/jars && \
 			cp target/scala-2.11/kafka-schedule-parser-assembly-*.jar $BASE_PATH/docker/containers/Docker-ConfluentConnect/jars/kafka-schedule-parser-assembly.jar
 			;;
 		spark-worker)
@@ -76,29 +77,34 @@ case "$DOCKER_IMAGE_TYPE" in
 			cp /tmp/micro-content-matcher/target/scala-*/micro-container-*.jar $BASE_PATH/docker/containers/Docker-SparkJob/jars/all-spark-jobs.jar
 			;;
 		sc-job-scheduler)
-			cd /tmp
-			rm -rf /tmp/sports-cloud-k8s-schedulers
-			cp -rf $BASE_PATH/../../sports-cloud-k8s-schedulers  .
-			cd sports-cloud-k8s-schedulers
+			cd /tmp && \
+			rm -rf /tmp/sports-cloud-k8s-schedulers && \
+			cp -rf $BASE_PATH/../../sports-cloud-k8s-schedulers  . && \
+			cd sports-cloud-k8s-schedulers && \
 			docker run --rm --name=build-project  \
 			-v /root/.m2:/root/.m2 \
 			-v /root/.ivy2:/root/.ivy2 \
 			-v ${PWD}:/project \
 			-w "/project" \
-			-t registry.sports-cloud.com:5000/builder-docker:latest /bin/bash -c  'sbt clean assembly'
+			-t registry.sports-cloud.com:5000/builder-docker:latest /bin/bash -c  'sbt clean assembly' && \
 			
 			### Add the jar to the docker image
-			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs
-			cp target/scala-*/sports-cloud-*-schedulers-assembly-*.jar $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs/sports-cloud-schedulers-assembly.jar
-			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect
-			cp -rf $CONFIG_PATH/worker-config $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect
+			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs && \
+			cp target/scala-*/sports-cloud-*-schedulers-assembly-*.jar $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs/sports-cloud-schedulers-assembly.jar && \
+			mkdir -p $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect && \
+			cp -rf $CONFIG_PATH/worker-config $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/scripts/kafka/connect && \
 
 			#### rest-proxy-parser
-			cd /tmp
-			rm -rf /tmp/sports-cloud-rest-parsers
-			cp -rf $BASE_PATH/../../sports-cloud-rest-parsers  .
-			cd sports-cloud-rest-parsers
-			sbt clean assembly
+			cd /tmp && \
+			rm -rf /tmp/sports-cloud-rest-parsers && \
+			cp -rf $BASE_PATH/../../sports-cloud-rest-parsers  . && \
+			cd sports-cloud-rest-parsers && \
+			docker run --rm --name=build-project  \
+			-v /root/.m2:/root/.m2 \
+			-v /root/.ivy2:/root/.ivy2 \
+			-v ${PWD}:/project \
+			-w "/project" \
+			-t registry.sports-cloud.com:5000/builder-docker:latest /bin/bash -c  'sbt clean assembly' && \
 			cp target/scala-*/kafka-schedule-rest-parsers-assembly-*.jar $BASE_PATH/docker/containers/Docker-ScheduledJob/deploy-scheduled-jobs/libs/kafka-schedule-rest-parsers-assembly.jar
 			;;
         *)
