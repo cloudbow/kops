@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for all data related modules
+name: data
+version: 0.0.1

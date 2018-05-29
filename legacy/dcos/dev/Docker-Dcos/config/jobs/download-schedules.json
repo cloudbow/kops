@@ -1,0 +1,33 @@
+{
+  "id": "download-schedules",
+  "run": {
+    "cpus": 0.1,
+    "mem": 128,
+    "disk": 0,
+    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","download-schedules"],
+    "docker": {
+      "image": "registry.marathon.l4lb.thisdcos.directory:5000/sc-job-scheduler:latest"
+    },
+    "env": {
+      "cmsHost": "cbd46b77",
+      "cmsSummaryUrl": "cms/publish3/domain/summary/1.json"
+    },
+    "maxLaunchDelay": 3600,
+    "restart": {
+      "activeDeadlineSeconds": 1200,
+      "policy": "ON_FAILURE"
+    },
+    "user": "root"
+  },
+  "schedules": [
+    {
+      "id": "default",
+      "enabled": true,
+      "cron": "40 5 * * *",
+      "timezone": "UTC",
+      "concurrencyPolicy": "ALLOW",
+      "startingDeadlineSeconds": 60
+    }
+  ],
+  "description": "Downloads schedules from Slingtv"
+}

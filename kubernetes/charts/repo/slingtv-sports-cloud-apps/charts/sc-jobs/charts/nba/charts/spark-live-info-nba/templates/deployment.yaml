@@ -1,0 +1,69 @@
+# ------------------- Connect for live info nba for slingtv ------------------- #
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "spark-live-info-nba.fullname" . }}
+  labels:
+    app: {{ template "spark-live-info-nba.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    jobtype: live-info
+spec:
+  replicas: {{ .Values.Job.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "spark-live-info-nba.name" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        release: {{ .Release.Name }} 
+        jobtype: live-info  
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - "/opt/spark/bin/spark-submit"
+          - "--master"
+          - "local[2]"
+          - "--deploy-mode"
+          - "client"
+          - "--name"
+          - "{{ .Values.sparkJobArgs.jobName }}"
+          - "--class"
+          - "{{ .Values.sparkJobArgs.className }}" 
+          - "--driver-memory"
+          - "{{ .Values.sparkJobArgs.driverMem }}"
+          - "--executor-memory"
+          - "{{ .Values.sparkJobArgs.executorMem }}"
+          - "--total-executor-cores"
+          - "{{ .Values.sparkJobArgs.executorCores }}"
+          - "--conf"
+          - "spark.es.index.auto.create=true"
+          - "--conf"
+          - "spark.es.nodes={{ .Release.Name }}-elasticsearch-client.default.svc.cluster.local"
+          - "--conf"
+          - "spark.es.net.http.auth.user=elastic"
+          - "--conf"
+          - "spark.es.net.http.auth.pass=changeme"
+          - "--conf"
+          - "spark.es.write.operation=upsert"
+          - "--conf"
+          - "spark.default.parallelism={{ .Values.sparkJobArgs.parallelism }}"
+          - "--conf"
+          - "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=30 -XX:G1ReservePercent=15 -XX:MaxGCPauseMillis=2000 -XX:+UseCompressedOops"
+          - "--conf"
+          - "spark.serializer=org.apache.spark.serializer.KryoSerializer"
+          - "/jars/all-spark-jobs.jar"
+          {{- range .Values.sparkJobArgs.execArgs }} 
+          - {{ . | quote }} 
+          {{- end }} 
+        env:
+        {{- range $key, $value := .Values.image.env }}
+        - name: "{{ $key }}"
+          value: "{{ $value }}"
+        {{- end }}
+        - name: KAFKA_BROKER_EP
+          value: "{{ .Release.Name }}-kafka-hs.default.svc.cluster.local:9092"
+        - name: ARTIFACT_SERVER_EP
+          value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"

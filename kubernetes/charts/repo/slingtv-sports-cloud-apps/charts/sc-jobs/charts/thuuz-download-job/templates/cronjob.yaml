@@ -1,0 +1,27 @@
+# ------------------- Download thuuz for slingtv ------------------- #
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "thuuz-download-job.fullname" . }}
+spec:
+  schedule: {{ .Values.cronJob.schedule }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: {{ .Chart.Name }}
+            image: {{ .Values.global.repository }}/{{ .Values.image.tag }}
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            args:
+            {{- range .Values.cronJob.args }}
+            - {{ . | quote }}
+            {{- end }}
+            env:
+            {{- range $key, $value := .Values.image.env }}
+            - name: "{{ $key }}"
+              value: "{{ $value }}"
+            {{- end }}
+            - name: ARTIFACT_SERVER_EP
+              value: "{{ .Release.Name }}-artifact-server.default.svc.cluster.local:9082"
+          restartPolicy: {{ .Values.cronJob.restartPolicy }}

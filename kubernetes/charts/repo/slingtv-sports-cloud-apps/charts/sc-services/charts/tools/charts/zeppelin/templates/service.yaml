@@ -1,0 +1,19 @@
+# ------------------- Zeppelin Service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "zeppelin.fullname" . }}
+  labels:
+    app: {{ template "zeppelin.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    app: {{ template "zeppelin.name" . }}
+    release: {{ .Release.Name }}
+  type: {{ .Values.service.type }}
+  ports:
+  - name: {{ .Values.service.name }}
+    port: {{ .Values.service.internalPort }}
+    targetPort:  {{ .Values.service.externalPort }}
+    protocol: TCP

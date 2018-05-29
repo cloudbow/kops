@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Dowload Job for downloading data from Thuuz
+name: thuuz-download-job
+version: 0.1.0

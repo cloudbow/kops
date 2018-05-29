@@ -1,0 +1,33 @@
+{
+  "id": "download-summary",
+  "run": {
+    "cpus": 0.1,
+    "mem": 128,
+    "disk": 0,
+    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","download-summary"],
+    "docker": {
+      "image": "arungeorge09/sc-job-scheduler:latest"
+    },
+    "env": {
+      "cmsHost": "cbd46b77",
+      "cmsSummaryUrl": "cms/publish3/domain/summary/1.json"
+    },
+    "maxLaunchDelay": 3600,
+    "restart": {
+      "activeDeadlineSeconds": 1200,
+      "policy": "ON_FAILURE"
+    },
+    "user": "root"
+  },
+  "schedules": [
+    {
+      "id": "default",
+      "enabled": true,
+      "cron": "20 5 * * *",
+      "timezone": "UTC",
+      "concurrencyPolicy": "ALLOW",
+      "startingDeadlineSeconds": 60
+    }
+  ],
+  "description": "Downloads summary from Slingtv"
+}

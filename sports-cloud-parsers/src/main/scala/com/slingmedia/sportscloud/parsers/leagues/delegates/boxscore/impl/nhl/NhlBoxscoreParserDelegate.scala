@@ -1,0 +1,90 @@
+package com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.impl.nhl
+
+import com.slingmedia.sportscloud.parsers.factory.ParsedItem
+import com.slingmedia.sportscloud.parsers.leagues.delegates.boxscore.{BoxScoreDataExtractor, BoxScoreSchemaGenerator, BoxScoreStructGenerator}
+import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
+import org.apache.kafka.connect.source.SourceRecord
+import org.slf4j.LoggerFactory
+
+import scala.collection.JavaConverters._
+import scala.xml.{Elem, NodeSeq}
+
+class NhlBoxScoreParserDelegate extends ParsedItem {
+
+  private val log = LoggerFactory.getLogger("NhlBoxScoreParserDelegate")
+
+  override def generateRows(data: Elem, in: SourceRecord, xmlRoot: NodeSeq ): java.util.List[SourceRecord] = {
+    log.info(s"Parsing rows for boxscore for nhl")
+    val leagueStr = (data \\ "league" \ "@alias").text
+
+    var mlbBoxScores = scala.collection.mutable.ListBuffer.empty[SourceRecord]
+    val rows = xmlRoot.map { rowData =>
+      val commonFields = new BoxScoreDataExtractor(data,rowData)
+      val gameId = (rowData \\ "gamecode" \ "@global-code").text
+      commonFields.gameId=gameId
+      val homeTeamlineScore = scala.collection.mutable.ListBuffer.empty[Int]
+      (rowData \\ "home-team" \\ "linescore" \\ "period").map { quarter =>
+        homeTeamlineScore += toInt((quarter \\ "@score").text).getOrElse(0)
+      }
+
+      val awayTeamlineScore = scala.collection.mutable.ListBuffer.empty[Int]
+      (rowData \\ "visiting-team" \\ "linescore" \\ "period").map { quarter =>
+        awayTeamlineScore += toInt((quarter \\ "@score").text).getOrElse(0)
+      }
+      var awayScore = 0;
+      if(awayTeamlineScore.length > 0) {
+        awayScore = awayTeamlineScore.reduceLeft[Int](_ + _)
+      }
+
+      var homeScore = 0;
+      if(homeTeamlineScore.length > 0) {
+        homeScore = homeTeamlineScore.reduceLeft[Int](_ + _)
+      }
+
+      val message = NbaBoxScoreData(
+        commonFields,
+        homeTeamlineScore.toList,
+        awayTeamlineScore.toList,
+        homeScore,
+        awayScore
+      )
+      new SourceRecord(in.sourcePartition,
+        in.sourceOffset,
+        in.topic,
+        0,
+        in.keySchema,
+        in.key,
+        message.connectSchema,
+        message.getStructure)
+    }
+    rows.toList.asJava
+  }
+
+  case class NbaBoxScoreData(commonFields: BoxScoreDataExtractor,
+                          homeTeamlineScore:List[Int],
+                          awayTeamlineScore: List[Int],
+                          homeScore: Int,
+                          awayScore: Int
+                         ) {
+    val boxScoreSchemaInited = SchemaBuilder.struct().name("c.s.s.s.Game")
+    val boxScoreCommonSchema = BoxScoreSchemaGenerator(boxScoreSchemaInited)
+    val boxScoreSchema: Schema = boxScoreSchemaInited
+      .field("homeTeamlineScore", SchemaBuilder.array(Schema.INT32_SCHEMA).build())
+      .field("awayTeamlineScore", SchemaBuilder.array(Schema.INT32_SCHEMA).build())
+      .field("homeScore", Schema.INT32_SCHEMA)
+      .field("awayScore", Schema.INT32_SCHEMA)
+      .build()
+
+    val connectSchema: Schema = boxScoreSchema
+    val boxScoreStructInited = new Struct(boxScoreSchema)
+    val boxScoreCommonStruct = BoxScoreStructGenerator(boxScoreStructInited,commonFields)
+    val boxScoreStruct: Struct = boxScoreStructInited
+      .put("homeTeamlineScore",homeTeamlineScore.asJava)
+      .put("awayTeamlineScore", awayTeamlineScore.asJava)
+      .put("homeScore", homeScore)
+      .put("awayScore", awayScore)
+    def getStructure: Struct = boxScoreStruct
+
+  }
+
+}

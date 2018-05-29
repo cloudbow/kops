@@ -1,0 +1,18 @@
+{
+  "name": "ftp-live-info-ncaab",
+  "config": {
+    "connector.class": "com.eneco.trading.kafka.connect.ftp.source.FtpSourceConnector",
+    "ftp.sourcerecordconverter": "com.slingmedia.sportscloud.kafka.converters.impl.live.NcaabSourceConverter",
+    "ftp.address": "ftp.stats.com",
+    "ftp.user": "DishSportsO",
+    "ftp.password": "D1sh3325",
+    "ftp.refresh": "PT1S",
+    "ftp.max.poll.records": "500",
+    "ftp.max.backoff": "PT1M",
+    "ftp.file.maxage": "P1D",
+    "ftp.monitor.update": "/:live_info_ncaab",
+    "ftp.keystyle": "string",
+    "tasks.max": "2",
+    "topics": "live_info_ncaab"
+  }
+}

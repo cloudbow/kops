@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Sports cloud job charts
+name: sc-jobs
+version: 0.0.1

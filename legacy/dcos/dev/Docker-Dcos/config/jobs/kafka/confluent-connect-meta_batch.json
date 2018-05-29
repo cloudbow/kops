@@ -1,0 +1,29 @@
+{
+  "id": "confluent-connect-meta-batch",
+  "run": {
+    "cpus": 0.1,
+    "mem": 64,
+    "disk": 0,
+    "args": ["/deploy-scheduled-jobs/scheduled-job-driver.sh","connect-jobs","com.slingmedia.sportscloud.schedulers.KafkaConnectMetaBatchJob", "mlb"],
+    "docker": {
+      "image": "registry.marathon.l4lb.thisdcos.directory:5000/sc-job-scheduler:latest"
+    },
+    "maxLaunchDelay": 3600,
+    "restart": {
+      "activeDeadlineSeconds": 1200,
+      "policy": "ON_FAILURE"
+    },
+    "user": "root"
+  },
+  "schedules": [
+    {
+      "id": "default",
+      "enabled": true,
+      "cron": "*/59 * * * *",
+      "timezone": "UTC",
+      "concurrencyPolicy": "ALLOW",
+      "startingDeadlineSeconds": 60
+    }
+  ],
+  "description": "Upload metadata to kafka"
+}

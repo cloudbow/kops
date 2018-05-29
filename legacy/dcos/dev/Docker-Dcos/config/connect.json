@@ -1,0 +1,13 @@
+{
+  "connect": {
+    "name": "connect",
+    "instances": 1,
+    "cpus": 1,
+    "mem": 1024,
+    "heap": 512,
+    "role": "*",
+    "kafka-service": "confluent-kafka",
+    "zookeeper-connect": "master.mesos:2181/dcos-service-confluent-kafka",
+    "schema-registry-service": "schema-registry"
+  }
+}

@@ -1,0 +1,18 @@
+# ------------------- Elastic Search Service --------------------------------------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "elasticsearch.fullname" . }}-discovery
+  labels:
+    app: {{ template "elasticsearch.name" . }}
+    release: {{ .Release.Name }}
+    role: {{ .Values.services.discovery.role }}
+spec:
+  selector:
+    app: {{ template "elasticsearch.name" . }}
+    release: {{ .Release.Name }}
+    role: {{ .Values.services.discovery.role }}
+  ports:
+  - name: {{ .Values.services.discovery.portName }}
+    port: {{ .Values.services.discovery.internalPort }}
+    protocol: TCP

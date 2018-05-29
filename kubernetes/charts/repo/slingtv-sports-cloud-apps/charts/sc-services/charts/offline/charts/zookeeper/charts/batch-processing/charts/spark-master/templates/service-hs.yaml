@@ -1,0 +1,17 @@
+# ------------------- spark-master headless service ------------------- #
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "spark-master.fullname" . }}-hs
+  labels:
+    app: {{ template "spark-master.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+spec:
+  ports:
+  - port: {{ .Values.service.internalPort }}
+    name: {{ .Values.service.name }}
+  clusterIP: {{ .Values.service.clusterIP }}
+  selector:
+    app: {{ template "spark-master.name" . }}
+    release: {{ .Release.Name }}
