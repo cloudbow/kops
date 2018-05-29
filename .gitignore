@@ -29,3 +29,6 @@ modded-external-dependencies/kafka-connect-ftp/build
 sports-cloud-rest-parsers/.idea
 sports-cloud-keeper/.idea
 kubernetes/terraform/descriptors/.terraform
+.idea
+kubernetes/terraform/slingtv-sports-cloud/.terraform
+kubernetes/terraform/slingtv-sports-cloud/terraform.tfstate.*
