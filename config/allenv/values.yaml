@@ -2471,6 +2471,29 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "5 8 * * *"
+    spark-player-game-stats-nba:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.17
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.playergamestats.impl.NbaPlayerGameStatsMuncher
+        jobName: NbaPlayerGameStatsMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "player_game_stats_nba"
+        - "player_game_stats"
+      Job:
+        replicas: 1
+        command:
+        type: ClusterIP
+        restartPolicy: OnFailure
+        schedule: "30 7 * * *"
   ncaab:
     connect-batch-job-ncaab:
       image:
@@ -2643,6 +2666,29 @@ sc-jobs:
         type: ClusterIP
         restartPolicy: Never
         schedule: "5 8 * * *"
+    spark-player-game-stats-ncaab:
+      ingress: {}
+      service: {}
+      image:
+        tag: spark-job:0.0.1-alpha.17
+        pullPolicy: IfNotPresent
+        env:
+      sparkJobArgs:
+        className: com.slingmedia.sportscloud.offline.streaming.playergamestats.impl.NbaPlayerGameStatsMuncher
+        jobName: NcaabPlayerGameStatsMuncher
+        driverMem: 2G
+        executorMem: 2G
+        executorCores: 2
+        parallelism: 4
+        execArgs:
+        - "player_game_stats_ncaab"
+        - "player_game_stats"
+      Job:
+        replicas: 1
+        command:
+        type: ClusterIP
+        restartPolicy: OnFailure
+        schedule: "30 7 * * *"
   soccer:
     spark-content-match-soccer:
       ingress: {}
