@@ -1327,7 +1327,7 @@ sc-services:
             resources:
               cpu: 100m
             containerPort: 8081
-            replicas: 3
+            replicas: 6
             command: 
             - "/scripts/start-worker"
       streaming-platform:
@@ -1731,15 +1731,15 @@ sc-services:
           ZEPPELIN_PORT: 8080
           PYTHONPATH: "/opt/spark/python:/opt/spark/python/lib/py4j-0.8.2.1-src.zip"
           ZEPPELIN_CONF_DIR: "/opt/zeppelin/conf"
-          APP_SPARK_MASTERS_EPS: "local[3]"
+          APP_SPARK_MASTERS_EPS: "local[2]"
       deployment:
         command:
         - /opt/zeppelin/bin/docker-zeppelin.sh
         resources:
-          minCpu: 2
-          maxCpu: 3
-          minMem: 2G
-          maxMem: 3G
+          minCpu: 100m
+          maxCpu: 4
+          minMem: 2Gi
+          maxMem: 3Gi
         containerPort: 8080
         replicas: 1   
       service:
@@ -1751,7 +1751,7 @@ sc-services:
         driverMemory: 2g
         executorMemory: 2g
         numExecutors: 2
-        coresMax: 3
+        coresMax: 2
     kibana:
       image:
         repository: "docker.elastic.co/kibana"
@@ -1971,7 +1971,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 8 * * *"
+        schedule: "40 0/8 * * *"
     spark-live-info-nfl:
       ingress: {}
       service: {}
@@ -2123,7 +2123,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 8 * * *"
+        schedule: "50 0/8 * * *"
     spark-live-info-mlb:
       ingress: {}
       service: {}
@@ -2252,7 +2252,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 8 * * *"
+        schedule: "0 0/9 * * *"
     spark-live-info-ncaaf:
       ingress: {}
       service: {}
@@ -2424,7 +2424,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 8 * * *"
+        schedule: "10 0/9 * * *"
     spark-live-info-nba:
       ingress: {}
       service: {}
@@ -2619,7 +2619,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 8 * * *"
+        schedule: "20 0/9 * * *"
     spark-live-info-ncaab:
       ingress: {}
       service: {}
@@ -2711,7 +2711,7 @@ sc-jobs:
         command: 
         type: ClusterIP
         restartPolicy: Never
-        schedule: "40 0/8 * * *"
+        schedule: "30 0/9 * * *"
     connect-live-info-soccer:
       deployment:
         resources:

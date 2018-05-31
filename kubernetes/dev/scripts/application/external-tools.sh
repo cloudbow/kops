@@ -16,4 +16,6 @@ kubectl rollout status svc/kube-registry
 $BASE_PATH/scripts/application/build-builder.sh $BASE_PATH
 ### END  build of Builder docker container for Jenkins ####
 
+
+kubectl apply -f $BASE_PATH/config/ingress.yml
 ### Create Empty Jenkins ###
