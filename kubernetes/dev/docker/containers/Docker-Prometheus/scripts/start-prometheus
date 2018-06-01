@@ -1,6 +1,0 @@
-#!/bin/bash
-cp /scripts/prometheus.yml /opt/prometheus/prometheus.yml
-pwd
-## Prometheus write to /opt/prometheus/data and has to be externally mounted
-cd /opt/prometheus && 
-./prometheus

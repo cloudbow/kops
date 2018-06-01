@@ -30,3 +30,5 @@ sports-cloud-rest-parsers/.idea
 sports-cloud-keeper/.idea
 kubernetes/terraform/descriptors/.terraform
 .idea
+slingtv-sports-cloud/.terraform
+legacy-slingtv-sports-cloud/.terraform

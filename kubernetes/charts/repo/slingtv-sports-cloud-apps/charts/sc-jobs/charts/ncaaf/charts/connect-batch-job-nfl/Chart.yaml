@@ -1,4 +1,0 @@
-apiVersion: v1
-description: A Helm chart for Connect ncaaf batch job
-name: connect-batch-job-ncaaf
-version: 0.1.0
