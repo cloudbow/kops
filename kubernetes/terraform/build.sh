@@ -33,11 +33,7 @@ else
     echo "Using directory $1"
 fi
 
-###
-GEN_DIR=$1
-mkdir -p $GEN_DIR
-cp -r templates/* $GEN_DIR
-cd $GEN_DIR
+
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
@@ -71,7 +67,28 @@ then
     exit 1
 else
     echo "Using rename"
-fi	
+fi
+
+###
+GEN_DIR=$1
+if [ -z "${GEN_DIR}" ]
+then
+    echo "Provide the output directory as commandline arg."
+    exit 1
+else
+    echo "Using GEN_DIR ${GEN_DIR}"
+fi  
+
+### Delete old files and copy newer one
+### Dont change this to rm -rf 
+rm -rf "$GEN_DIR/data"
+
+
+mkdir -p $GEN_DIR/data
+cp -r templates/* $GEN_DIR
+cd $GEN_DIR
+
+
 
 ## Replace all cluster name with correct values
 FILES=`find . -type f \( ! -iname "terraform.tfstate*"  \)`
@@ -88,6 +105,8 @@ CLUSTER_NAME_HYPHENATED=`echo ${CLUSTER_NAME} | gsed 's/\.k8s\.local/-k8s-local/
 while read -r line; do
 	gsed -i "s/#cluster_name_trimmed_elb#/$(printf $CLUSTER_NAME_HYPHENATED|cut -c 1-28)/g" $line
 done <<< "$FILES"
+
+
 
 rename 's/#cluster_name#/'$CLUSTER_NAME'/g' data/*.*
 
