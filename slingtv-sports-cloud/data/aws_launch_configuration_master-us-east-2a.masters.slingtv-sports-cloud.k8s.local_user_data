@@ -17,14 +17,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+
 NODEUP_URL=https://kubeupv2.s3.amazonaws.com/kops/1.9.0/linux/amd64/nodeup
 NODEUP_HASH=54ecae66a2b4e1409b36fc00b550f2501afedbfc
-
-
-
-
-
-
 
 
 function ensure-install-dir() {
@@ -280,14 +275,14 @@ Assets:
 - 1d9788b0f5420e1a219aad2cb8681823fc515e7c@https://storage.googleapis.com/kubernetes-release/network-plugins/cni-0799f5732f2a11b329d9e3d51b9c8f2e3759f2ff.tar.gz
 - c6f310214f687b6c2f32e81c2a49235182950be3@https://kubeupv2.s3.amazonaws.com/kops/1.9.0/linux/amd64/utils.tar.gz
 ClusterName: slingtv-sports-cloud.k8s.local
-ConfigBase: s3://kubernetes-slingtv-state-store/slingtv-sports-cloud.k8s.local
+ConfigBase: s3://k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local
 InstanceGroupName: master-us-east-2a
 Tags:
 - _automatic_upgrades
 - _aws
 - _kubernetes_master
 channels:
-- s3://kubernetes-slingtv-state-store/slingtv-sports-cloud.k8s.local/addons/bootstrap-channel.yaml
+- s3://k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/addons/bootstrap-channel.yaml
 protokubeImage:
   hash: 4bbfcc6df1c1c0953bd0532113a74b7ae21e0ded
   name: protokube:1.9.0
@@ -297,3 +292,22 @@ __EOF_KUBE_ENV
 
 download-release
 echo "== nodeup node config done =="
+
+## Initial bootstrap commands telnet, jq, stern
+apt-get update
+apt-get install telnet
+apt-get install jq
+wget https://github.com/wercker/stern/releases/download/1.5.1/stern_linux_amd64
+mv stern_linux_amd64 /opt/stern
+ln -s /opt/stern /usr/bin/stern
+chmod +x /usr/bin/stern
+##kubectl install
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
+chmod +x ./kubectl && \
+sudo mv ./kubectl /usr/local/bin/kubectl
+## Install helm
+wget https://storage.googleapis.com/kubernetes-helm/helm-v2.8.1-linux-amd64.tar.gz
+tar -xvf helm-v2.8.1-linux-amd64.tar.gz
+cd linux-amd64
+mv helm /usr/bin
+helm init

@@ -148,7 +148,7 @@
         "s3:ListBucket"
       ],
       "Resource": [
-        "arn:aws:s3:::kubernetes-slingtv-state-store"
+        "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local"
       ]
     },
     {
@@ -157,7 +157,7 @@
       "Action": [
         "s3:Get*"
       ],
-      "Resource": "arn:aws:s3:::kubernetes-slingtv-state-store/slingtv-sports-cloud.k8s.local/*"
+      "Resource": "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/*"
     },
     {
       "Sid": "kopsK8sECR",

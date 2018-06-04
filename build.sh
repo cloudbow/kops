@@ -13,6 +13,26 @@ set -xe
 ## Just add the environment variables that is required here. 
 ## A list can be create by appending TF_VAR_<varname> from variables.tf
 
+
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     MACHINE=Linux;;
+    Darwin*)    MACHINE=Mac;;
+    CYGWIN*)    MACHINE=Cygwin;;
+    MINGW*)     MACHINE=MinGw;;
+    *)          MACHINE="UNKNOWN:${unameOut}"
+esac
+echo ${MACHINE}
+
+if [ "$MACHINE" != "Mac" ] && [ "$MACHINE" != "Linux" ]
+then
+    echo "Cannot execute in other os"
+    exit 1
+else
+    echo "Running in ${MACHINE}"
+fi
+
+
 ## Don't continue if clustername is not given
 if [ -z "${CLUSTER_NAME}" ]
 then
@@ -34,16 +54,14 @@ else
 fi
 
 
-
-unameOut="$(uname -s)"
-case "${unameOut}" in
-    Linux*)     MACHINE=Linux;;
-    Darwin*)    MACHINE=Mac;;
-    CYGWIN*)    MACHINE=Cygwin;;
-    MINGW*)     MACHINE=MinGw;;
-    *)          MACHINE="UNKNOWN:${unameOut}"
-esac
-echo ${MACHINE}
+KOPS_COMMAND=`which kops`
+if [ -z "${KOPS_COMMAND}" ]
+then
+    echo "Install kops from github"
+    exit 1
+else
+    echo "Using kops"
+fi
 
 if [ "$MACHINE" == "Mac" ]
 then
@@ -96,17 +114,80 @@ while read -r line; do
 	gsed -i "s/#cluster_name#/${CLUSTER_NAME}/g" $line
 done <<< "$FILES"
 
+## Replace all cluster name hyphenated with correct values
 CLUSTER_NAME_HYPHENATED=`echo ${CLUSTER_NAME} | gsed 's/\.k8s\.local/-k8s-local/g'`
 while read -r line; do
 	gsed -i "s/#cluster_name_hyphenated#/${CLUSTER_NAME_HYPHENATED}/g" $line
 done <<< "$FILES"
 
-CLUSTER_NAME_HYPHENATED=`echo ${CLUSTER_NAME} | gsed 's/\.k8s\.local/-k8s-local/g'`
+## Replace all clustername trimmed format
+CLUSTER_NAME_HYPHENATED_TRIMMED="$(printf $CLUSTER_NAME_HYPHENATED|cut -c 1-28)"
 while read -r line; do
-	gsed -i "s/#cluster_name_trimmed_elb#/$(printf $CLUSTER_NAME_HYPHENATED|cut -c 1-28)/g" $line
+	gsed -i "s/#cluster_name_trimmed_elb#/${CLUSTER_NAME_HYPHENATED_TRIMMED}/g" $line
+done <<< "$FILES"
+
+## Replace default region
+DEFAULT_REGION="us-east-2"
+while read -r line; do
+    gsed -i "s/#default_region#/${DEFAULT_REGION}/g" $line
+done <<< "$FILES"
+
+
+## Replace default region
+DEFAULT_REGION="us-east-2"
+while read -r line; do
+    gsed -i "s/#default_region#/${DEFAULT_REGION}/g" $line
+done <<< "$FILES"
+
+## Replace all nod einstance types
+NODE_INSTANCE_TYPE="m4.large"
+while read -r line; do
+    gsed -i "s/#default_node_instance_type#/${NODE_INSTANCE_TYPE}/g" $line
+done <<< "$FILES"
+
+## Replace all nod einstance types
+MASTER_INSTANCE_TYPE="c4.large"
+while read -r line; do
+    gsed -i "s/#default_master_instance_type#/${MASTER_INSTANCE_TYPE}/g" $line
 done <<< "$FILES"
 
 
 
 rename 's/#cluster_name#/'$CLUSTER_NAME'/g' data/*.*
+
+
+
+
+## Create S3 state store and generate and update config to S3.
+S3_BUCKET=k8s-state-${CLUSTER_NAME_HYPHENATED}
+export KOPS_STATE_STORE=s3://${S3_BUCKET}
+if aws s3 ls "s3://${S3_BUCKET}" 2>&1 | grep -q 'NoSuchBucket'
+then
+    aws s3api create-bucket \
+        --bucket ${S3_BUCKET} \
+        --region ${DEFAULT_REGION}
+fi
+
+AVAILABILITY_ZONES="us-east-2a,us-east-2b"
+
+
+#DEFAULT_NODE_INSTANCE_TYPE#
+FIRST_NODE_COUNT=3
+KUBERNETES_VERSION="1.8.7"
+kops create cluster \
+    --zones ${AVAILABILITY_ZONES} \
+    --node-size "${NODE_INSTANCE_TYPE}" \
+    --master-size "${MASTER_INSTANCE_TYPE}" \
+    --kubernetes-version=${KUBERNETES_VERSION} \
+    --node-count=${FIRST_NODE_COUNT} \
+    ${CLUSTER_NAME}
+
+kops update cluster ${CLUSTER_NAME} --yes \
+--out=/tmp/terraform-"$(date +%F%T)" \
+--target=terraform
+
+
+
+
+
 

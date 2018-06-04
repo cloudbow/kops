@@ -196,13 +196,13 @@ Assets:
 - 1d9788b0f5420e1a219aad2cb8681823fc515e7c@https://storage.googleapis.com/kubernetes-release/network-plugins/cni-0799f5732f2a11b329d9e3d51b9c8f2e3759f2ff.tar.gz
 - c6f310214f687b6c2f32e81c2a49235182950be3@https://kubeupv2.s3.amazonaws.com/kops/1.9.0/linux/amd64/utils.tar.gz
 ClusterName: #cluster_name#
-ConfigBase: s3://kubernetes-slingtv-state-store/#cluster_name#
+ConfigBase: s3://k8s-state-#cluster_name_hyphenated#/#cluster_name#
 InstanceGroupName: nodes
 Tags:
 - _automatic_upgrades
 - _aws
 channels:
-- s3://kubernetes-slingtv-state-store/#cluster_name#/addons/bootstrap-channel.yaml
+- s3://k8s-state-#cluster_name_hyphenated#/#cluster_name#/addons/bootstrap-channel.yaml
 protokubeImage:
   hash: 4bbfcc6df1c1c0953bd0532113a74b7ae21e0ded
   name: protokube:1.9.0

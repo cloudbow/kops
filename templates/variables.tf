@@ -1,6 +1,6 @@
 variable "aws_region" {
   description = "The AWS region to create things in."
-  default     = "us-east-2"
+  default     = "#default_region#"
 }
 
 
@@ -18,13 +18,13 @@ variable "aws_public_key_pem_path" {
 }
 
 variable "aws_master_instance_type" {
-  default = "c4.large"
+  default = "#default_master_instance_type#"
   description = "the master instance type"
 }
 
 
 variable "aws_node_instance_type" {
-  default = "m4.large"
+  default = "#default_node_instance_type#"
   description = "the node instance type"
 }
 
