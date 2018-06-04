@@ -1,4 +1,0 @@
-apiVersion: v1
-description: A Helm chart for Ncaab player game stats
-name: spark-player-game-stats-ncaab
-version: 0.0.1
