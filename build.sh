@@ -13,6 +13,26 @@ set -xe
 ## Just add the environment variables that is required here. 
 ## A list can be create by appending TF_VAR_<varname> from variables.tf
 
+
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     MACHINE=Linux;;
+    Darwin*)    MACHINE=Mac;;
+    CYGWIN*)    MACHINE=Cygwin;;
+    MINGW*)     MACHINE=MinGw;;
+    *)          MACHINE="UNKNOWN:${unameOut}"
+esac
+echo ${MACHINE}
+
+if [ "$MACHINE" != "Mac" ] && [ "$MACHINE" != "Linux" ]
+then
+    echo "Cannot execute in other os"
+    exit 1
+else
+    echo "Running in ${MACHINE}"
+fi
+
+
 ## Don't continue if clustername is not given
 if [ -z "${CLUSTER_NAME}" ]
 then
@@ -34,16 +54,14 @@ else
 fi
 
 
-
-unameOut="$(uname -s)"
-case "${unameOut}" in
-    Linux*)     MACHINE=Linux;;
-    Darwin*)    MACHINE=Mac;;
-    CYGWIN*)    MACHINE=Cygwin;;
-    MINGW*)     MACHINE=MinGw;;
-    *)          MACHINE="UNKNOWN:${unameOut}"
-esac
-echo ${MACHINE}
+KOPS_COMMAND=`which kops`
+if [ -z "${KOPS_COMMAND}" ]
+then
+    echo "Install kops from github"
+    exit 1
+else
+    echo "Using kops"
+fi
 
 if [ "$MACHINE" == "Mac" ]
 then
@@ -160,7 +178,7 @@ kops create cluster \
     --zones ${AVAILABILITY_ZONES} \
     --node-size "${NODE_INSTANCE_TYPE}" \
     --master-size "${MASTER_INSTANCE_TYPE}" \
-    --kubernetes-version=1.8.7 \
+    --kubernetes-version=${KUBERNETES_VERSION} \
     --node-count=${FIRST_NODE_COUNT} \
     ${CLUSTER_NAME}
 
