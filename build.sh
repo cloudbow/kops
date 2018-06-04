@@ -133,6 +133,8 @@ while read -r line; do
     gsed -i "s/#default_master_instance_type#/${MASTER_INSTANCE_TYPE}/g" $line
 done <<< "$FILES"
 
+
+
 rename 's/#cluster_name#/'$CLUSTER_NAME'/g' data/*.*
 
 
