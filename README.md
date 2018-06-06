@@ -5,17 +5,9 @@ NOTE: DONT RUN THE COMMANDS HERE WITHOUT LOOKING AT last_built_command.sh .
 
 OTHERWISE YOU MIGHT END UP IN TEARING DOWN THE CLUSTER OR REDUCING ITS CAPACITY 
 
-ALSO UPDATE THE LAST BUILT COMMAND ONCE YOU UPDATE THE TERRAFORM IMAGE
+ALSO UPDATE THE last_built_command.sh ONCE YOU UPDATE THE TERRAFORM IMAGE
 
 # How to Run
-
-## Old Sports Cloud Cluster
-
-Currently the script is used only to generate newer clusters. The old cluster is not generated using this generate mechanism described here.
-
-For old cluster we still use terraform . Use the following command
-
-TF_VAR_aws_node_instance_nos=14 TF_VAR_aws_master_instance_nos=1 terraform apply
 
 
 
