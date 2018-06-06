@@ -1,0 +1,2 @@
+cd slingtv-sports-cloud
+TF_VAR_aws_node_instance_type="m4.xlarge" TF_VAR_aws_node_instance_nos=4   TF_VAR_aws_master_instance_nos=1 TF_VAR_aws_public_key_pem_path="/Volumes/Data/Documents/backend/projects/docs/sports cloud/aws_key_pair_kubernetes.sports-cloud-k8s-local-881fbb3c10201b00cf7efbd888c878db_public_key" terraform apply

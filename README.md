@@ -1,8 +1,11 @@
 Running the project
 ==================
 
-NOTE: DONT ATTEMPT TO CHANGE THE NO OF NODES OR ANY PARAMETER IN TERRAFORM APPLY
+NOTE: DONT RUN THE COMMANDS HERE WITHOUT LOOKING AT last_built_command.sh . 
 
+OTHERWISE YOU MIGHT END UP IN TEARING DOWN THE CLUSTER OR REDUCING ITS CAPACITY 
+
+ALSO UPDATE THE LAST BUILT COMMAND ONCE YOU UPDATE THE TERRAFORM IMAGE
 
 # How to Run
 
@@ -27,10 +30,11 @@ CLUSTER_NAME="slingtv-sports-cloud.k8s.local" ./build.sh ${OUTPUT_DIR}
 cd ${OUTPUT_DIR}
 ```
 ## Run the terraform file
-
+NOTE: DONT RUN THIS COMMAND AS IT IS A TEMPLATE. USE THE last_built_command.sh
 ```
 terraform init
-TF_VAR_aws_node_instance_nos=3  TF_VAR_aws_master_instance_nos=1 TF_VAR_aws_public_key_pem_path="/Volumes/Data/Documents/backend/projects/docs/sports cloud/aws_key_pair_kubernetes.sports-cloud-k8s-local-881fbb3c10201b00cf7efbd888c878db_public_key" terraform apply
+TF_VAR_aws_node_instance_nos=<num>  TF_VAR_aws_master_instance_nos=<num> TF_VAR_aws_public_key_pem_path="<key-file>" terraform plan
+TF_VAR_aws_node_instance_nos=<num>  TF_VAR_aws_master_instance_nos=<num> TF_VAR_aws_public_key_pem_path="<key-file>" terraform apply
 ```
 
 
