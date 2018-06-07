@@ -1,6 +1,6 @@
 resource "aws_route53_zone" "slingtv-sports-cloud-k8s-local" {
   name = "sports-cloud.com"
-  comment = "Sports Cloud Internal zone"
+  comment = "slingtv-sports-cloud.k8s.local Internal zone"
   vpc_id = "${aws_vpc.slingtv-sports-cloud-k8s-local.id}"
   vpc_region = "${var.aws_region}"
 }
