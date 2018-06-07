@@ -38,7 +38,8 @@
         "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/pki/private/kube-proxy/*",
         "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/pki/private/kubelet/*",
         "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/pki/ssh/*",
-        "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/secrets/dockerconfig"
+        "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/secrets/dockerconfig",
+        "arn:aws:s3:::k8s-state-slingtv-sports-cloud-k8s-local/slingtv-sports-cloud.k8s.local/docker-state/*"
       ]
     },
     {
