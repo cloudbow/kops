@@ -9,14 +9,16 @@ ALSO UPDATE THE last_built_command.sh ONCE YOU UPDATE THE TERRAFORM IMAGE
 
 # What you get
 
-You get a full k8s cluster of version 1.8.7
-Self signed TLS enabled docker registry under registry.xyz.com:5000
+* You get a full k8s cluster of version 1.8.7
+
+* Self signed TLS enabled docker registry under registry.xyz.com:5000
 
 
 
 ## Generate the configuration
 
 Note: CLUSTER_NAME SHOULD END WITH .k8s.local
+
 NOTE: Need to be in bash to run the following
 
 ```
@@ -30,6 +32,7 @@ CLUSTER_NAME="my-cloud.k8s.local" \
 
 ```
 ## Run the terraform file
+
 NOTE: DONT RUN THIS COMMAND AS IT IS A TEMPLATE. USE THE last_built_command.sh
 ```
 cd ${OUTPUT_DIR}
