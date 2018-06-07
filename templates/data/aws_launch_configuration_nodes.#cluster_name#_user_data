@@ -212,3 +212,16 @@ __EOF_KUBE_ENV
 
 download-release
 echo "== nodeup node config done =="
+
+## Add root cert for each nodes in cluster
+echo "Waiting for aws command"
+while ! which /usr/local/bin/aws; do   
+  sleep 0.1 # wait for 1/10 of the second before check again
+done
+echo "aws command available"
+
+/usr/local/bin/aws s3 cp s3://k8s-state-#cluster_name_hyphenated#/#cluster_name#/docker-state/domain.crt domain.crt
+cp domain.crt ca.crt
+## Copy the ca.crt file to all nodes for docker registry
+mkdir -p /etc/docker/certs.d/#docker_registry_host#:5000 && \
+cp -rf /home/admin/ca.crt /etc/docker/certs.d/#docker_registry_host#:5000

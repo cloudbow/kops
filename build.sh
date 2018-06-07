@@ -13,6 +13,17 @@ set -xe
 ## Just add the environment variables that is required here. 
 ## A list can be create by appending TF_VAR_<varname> from variables.tf
 
+echo 'Requirements 
+
+- Install kops from https://github.com/kubernetes/kops (1.9.0)
+- Install terraform from terraform site (v0.11.7)
+- Install aws cli
+- Do aws configure
+- Obtain a key pair from aws 
+- Save the pem for yourself
+
+'
+ 
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
@@ -40,6 +51,31 @@ then
     exit 1
 else
     echo "Using clustername ${CLUSTER_NAME}"
+fi
+
+## Don't continue if clustername is not given
+if [ -z "${BASE_PRIVATE_HOSTED_DOMAIN}" ]
+then
+    echo "Registry Base Host name is required"
+    exit 1
+else
+    echo "Using Base Host name ${BASE_PRIVATE_HOSTED_DOMAIN}"
+fi
+
+if [ -z "${DOCKER_REGISTRY_NAME}" ]
+then
+    echo "Registry name is required"
+    exit 1
+else
+    echo "Using registry name ${DOCKER_REGISTRY_NAME}"
+fi
+
+if [ -z "${ARTIFACT_SERVER_NAME}" ]
+then
+    echo "Artifact server  name"
+    exit 1
+else
+    echo "Using registry name ${ARTIFACT_SERVER_NAME}"
 fi
 
 ## Don't continue if clustername is not given
@@ -126,6 +162,21 @@ while read -r line; do
 	gsed -i "s/#cluster_name_trimmed_elb#/${CLUSTER_NAME_HYPHENATED_TRIMMED}/g" $line
 done <<< "$FILES"
 
+## Replace all docker registry hostnames
+DOCKER_REGISTRY_HOST_NAME="${DOCKER_REGISTRY_NAME}.${BASE_PRIVATE_HOSTED_DOMAIN}"
+while read -r line; do
+    gsed -i "s/#docker_registry_host#/${DOCKER_REGISTRY_HOST_NAME}/g" $line
+done <<< "$FILES"
+
+ARTIFACT_SERVER_HOST_NAME="${ARTIFACT_SERVER_NAME}.${BASE_PRIVATE_HOSTED_DOMAIN}"
+while read -r line; do
+    gsed -i "s/#artifact_server_host#/${ARTIFACT_SERVER_HOST_NAME}/g" $line
+done <<< "$FILES"
+
+while read -r line; do
+    gsed -i "s/#private_base_host#/${BASE_PRIVATE_HOSTED_DOMAIN}/g" $line
+done <<< "$FILES"
+
 ## Replace default region
 DEFAULT_REGION="us-east-2"
 while read -r line; do
@@ -159,32 +210,61 @@ rename 's/#cluster_name#/'$CLUSTER_NAME'/g' data/*.*
 
 
 ## Create S3 state store and generate and update config to S3.
-S3_BUCKET=k8s-state-${CLUSTER_NAME_HYPHENATED}
-export KOPS_STATE_STORE=s3://${S3_BUCKET}
-if aws s3 ls "s3://${S3_BUCKET}" 2>&1 | grep -q 'NoSuchBucket'
+KOPS_S3_BUCKET=k8s-state-${CLUSTER_NAME_HYPHENATED}
+export KOPS_STATE_STORE=s3://${KOPS_S3_BUCKET}
+if aws s3 ls "s3://${KOPS_S3_BUCKET}" 2>&1 | grep -q 'NoSuchBucket'
 then
     aws s3api create-bucket \
-        --bucket ${S3_BUCKET} \
+        --bucket ${KOPS_S3_BUCKET} \
         --region ${DEFAULT_REGION}
 fi
 
-AVAILABILITY_ZONES="us-east-2a,us-east-2b"
+###
+echo "Below will remove the state store from s3"
+echo "This will mean you cannot edit some things through kops."
+read -r -p "Are you sure? [y/N] " response
+case "$response" in
+    [yY][eE][sS]|[yY]) 
+        aws s3 rm s3://${KOPS_S3_BUCKET} --recursive
+        AVAILABILITY_ZONES="us-east-2a,us-east-2b"
+        #DEFAULT_NODE_INSTANCE_TYPE#
+        FIRST_NODE_COUNT=3
+        KUBERNETES_VERSION="1.8.7"
+        kops create cluster \
+            --zones ${AVAILABILITY_ZONES} \
+            --node-size "${NODE_INSTANCE_TYPE}" \
+            --master-size "${MASTER_INSTANCE_TYPE}" \
+            --kubernetes-version=${KUBERNETES_VERSION} \
+            --node-count=${FIRST_NODE_COUNT} \
+            ${CLUSTER_NAME}
+
+        kops update cluster ${CLUSTER_NAME} --yes \
+        --out=/tmp/terraform-"$(date +%F%T)" \
+        --target=terraform
+
+        ##----------Create Docker registry related things ------------###
+
+        ## Create s3 bucket to store root cert 
+        ## Remove it first
+        cd /tmp
+        rm -rf domain.key domain.crt
+        ### Create key for docker registry 
+        openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 3650 -out domain.crt -subj "/C=US/ST=NY/L=NYC/O=SlingMedia/OU=Backend/CN=registry.sports-cloud.com"
+        ### Upload to s3
+        STATE_FOLDER="${CLUSTER_NAME}/docker-state"
+        mkdir -p /tmp/${STATE_FOLDER}
+        mv domain.key /tmp/${STATE_FOLDER}
+        mv domain.crt /tmp/${STATE_FOLDER}
+        aws s3 sync ${STATE_FOLDER} s3://${KOPS_S3_BUCKET}/${STATE_FOLDER}
+        rm -rf /tmp/${STATE_FOLDER}
+        ;;
+    *)
+        echo "Not deleing state store"
+        ;;
+esac
 
 
-#DEFAULT_NODE_INSTANCE_TYPE#
-FIRST_NODE_COUNT=3
-KUBERNETES_VERSION="1.8.7"
-kops create cluster \
-    --zones ${AVAILABILITY_ZONES} \
-    --node-size "${NODE_INSTANCE_TYPE}" \
-    --master-size "${MASTER_INSTANCE_TYPE}" \
-    --kubernetes-version=${KUBERNETES_VERSION} \
-    --node-count=${FIRST_NODE_COUNT} \
-    ${CLUSTER_NAME}
 
-kops update cluster ${CLUSTER_NAME} --yes \
---out=/tmp/terraform-"$(date +%F%T)" \
---target=terraform
 
 
 
