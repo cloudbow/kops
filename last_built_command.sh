@@ -2,7 +2,7 @@
 ## CIRD block quotes and / needs to be escaped for sed to work
 OUTPUT_DIR="k8s-cluster"
 CORPORATE_CIDR_BLOCKS='\"0.0.0.0\/0\"' \
-BASE_PRIVATE_HOSTED_DOMAIN="xyz.com" \
+BASE_PRIVATE_HOSTED_DOMAIN="my-cloud.com" \
 ARTIFACT_SERVER_NAME="artifact-server" \
 DOCKER_REGISTRY_NAME="registry" \
 CLUSTER_NAME="my-cloud.k8s.local" \
