@@ -18,7 +18,7 @@ NOTE: Need to be in bash to run the following
 
 ```
 OUTPUT_DIR="slingtv-sports-cloud"
-CORPORATE_CIDR_BLOCKS='"182.71.244.110/32", "75.62.122.254/32"' \
+CORPORATE_CIDR_BLOCKS='\"182.71.244.110\/32\", \"75.62.122.254\/32\"' \
 BASE_PRIVATE_HOSTED_DOMAIN="sports-cloud.com" \
 ARTIFACT_SERVER_NAME="artifact-server" \
 DOCKER_REGISTRY_NAME="registry" \
