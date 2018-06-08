@@ -260,7 +260,7 @@ case "$response" in
         cd /tmp
         rm -rf domain.key domain.crt
         ### Create key for docker registry 
-        openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 3650 -out domain.crt -subj "/C=US/ST=NY/L=NYC/O=SlingMedia/OU=Backend/CN=registry.sports-cloud.com"
+        openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 3650 -out domain.crt -subj "/C=US/ST=NY/L=NYC/O=SlingMedia/OU=Backend/CN=${DOCKER_REGISTRY_HOST_NAME}"
         ### Upload to s3
         STATE_FOLDER="${CLUSTER_NAME}/docker-state"
         mkdir -p /tmp/${STATE_FOLDER}
