@@ -224,4 +224,4 @@ echo "aws command available"
 cp domain.crt ca.crt
 ## Copy the ca.crt file to all nodes for docker registry
 mkdir -p /etc/docker/certs.d/#docker_registry_host#:5000 && \
-cp -rf /home/admin/ca.crt /etc/docker/certs.d/#docker_registry_host#:5000
+cp -rf ca.crt /etc/docker/certs.d/#docker_registry_host#:5000
