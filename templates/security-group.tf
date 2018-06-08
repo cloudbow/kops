@@ -76,7 +76,7 @@ resource "aws_security_group_rule" "https-api-elb-#cluster_name_hyphenated#" {
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
-  cidr_blocks       = ["182.71.244.110/32", "75.62.122.254/32"]
+  cidr_blocks       = [#corporte_cidr#]
 }
 
 resource "aws_security_group_rule" "https-elb-to-master-#cluster_name_hyphenated#" {
