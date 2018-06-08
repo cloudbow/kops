@@ -24,7 +24,7 @@ resource "aws_security_group_rule" "alb-#cluster_name_hyphenated#-corporate-rule
   from_port         = 0
   to_port           = 65535
   protocol          = "tcp"
-  cidr_blocks       = ["182.71.244.110/32", "75.62.122.254/32"]
+  cidr_blocks       = [#corporte_cidr#]
 }
 
 resource "aws_security_group_rule" "alb-#cluster_name_hyphenated#-egress" {

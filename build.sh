@@ -78,6 +78,14 @@ else
     echo "Using registry name ${ARTIFACT_SERVER_NAME}"
 fi
 
+if [ -z "${CORPORATE_CIDR_BLOCKS}" ]
+then
+    echo "Provide your cidr group correctly. Otherwise you will be attacked"
+    exit 1
+else
+    echo "Using registry name ${CORPORATE_CIDR_BLOCKS}"
+fi
+
 ## Don't continue if clustername is not given
 if [ -z "$1" ]
 then
@@ -175,6 +183,10 @@ done <<< "$FILES"
 
 while read -r line; do
     gsed -i "s/#private_base_host#/${BASE_PRIVATE_HOSTED_DOMAIN}/g" $line
+done <<< "$FILES"
+
+while read -r line; do
+    gsed -i "s/#corporte_cidr#/${CORPORATE_CIDR_BLOCKS}/g" $line
 done <<< "$FILES"
 
 ## Replace default region
