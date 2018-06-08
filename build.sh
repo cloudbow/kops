@@ -226,8 +226,7 @@ KOPS_S3_BUCKET=k8s-state-${CLUSTER_NAME_HYPHENATED}
 export KOPS_STATE_STORE=s3://${KOPS_S3_BUCKET}
 if aws s3 ls "s3://${KOPS_S3_BUCKET}" 2>&1 | grep -q 'NoSuchBucket'
 then
-    aws s3api create-bucket \
-        --bucket ${KOPS_S3_BUCKET} \
+    aws s3 mb s3://${KOPS_S3_BUCKET} \
         --region ${DEFAULT_REGION}
 fi
 
