@@ -11,7 +11,7 @@ ALSO UPDATE THE last_built_command.sh ONCE YOU UPDATE THE TERRAFORM IMAGE
 
 * You get a full k8s cluster of version 1.8.7
 
-* Self signed TLS enabled docker registry under registry.xyz.com:5000
+* Self signed TLS enabled docker registry under registry.my-cloud.com:5000
 
 
 
