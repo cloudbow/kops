@@ -1,6 +1,7 @@
 ##-- Build command ( RUN ONLY ONCE ) ---
+## CIRD block quotes and / needs to be escaped for sed to work
 OUTPUT_DIR="k8s-cluster"
-CORPORATE_CIDR_BLOCKS='"0.0.0.0/0"' \
+CORPORATE_CIDR_BLOCKS='\"0.0.0.0\/0\"' \
 BASE_PRIVATE_HOSTED_DOMAIN="xyz.com" \
 ARTIFACT_SERVER_NAME="artifact-server" \
 DOCKER_REGISTRY_NAME="registry" \
