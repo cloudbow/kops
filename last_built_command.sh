@@ -12,13 +12,13 @@ CLUSTER_NAME="my-cloud.k8s.local" \
 cd ${OUTPUT_DIR}
 
 TF_VAR_aws_node_instance_type="m4.xlarge" \
-TF_VAR_aws_node_instance_nos=4  \
+TF_VAR_aws_node_instance_nos=2  \
 TF_VAR_aws_master_instance_nos=1 \
 TF_VAR_aws_public_key_pem_path="/Volumes/Data/Documents/backend/projects/docs/aws_key_public_key" \
 terraform plan
 
 TF_VAR_aws_node_instance_type="m4.xlarge" \
-TF_VAR_aws_node_instance_nos=4  \
+TF_VAR_aws_node_instance_nos=2  \
 TF_VAR_aws_master_instance_nos=1 \
 TF_VAR_aws_public_key_pem_path="/Volumes/Data/Documents/backend/projects/docs/aws_key_public_key" \
 terraform apply

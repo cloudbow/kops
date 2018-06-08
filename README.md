@@ -38,13 +38,13 @@ NOTE: DONT RUN THIS COMMAND AS IT IS A TEMPLATE. USE THE last_built_command.sh
 cd ${OUTPUT_DIR}
 terraform init
 TF_VAR_aws_node_instance_type="m4.xlarge" \
-TF_VAR_aws_node_instance_nos=4  \
+TF_VAR_aws_node_instance_nos=2  \
 TF_VAR_aws_master_instance_nos=1 \
 TF_VAR_aws_public_key_pem_path="/Volumes/Data/Documents/backend/projects/docs/aws_key_pair" \
 terraform plan
 
 TF_VAR_aws_node_instance_type="m4.xlarge" \
-TF_VAR_aws_node_instance_nos=4  \
+TF_VAR_aws_node_instance_nos=2  \
 TF_VAR_aws_master_instance_nos=1 \
 TF_VAR_aws_public_key_pem_path="/Volumes/Data/Documents/backend/projects/docs/aws_key_pair" \
 terraform apply
