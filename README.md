@@ -11,7 +11,7 @@ ALSO UPDATE THE last_built_command.sh ONCE YOU UPDATE THE TERRAFORM IMAGE
 
 * You get a full k8s cluster of version 1.8.7
 
-* Self signed TLS enabled docker registry under registry.xyz.com:5000
+* Self signed TLS enabled docker registry under registry.my-cloud.com:5000
 
 
 
@@ -24,7 +24,7 @@ NOTE: Need to be in bash to run the following
 ```
 OUTPUT_DIR="k8s-cluster"
 CORPORATE_CIDR_BLOCKS='\"0.0.0.0\/0\"' \
-BASE_PRIVATE_HOSTED_DOMAIN="xyz.com" \
+BASE_PRIVATE_HOSTED_DOMAIN="my-cloud.com" \
 ARTIFACT_SERVER_NAME="artifact-server" \
 DOCKER_REGISTRY_NAME="registry" \
 CLUSTER_NAME="my-cloud.k8s.local" \
