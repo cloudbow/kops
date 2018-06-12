@@ -39,7 +39,8 @@
         "arn:aws:s3:::k8s-state-#cluster_name_hyphenated#/#cluster_name#/pki/private/kubelet/*",
         "arn:aws:s3:::k8s-state-#cluster_name_hyphenated#/#cluster_name#/pki/ssh/*",
         "arn:aws:s3:::k8s-state-#cluster_name_hyphenated#/#cluster_name#/secrets/dockerconfig",
-        "arn:aws:s3:::k8s-state-#cluster_name_hyphenated#/#cluster_name#/docker-state/*"
+        "arn:aws:s3:::k8s-state-#cluster_name_hyphenated#/#cluster_name#/non-kops-docker-state/*",
+        "arn:aws:s3:::k8s-state-#cluster_name_hyphenated#/#cluster_name#/non-kops-launch-scripts/*"
       ]
     },
     {

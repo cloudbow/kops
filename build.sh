@@ -218,7 +218,9 @@ done <<< "$FILES"
 
 rename 's/#cluster_name#/'$CLUSTER_NAME'/g' data/*.*
 
+mv data/master_bootstrap_app.sh /tmp
 
+### --- template expansion complete ----- ####
 
 
 ## Create S3 state store and generate and update config to S3.
@@ -229,6 +231,8 @@ then
     aws s3 mb s3://${KOPS_S3_BUCKET} \
         --region ${DEFAULT_REGION}
 fi
+
+
 
 ###
 echo "Below will remove the state store from s3"
@@ -253,6 +257,9 @@ case "$response" in
         --out=/tmp/terraform-"$(date +%F%T)" \
         --target=terraform
 
+
+       
+
         ##----------Create Docker registry related things ------------###
 
         ## Create s3 bucket to store root cert 
@@ -262,12 +269,21 @@ case "$response" in
         ### Create key for docker registry 
         openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 3650 -out domain.crt -subj "/C=US/ST=NY/L=NYC/O=SlingMedia/OU=Backend/CN=${DOCKER_REGISTRY_HOST_NAME}"
         ### Upload to s3
-        STATE_FOLDER="${CLUSTER_NAME}/docker-state"
-        mkdir -p /tmp/${STATE_FOLDER}
-        mv domain.key /tmp/${STATE_FOLDER}
-        mv domain.crt /tmp/${STATE_FOLDER}
-        aws s3 sync ${STATE_FOLDER} s3://${KOPS_S3_BUCKET}/${STATE_FOLDER}
-        rm -rf /tmp/${STATE_FOLDER}
+        DOCKER_STATE_FOLDER="${CLUSTER_NAME}/non-kops-docker-state"
+        mkdir -p /tmp/${DOCKER_STATE_FOLDER}
+        mv domain.key /tmp/${DOCKER_STATE_FOLDER}
+        mv domain.crt /tmp/${DOCKER_STATE_FOLDER}
+        aws s3 sync ${DOCKER_STATE_FOLDER} s3://${KOPS_S3_BUCKET}/${DOCKER_STATE_FOLDER}
+        rm -rf /tmp/${DOCKER_STATE_FOLDER}
+
+
+         ## Migrate script to s3 folder for later execution
+        SCRIPTS_S3_FOLDER="${CLUSTER_NAME}/non-kops-launch-scripts"
+        mkdir -p /tmp/${SCRIPTS_S3_FOLDER}
+        mv /tmp/master_bootstrap_app.sh /tmp/${SCRIPTS_S3_FOLDER}
+        aws s3 sync ${SCRIPTS_S3_FOLDER} s3://${KOPS_S3_BUCKET}/${SCRIPTS_S3_FOLDER}
+        rm -rf /tmp/${SCRIPTS_S3_FOLDER}
+
         ;;
     *)
         echo "Not deleing state store"
